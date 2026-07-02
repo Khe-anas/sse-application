@@ -1,0 +1,103 @@
+spring:
+  application:
+    name: sse-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sse_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 25MB
+      max-request-size: 130MB
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:true}
+          starttls:
+            enable: ${SMTP_STARTTLS_ENABLE:true}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+management:
+  health:
+    mail:
+      enabled: ${SSE_MAIL_ENABLED:false}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:sse-super-secret-key-change-in-production-min-32-chars}
+  access-token-expiration: 900000    # 15 minutes
+  refresh-token-expiration: 604800000 # 7 days
+
+sse:
+  mail:
+    enabled: ${SSE_MAIL_ENABLED:false}
+    from: ${SSE_MAIL_FROM:no-reply@sse.local}
+    app-url: ${SSE_MAIL_APP_URL:http://localhost:3000}
+
+# File Upload
+upload:
+  dir: uploads
+  max-file-size: 26214400  # 25MB
+
+# CORS
+cors:
+  allowed-origins: "*"
+
+# Logging
+logging:
+  level:
+    com.sse: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://postgres:5432/sse_db
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 130MB
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.sse: INFO
+    org.springframework.security: WARN

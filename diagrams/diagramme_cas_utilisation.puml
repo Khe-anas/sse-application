@@ -1,0 +1,109 @@
+@startuml diagramme_cas_utilisation
+' ============================================================
+'  SSE — Diagramme de Cas d'Utilisation SIMPLIFIÉ
+'  (avec généralisation d'acteurs = héritage)
+' ============================================================
+
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #EBF4FF
+  BorderColor #2C5282
+  ArrowColor #2D3748
+}
+skinparam actor {
+  BackgroundColor #F0FFF4
+  BorderColor #276749
+}
+skinparam package {
+  BorderColor #A0AEC0
+  BackgroundColor #F7FAFC
+}
+
+left to right direction
+
+title <size:18><b>SSE — Diagramme de Cas d'Utilisation</b></size>\n<size:11><color:#666666>Généralisation d'acteurs (héritage) — version simplifiée</color></size>
+
+' ============ ACTEURS ============
+actor "Visiteur" as Visiteur
+
+' Acteur général (parent)
+actor "Utilisateur\nauthentifié" as U
+
+' Acteurs spécialisés (enfants) → héritent des CU de "U"
+actor "Responsable" as Responsable
+actor "Administrateur" as Admin
+actor "Gouvernement" as Gouv
+
+' ====== GÉNÉRALISATION (héritage d'acteurs) ======
+Responsable --|> U
+Admin --|> U
+Gouv --|> U
+
+' ============ CAS D'UTILISATION COMMUNS (hérités) ============
+rectangle "Fonctions communes (héritées par tous)" {
+  usecase "Se connecter" as UC_Login
+  usecase "Consulter son profil" as UC_Profile
+  usecase "Consulter le référentiel" as UC_Ref
+  usecase "Consulter une évaluation" as UC_ViewEval
+  usecase "Recevoir des notifications" as UC_Notif
+  usecase "Exporter un rapport (PDF/Excel)" as UC_Export
+}
+
+U --> UC_Login
+U --> UC_Profile
+U --> UC_Ref
+U --> UC_ViewEval
+U --> UC_Notif
+U --> UC_Export
+
+' ============ CAS D'UTILISATION SPÉCIFIQUES ============
+
+rectangle "Responsable d'organisme" {
+  usecase "Créer une évaluation" as UC_Create
+  usecase "Remplir les réponses" as UC_Fill
+  usecase "Joindre des preuves" as UC_Upload
+  usecase "Soumettre l'évaluation" as UC_Submit
+}
+
+Responsable --> UC_Create
+Responsable --> UC_Fill
+Responsable --> UC_Submit
+
+UC_Submit ..> UC_Fill : <<include>>
+UC_Fill ..> UC_Upload : <<include>>
+
+rectangle "Administrateur" {
+  usecase "Gérer les utilisateurs" as UC_Users
+  usecase "Gérer les organismes" as UC_Org
+  usecase "Valider une évaluation" as UC_Validate
+  usecase "Rejeter / demander correction" as UC_Reject
+  usecase "Gérer le référentiel" as UC_ManageRef
+  usecase "Consulter le tableau de bord" as UC_KPI
+  usecase "Envoyer une notification" as UC_Send
+}
+
+Admin --> UC_Users
+Admin --> UC_Org
+Admin --> UC_Validate
+Admin --> UC_Reject
+Admin --> UC_ManageRef
+Admin --> UC_KPI
+Admin --> UC_Send
+
+UC_Validate ..> UC_ViewEval : <<include>>
+
+rectangle "Gouvernement" {
+  usecase "Consulter le classement" as UC_Ranking
+}
+
+Gouv --> UC_Ranking
+
+' ============ CAS DU VISITEUR ============
+rectangle "Visiteur (non authentifié)" {
+  usecase "Demander la création de compte" as UC_Request
+}
+
+Visiteur --> UC_Login
+Visiteur --> UC_Request
+
+@enduml

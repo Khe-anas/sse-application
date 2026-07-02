@@ -1,0 +1,74 @@
+import api from './api';
+import type { AccountRequest, AccountRequestStatus, PageResponse, TypeOrganisme, User } from '@/types';
+
+export interface AccountRequestSubmitForm {
+  companyName: string;
+  type: TypeOrganisme;
+  responsibleFirstName: string;
+  responsibleLastName: string;
+  companyEmail: string;
+  phone?: string;
+  address?: string;
+  sector?: string;
+  message?: string;
+  verificationFiles?: File[];
+}
+
+export interface ApproveAccountRequestResponse {
+  request: AccountRequest;
+  user: User;
+  temporaryPassword: string;
+}
+
+export const accountRequestService = {
+  submit: async (data: AccountRequestSubmitForm): Promise<AccountRequest> => {
+    const formData = new FormData();
+    formData.append('companyName', data.companyName);
+    formData.append('type', data.type);
+    formData.append('responsibleFirstName', data.responsibleFirstName);
+    formData.append('responsibleLastName', data.responsibleLastName);
+    formData.append('companyEmail', data.companyEmail);
+
+    if (data.phone) formData.append('phone', data.phone);
+    if (data.address) formData.append('address', data.address);
+    if (data.sector) formData.append('sector', data.sector);
+    if (data.message) formData.append('message', data.message);
+    data.verificationFiles?.forEach((file) => formData.append('verificationFiles', file));
+
+    const response = await api.post<AccountRequest>('/account-requests', formData);
+    return response.data;
+  },
+
+  getAll: async (params?: {
+    status?: AccountRequestStatus;
+    search?: string;
+    page?: number;
+    size?: number;
+  }): Promise<PageResponse<AccountRequest>> => {
+    const response = await api.get<PageResponse<AccountRequest>>('/admin/account-requests', { params });
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<AccountRequest> => {
+    const response = await api.get<AccountRequest>(`/admin/account-requests/${id}`);
+    return response.data;
+  },
+
+  claim: async (id: string): Promise<AccountRequest> => {
+    const response = await api.put<AccountRequest>(`/admin/account-requests/${id}/claim`);
+    return response.data;
+  },
+
+  approve: async (
+    id: string,
+    data: { password?: string; adminComment?: string }
+  ): Promise<ApproveAccountRequestResponse> => {
+    const response = await api.put<ApproveAccountRequestResponse>(`/admin/account-requests/${id}/approve`, data);
+    return response.data;
+  },
+
+  reject: async (id: string, data: { adminComment: string }): Promise<AccountRequest> => {
+    const response = await api.put<AccountRequest>(`/admin/account-requests/${id}/reject`, data);
+    return response.data;
+  },
+};

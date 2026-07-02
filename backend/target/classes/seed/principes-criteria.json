@@ -1,0 +1,1334 @@
+[
+  {
+    "number": 1,
+    "sheetName": "1-Finalité",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin de définir la finalité de l'organisme, il faut s'assurer que:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "Etes-vous dotés de:",
+            "preuvesFr": null,
+            "referencesFr": null
+          },
+          {
+            "number": 2,
+            "labelFr": "la mission de l'organisme soit définie",
+            "preuvesFr": "document constitutif (de création/ statut ou tout autre document pertinent) / information documentée décrivant la mission",
+            "referencesFr": "Texte de création"
+          },
+          {
+            "number": 3,
+            "labelFr": "les valeurs de l'organisme soient définies",
+            "preuvesFr": "code d'éthique / code de déontologie / information documentée décrivant les valeurs",
+            "referencesFr": "Décret 2014- 4030 du 3 octobre 2014"
+          },
+          {
+            "number": 4,
+            "labelFr": "les composants éthiques soient définis",
+            "preuvesFr": "code d'éthique / code de déontologie",
+            "referencesFr": "Décret 2014- 4030 du 3 octobre 2014"
+          },
+          {
+            "number": 5,
+            "labelFr": "les parties prenantes soient appréciées",
+            "preuvesFr": "Documents d’analyse et d'appréciation des parties prenantes",
+            "referencesFr": "Guide pratique des cellules de gouvernance"
+          },
+          {
+            "number": 6,
+            "labelFr": "Une analyse interne et externe de l'organisme soit réalisée",
+            "preuvesFr": "document à jour définissant les capacités (positives et négatives) et les opportunités de l'organisme",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "processus d'identification des enjeux internes et externes soit mis en place",
+            "preuvesFr": "document à jour décrivant les enjeux (SWOT, PESTEL ou tout autre document pertinent…)",
+            "referencesFr": "Guide pratique des cellules de gouvernance / Circulaire n° 31 du 23 novembre 2023 relatif à l’élaboration du contrat programme / Guide d’orientation pour l’élaboration des contrat programmes."
+          },
+          {
+            "number": 8,
+            "labelFr": "un engagement social soit pris",
+            "preuvesFr": "document décrivant les actions d'ordre social  / Rapport d’activité",
+            "referencesFr": "Loi 2018- 35 sur la responsabilité sociétale des entreprises"
+          },
+          {
+            "number": 9,
+            "labelFr": "un engagement pour réduire les impacts environnementaux soit pris",
+            "preuvesFr": "document décrivant les actions pour réduire les impacts environnementaux / documents (PV, Rapports...)",
+            "referencesFr": "Loi 35 -2018 sur la responsabilité sociétale des entreprises"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Pour communiquer sur la finalité, il auto s'assurer que :",
+        "criteres": [
+          {
+            "number": 10,
+            "labelFr": "la communication de la finalité avec les parties prenantes soit réalisée",
+            "preuvesFr": "Site web, rapport d’activité, …",
+            "referencesFr": "Loi organique d’accès à l’information"
+          },
+          {
+            "number": 11,
+            "labelFr": "la revue de la finalité soit planifiée (réalisation éventuelle des actions correctives de la finalité)",
+            "preuvesFr": "Plan des actions correctives",
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 11
+  },
+  {
+    "number": 2,
+    "sheetName": "2-Céation de valeur",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin de définir la valeur, l'organisme doit s'assurer que :",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "les attentes des principales parties prenantes, les enjeux, les valeurs, et la finalité de l’organisme soient definies",
+            "preuvesFr": "Information documentée tenant compte des attentes des principales parties prenantes, des enjeux, les valeurs, et la finalité de l’organisme",
+            "referencesFr": "voir aussi finalité"
+          },
+          {
+            "number": 2,
+            "labelFr": "les valeurs tiennent compte des besoins et des attentes des parties prenantes (les employés, les citoyens/clients …)",
+            "preuvesFr": "code d'éthique / code de déonthologie",
+            "referencesFr": "voir aussi finalité"
+          },
+          {
+            "number": 3,
+            "labelFr": "les valeurs refletent l'engagement de l'organisme par rapport à sa responsabilité sociétale et environnementale",
+            "preuvesFr": "le rapport RSE ou tout autre document qui presente les politiques et actions de l'organisme en matiere de RSE",
+            "referencesFr": "voir aussi finalité"
+          },
+          {
+            "number": 4,
+            "labelFr": "une communication multicanale soit mise à disposition",
+            "preuvesFr": "plan de communication mis à jour",
+            "referencesFr": "ISO 37000:2021"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "les paramètres dans le cadre desquels les  / objectifs de création de valeur doivent être atteints garantissent que:",
+        "criteres": [
+          {
+            "number": 5,
+            "labelFr": "un équilibre entre l’atteinte des objectifs de création de valeur et les impacts potentiels soit établi",
+            "preuvesFr": "documents stratégiques, plan de developpement, programmes annuels ou tout autre document pertinent",
+            "referencesFr": "Loi des finances,Projet annuel de performance / Rapport annuel de performance /"
+          },
+          {
+            "number": 6,
+            "labelFr": "les ressources financières, materielles, informationelles et humaines nécessaires à l'atteinte des objectifs de création de la valeur soient allouées",
+            "preuvesFr": "budget, rapports financiers, etats financiers",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "les interactions entre les ressources nécessaires soient identifiées et optimisées",
+            "preuvesFr": "budget, plans stratégiques",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Afin de fournir la valeur, il faut s'assurer que :",
+        "criteres": [
+          {
+            "number": 8,
+            "labelFr": "les actions adéquates aux résultats non escomptés déjà identifiés soient effectuées de manière régulière.",
+            "preuvesFr": "rapports, procès verbaux",
+            "referencesFr": null
+          },
+          {
+            "number": 9,
+            "labelFr": "les actions adéquates aux résultats non escomptés déjà identifiés soient évaluées en permanance",
+            "preuvesFr": "rapports, procès verbaux",
+            "referencesFr": null
+          },
+          {
+            "number": 10,
+            "labelFr": "les impacts de l’évolution du contexte soient identifiés, compris et surveillés et que  / des actions appropriées soient menées",
+            "preuvesFr": "Analyse du contexte (swot, pestel, porter, ….)",
+            "referencesFr": "voir aussi finalité"
+          },
+          {
+            "number": 11,
+            "labelFr": "l'évaluation régulière de la performance de l'organisme (notamment la direction) par rapport aux objectifs de création de valeur soit effectée",
+            "preuvesFr": "rapports, procès verbaux",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "labelFr": "Pour maintenir la valeur, il faut s'assurer que:",
+        "criteres": [
+          {
+            "number": 12,
+            "labelFr": "les performances financières et opérationnelles de l'organisme soient surveillées en permanance",
+            "preuvesFr": "rapports financiers, budget,",
+            "referencesFr": null
+          },
+          {
+            "number": 13,
+            "labelFr": "les domaines où la valeur est créée ou perdue soient identifiés",
+            "preuvesFr": "plan de gestion des risques ou tout autre document pertinent",
+            "referencesFr": null
+          },
+          {
+            "number": 14,
+            "labelFr": "les strategies soient révisées suite aux changements",
+            "preuvesFr": "documents stratégiques, plan de developpement, programmes annuels ou tout autre document pertinent",
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 14
+  },
+  {
+    "number": 3,
+    "sheetName": "3-Stratégie",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "A fin de définir les objectifs et des résultats stratégiques de l'organisme il faut s'assurer que:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "la définition des objectifs et des résultats stratégique soit effectuées par l'organe de gouvernance",
+            "preuvesFr": "PV de réunion, décisions, notes émanant de l'organe de gouvernance, Plan stratégique, contrat-programme (entreprises publiques), contrat objectifs (établissements publics à caractère non administratif)",
+            "referencesFr": "- ISO 37000; ISO 9001; Loi n° 89-9 du 1er février 1989 ; Décret n°2002-2197 du 7 octobre 2002 ; IFAC: International good practice guidance:evaluating and improving governance in organisations (principle H)"
+          },
+          {
+            "number": 2,
+            "labelFr": "les objectifs et les résultats stratégiques soient alignés sur la finalité de l’organisme, et sur les objectifs de création de valeur",
+            "preuvesFr": "Statuts, acte de constitution, plan stratégique (Vision, valeurs; missions), valeurs, PV de réunion de l'organe de gouvernance…",
+            "referencesFr": "ISO 37000"
+          },
+          {
+            "number": 3,
+            "labelFr": "Les objectifs et les résultats stratégiques soient assortis de délais",
+            "preuvesFr": "Plan Stratégique",
+            "referencesFr": "ISO 37000"
+          },
+          {
+            "number": 4,
+            "labelFr": "une analyse du contexte interne et externe soit réalisée",
+            "preuvesFr": "document d'anlyse du contexte",
+            "referencesFr": "ISO 37000, IFAC: International goood practice guidance:evaluating and improving governance in organisations (principle G), ELOGE ( L’efficience / et l’efficacité 3.1) voir finalité"
+          },
+          {
+            "number": 5,
+            "labelFr": "une analyse des risques soit réalisée",
+            "preuvesFr": "Document d'analyse de risques.",
+            "referencesFr": "ISO 37000 voir gouvernance des risques / finalité"
+          },
+          {
+            "number": 6,
+            "labelFr": "des indicateurs de réalisation et de performance soient identifées",
+            "preuvesFr": "indicateurs de mesure de performance, tableau de bord",
+            "referencesFr": "voir surveillance"
+          },
+          {
+            "number": 7,
+            "labelFr": "des besoins en ressources soient identifiées",
+            "preuvesFr": "document Plan Stratégique, budget prévisionnel, plan d'action",
+            "referencesFr": "ISO 37000, IFAC: International goood practice guidance:evaluating and improving governance in organisations (principle J.3) / voir création de valeur"
+          },
+          {
+            "number": 8,
+            "labelFr": "une analyse des parties prenantes (identification, classification, besoins,...) soit réalisé",
+            "preuvesFr": "documents d'Analyse des parties prenantes",
+            "referencesFr": "ISO 37000 / voir parties prenantes"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Etablir les politiques de gouvernance de l'organisme",
+        "criteres": [
+          {
+            "number": 9,
+            "labelFr": "La politique de gouvernance soit définis",
+            "preuvesFr": "la politique de gouvernance",
+            "referencesFr": null
+          },
+          {
+            "number": 10,
+            "labelFr": "Les rôles concernant le processus stratégique soient définis",
+            "preuvesFr": "Documents attribution des roles (fiches de poste, organigramme nominatif …)",
+            "referencesFr": null
+          },
+          {
+            "number": 11,
+            "labelFr": "un dispositif de reporting soit définie",
+            "preuvesFr": "Procédures de reporting, Rapports, Décisions ….",
+            "referencesFr": "ISO 37000"
+          },
+          {
+            "number": 12,
+            "labelFr": "Les règles de fonctionnement de l'organe de gouvernance soient définies",
+            "preuvesFr": "procédures ou code de fonctionnement, Mode opératoire,",
+            "referencesFr": "IFAC: International good practice guidance:evaluating and improving governance in organisations (principle E)"
+          },
+          {
+            "number": 13,
+            "labelFr": "La performance de l'organe de gouvernance soit mesurée et suivie",
+            "preuvesFr": "Rapport de l'organe de gouvernance consacré à sa performance,son fonctionnement. Des indicateurs, tableau de bord",
+            "referencesFr": "ISO 37000, IFAC: International good practice guidance:evaluating and improving governance in organisations (principle G 1, E.9)"
+          },
+          {
+            "number": 14,
+            "labelFr": "La politique de gouvernance soit révisée et mise à jour regulièrement",
+            "preuvesFr": "Indice de version des politiques de gouvernance.",
+            "referencesFr": "ISO 37000"
+          },
+          {
+            "number": 15,
+            "labelFr": "Des processus de surveillance permettant de s’assurer que les politiques de gouvernance et effectivement appliquées soient mis en place",
+            "preuvesFr": "PV, rapports d'audits, enquêtes,..",
+            "referencesFr": "ISO 37000"
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "A fin de piloter la mise en oeuvre de la stratégie de l’organisme par l'organe de la gouvernance, il faut s'assurer que:",
+        "criteres": [
+          {
+            "number": 16,
+            "labelFr": "la mise en œuvre du plan stratégique soit effectuée par l'organe de gouvernance",
+            "preuvesFr": "Rapport de suivi de la mise en œuvre du Plan stratégique. Indicateurs de mesure de l'atteinte des résultats stratégiques§",
+            "referencesFr": "IFAC: International goood practice guidance:evaluating and improving governance in organisations (principle k.1); ELOGE (L’efficience / et l’efficacité 3.3; 3.4)"
+          },
+          {
+            "number": 17,
+            "labelFr": "un mécaniseme de pilotage du plan stratégique soit mis en place",
+            "preuvesFr": "PV de réunion de l'organe de gouvernance, plan des activités",
+            "referencesFr": "IFAC (sustainability framewrk 2.0) ELOGE (durabilité et orientation à LT, 9), ELOGE (L'obligation de rendre compte, 12.2)"
+          }
+        ]
+      }
+    ],
+    "criteresCount": 17
+  },
+  {
+    "number": 4,
+    "sheetName": "4-Surveillance",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin de s'assurer que la surveillance effective est efficace il faut que:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "un processus de délégation des pouvoirs soit mis en place",
+            "preuvesFr": "décisions de délégation",
+            "referencesFr": "textes régissant l'organisation et le fonctionnement de l'organisation (statuts, textes de création)"
+          },
+          {
+            "number": 2,
+            "labelFr": "un processus de suivi de la gestion soit mis en place",
+            "preuvesFr": "rapports, indicateurs de performance, tableaux de bord, revues de direction,rapports selon la périodicité prévue",
+            "referencesFr": "contrats programme (voir création de valeur et stratégie)"
+          },
+          {
+            "number": 3,
+            "labelFr": "un sysème de contrôle interne effectif soit mis en place",
+            "preuvesFr": "organigramme, rapports d'audit, rapport de suivi des indicateurs, rapports CPA",
+            "referencesFr": "textes régissant l'organisation et le fonctionnement de l'organisation (statuts, textes de création)"
+          },
+          {
+            "number": 4,
+            "labelFr": "un processus d'amélioration soit mis en place",
+            "preuvesFr": "tableaux de suivi des recommandations des instances de contrôle, gestion des reclamations, plan d'action corrective",
+            "referencesFr": "textes régissant l'organisation et le fonctionnement de l'organisation (statuts, textes de création) (Voir redevabilité)"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Afin d'assurer la surveillance des performances de l'organisme il faut que:",
+        "criteres": [
+          {
+            "number": 5,
+            "labelFr": "les valeurs soient établies",
+            "preuvesFr": "chartes, codes ethiques",
+            "referencesFr": "Décret n° 2014-4030 du 3 octobre 2014, approuvant le code de conduite et de déontologie de l'agent public (Voir Finalité)"
+          },
+          {
+            "number": 6,
+            "labelFr": "la politique gouvernance soit définie",
+            "preuvesFr": "Politique de gouvernance",
+            "referencesFr": "Décret gouvernemental n° 2016-1158 du 12 août 2016, portant création des cellules  / de gouvernance et fixant leurs attributions (Voir Stratégie)"
+          },
+          {
+            "number": 7,
+            "labelFr": "un système de reporting soit définie",
+            "preuvesFr": "Indicateurs de suivi de performances (KPIs)",
+            "referencesFr": "textes régissant le fonctionnement de l'organisation (Voir Redevabilité)"
+          },
+          {
+            "number": 8,
+            "labelFr": "un système de management risque soit définie",
+            "preuvesFr": "documents de stratégie de gestion de risque (cartographie des risques…)",
+            "referencesFr": "textes régissant le fonctionnement de l'organisation (Voir gouvernance des risques)"
+          },
+          {
+            "number": 9,
+            "labelFr": "les criteres de verification de la conformité soient établis",
+            "preuvesFr": "décision, PV",
+            "referencesFr": null
+          },
+          {
+            "number": 10,
+            "labelFr": "l'identification et classement des parties prenantes soient établis",
+            "preuvesFr": "Cartographie des Parties Prenantes, documents attestant la prise en compte de leurs interets",
+            "referencesFr": "*RNG paragraphe2.1.2a (Voir finalité, création de valeurs , Stratégie, Dialogue avec les parties prenantes) /"
+          },
+          {
+            "number": 11,
+            "labelFr": "les états financiers soient arretés",
+            "preuvesFr": "documents des états financiers, PVs des organes de gouvernances, JORT",
+            "referencesFr": "textes régissant le fonctionnement de l'organisation"
+          },
+          {
+            "number": 12,
+            "labelFr": "des indicateurs financiers soient définies",
+            "preuvesFr": "documents financiers, rapports, Tableaux de bord",
+            "referencesFr": "textes régissant le fonctionnement de l'organisation"
+          },
+          {
+            "number": 13,
+            "labelFr": "roles, responsabiltés, autorités soient attribuées",
+            "preuvesFr": "manuels de procédures, grille de compétence, fiches de poste",
+            "referencesFr": "textes régissant le fonctionnement de l'organisation (Voir stratégie , Création de valeur, Redevabilité)"
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Afin d'obtenir une assurance de la surveillance il faut que:",
+        "criteres": [
+          {
+            "number": 14,
+            "labelFr": "les organes d'assurance de la surveillance soient constitués",
+            "preuvesFr": "comité d'audit, conseil de l'entreprise/ d'administration…",
+            "referencesFr": "textes régissant le fonctionnement de l'organisation"
+          },
+          {
+            "number": 15,
+            "labelFr": "les organes d'assurance de la surveillance soient indépedants de leurs rattachements",
+            "preuvesFr": "charte d’audit",
+            "referencesFr": "norme de l'audit interne"
+          }
+        ]
+      }
+    ],
+    "criteresCount": 15
+  },
+  {
+    "number": 5,
+    "sheetName": "5-Redevabilité",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin que la redevabilté soit assumé il faut que:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "Les informations concernant la finalité de l’organisme soint décrite",
+            "preuvesFr": "document constitutif (de création/ statut ou tout autre document pertinent) / information documentée décrivant la mission",
+            "referencesFr": "Texte de création (voir finalité)"
+          },
+          {
+            "number": 2,
+            "labelFr": "le modèle de création de valeur soit décrit",
+            "preuvesFr": "documents stratégiques, plan de developpement, programmes annuels ou tout autre document pertinent",
+            "referencesFr": "voir création de valeur"
+          },
+          {
+            "number": 3,
+            "labelFr": "la stratégie de l’organisme soint décrite",
+            "preuvesFr": "PV de réunion, décisions, notes émanant de l'organe de gouvernance, Plan stratégique, contrat-programme (entreprises publiques), contrat objectifs (établissements publics à caractère non administratif)",
+            "referencesFr": "voir stratégie"
+          },
+          {
+            "number": 4,
+            "labelFr": "Un processus de reporting concernant l'activité et la performance soit mis en place",
+            "preuvesFr": "rapport stratégique; tableaux de bord de suivi de la performance ; rapport du budget par objectif; rapports des organes de contrôle interne et externe",
+            "referencesFr": "Loi organique n°15-2019 relative à la loi organique du budget; statut de l'organisme; manuel de procédures administratif et financier"
+          },
+          {
+            "number": 5,
+            "labelFr": "Un dispositif de mesure d'impact des activités sur l'environnement social soit mis en place",
+            "preuvesFr": "rapports sur la responsabilté sociétale de l'organisme",
+            "referencesFr": "loi relative à la responsabilité sociétale des organismes; norme ISO 26000 fixant les lignes directrices relatives à la responsabilité sociétale"
+          },
+          {
+            "number": 6,
+            "labelFr": "Un dispositif de mesure d'impact des activités sur l'environnement naturel soit mis en place",
+            "preuvesFr": "rapports sur l'impact des activités de l'organisme sur l'environnement naturel",
+            "referencesFr": "textes juridiques relatifs à la création de l'organisme; décret n°1158 -2016 relatif à la création des cellules de gouvernance et fixant leurs prérogatives; norme ISO82 : lignes directrices pour la prise en compte du développement durable"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Afin de s'assurer que la communiquer sur le processus de redevabilité est effectée il faut que:",
+        "criteres": [
+          {
+            "number": 7,
+            "labelFr": "des mécanismes de reporting qui tiennent compte des attentes des parties prenantes soient mis en place",
+            "preuvesFr": "Rapport annuel d’activité Rapports d’évaluation; les rapports et les enquètes de la société civile et des organismes internationaux / Rapports d’audit et de contrôle / Les procés verbaux. / Sites Web et pages sur les réseaux sociaux /",
+            "referencesFr": "Loi N°2017 -54 du 24 juillet 2017 portant création du conseil national du dialogue social et fixant ses attributions, loi organique n°2018-29 du 9 mai 2018 relative au code des collectivité locales; décret gouvernemental n°2018-328 relatif à l'organisation des consultations publiques, décret gouvernemental n°2018-1067 du 25 décembre 2018 complétant le décret n°93-982 du 3 mai 1993 , fixant le cadre général de la relation entre l'administration et ses usagers,d (voir dialogue avec les partries prenantes)"
+          },
+          {
+            "number": 8,
+            "labelFr": "des canaux de communication et de rétroaction soient mis en place",
+            "preuvesFr": "plan de communication; plan de plaidoyer; réseaux sociaux ; forums, workshops; séminaires , visites sur terrains, les médias; les enquètes avec les citoyens et la société civile,",
+            "referencesFr": "décret gouvernemental n°2019-1242 du 19 décembre 2019 relatif au système sde communication et d'interactivité avec le citoyen; décret gouvernemental n°2019-401 du 6 mai 2019 , fixant les conditions et les procédures de la mise en oeuvre des mécanismes de la démocratie participative citées dans le code des collectivité locales; circulaire n°31 datée du 30 octobre 2014 relative à l'adoption d'un processus participatif dans l'élaboration des textes législatifs"
+          },
+          {
+            "number": 9,
+            "labelFr": "des dispositifs au signalement des disfonctionnements soient mis à la dispostion des Parties Prenantes",
+            "preuvesFr": "espace citoyen en ligne , numéro vert, ; plateforme dédiée aux signalement ( e-people,,,); bureau de relation avec les citoyens;",
+            "referencesFr": "décret gouvernemental n° 2019-1242 du 19 décembre 2019 , relatif au système de communication et d'interactivité en ligne; décret n° 93-1549 du 26 juillet 1993 , portant création des bureaux des relations avec le citoyen"
+          },
+          {
+            "number": 10,
+            "labelFr": "Les informations rapportées soient diffusées",
+            "preuvesFr": "plateforme de partage des données ( open data); dispositifs relatifs à l'accès àl'information;plateforme open gov",
+            "referencesFr": "loi organique n° 2016-22 du 24 mars 2016 , relative au droit d'accès à l'information; décret n°2021-3 du 6 janvier 2021 relatif aux données publiques ouvertes"
+          },
+          {
+            "number": 11,
+            "labelFr": "Les informations rapportées soient diffusées dans les délais",
+            "preuvesFr": "plateforme de partage des données ( open data); dispositifs relatifs à l'accès àl'information;plateforfme open gov",
+            "referencesFr": "loi organique n° 2016-22 du 24 mars 2016 , relative au droit d'accès à l'information; décret n°2021-3 du 6 janvier 2021 relatif aux données publiques ouvertes"
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "afin de s'assurer que la demandedes comptes est réalisée il faut que",
+        "criteres": [
+          {
+            "number": 12,
+            "labelFr": "un dispositif d'évaluation des performances soit définie",
+            "preuvesFr": "Rapports d’audit internes Rapports d’audits externes (CAC, corps de contrôles : cour des comptes, CGF, CGSP,CGDE …) Rapports de suivi des recommandations des rapports d’audit et de contrôle Plan stratégique Rapports des organisations de la société civile.",
+            "referencesFr": "textes juridiques relatifs à l'organisation des organes de contrôle externe ( les instances supérieures de contrôle, les inspections, les controleurs d'Etat, lezs controleurs de dépense,,, le decret relatif à la création des cellules de gouvernance ; le texte juridique relatif à la cour des compte; les textes relatifs à l'organisation administrative et financière des organisations (Voir Création de valeur et stratégie)"
+          },
+          {
+            "number": 13,
+            "labelFr": "un processus d'amélioration soit établis",
+            "preuvesFr": "système de surveillance, de veille",
+            "referencesFr": "Textes juridiques relatifs à l'organisation des organes de contrôle externe ( les instances supérieures de contrôle, les inspections, les controleurs d'Etat, lezs controleurs de dépense,,, le decret relatif à la création des cellules de gouvernance ; le texte juridique relatif à la cour des compte; les textes relatifs à l'organisation administrative et financière des organisations"
+          },
+          {
+            "number": 14,
+            "labelFr": "un processus d'amélioration soit mis en œuvre",
+            "preuvesFr": "Plan d'action corrective",
+            "referencesFr": "Textes juridiques relatifs à l'organisation des organes de contrôle externe ( les instances supérieures de contrôle, les inspections, les controleurs d'Etat, lezs controleurs de dépense,,, le decret relatif à la création des cellules de gouvernance ; le texte juridique relatif à la cour des compte; les textes relatifs à l'organisation administrative et financière des organisations"
+          },
+          {
+            "number": 15,
+            "labelFr": "Les rôles, responsabilités et autorités soient attribués",
+            "preuvesFr": "fiches de poste, fiche de fonction;",
+            "referencesFr": "décret sur le statut et l'organigramme , loi cadre (voir finalité)"
+          }
+        ]
+      }
+    ],
+    "criteresCount": 15
+  },
+  {
+    "number": 6,
+    "sheetName": "6 Dialogue avec les PP",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin d'Identifier et classer les parties par type il faut:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "Toutes les personnes et de tous les groupes susceptibles d’avoir un impact sur l’organisme ou être impactées par l’activité de l’organisme soient identifiées",
+            "preuvesFr": "*Liste des parties prenantes par type et par catégorie (notamment la prise en consération de l'aspect genre)",
+            "referencesFr": "*Décret gouvernemental n° 2019-401 du 6 mai 2019 fixant les conditions et les procédures de la mise en oeuvre des mécanismes de la démocratie participative * Décret gouvernemental n° 2018-1067 du 25 décembre 2018, complétant le décret n° 93-982 du 3 mai 1993, fixant le cadre général de la relation entre l’administration et ses usagers *Règlementation sur la participation citoyenne Et le *RNG paragraphe2.1.2 * guide pratique des cellule de bonne gouvernance * portail e-participation *Décret gouvernemental n° 2019-401 du 6 mai 2019, fixant les conditions et procédures de la mise en œuvre des mécanismes de démocratie participative prévus par l’article 30 du code des collectivités locales.(Répertoire des composantes de la société civile - Répertoire des avis et questions des habitants et composantes de la société civile et des réponses qui leur sont apportées ) *Décret 328-2018 relatif à l'organisation des consultations publiques * décret gouvernemental n° 2019-1242 du 19 décembre 2019 relatif au système de communication et d’interactivité en ligne avec le citoyen ; / • décret gouvernemental n° 2019-401 du 6 mai 2019, fixant les conditions et les procédures de la mise en œuvre des mécanismes de la démocratie participative cités à l’article 30 du Code des collectivités locales ; / • circulaire n° 12 datée du 21 mai 2011 relative à la participation des usagers de l’administration dans l’évaluation des services publics ; / • circulaire n° 13 datée du 23 mai 2011 relative à la mise en œuvre de l’approche participative dans le rapprochement des services prioritaires ; / • circulaire n° 14 datée du 27 mai 2011 relative à la qualité de la réglementation ; / • circulaire n° 31 datée du 30 octobre 2014 relative à l’adoption d’un processus participatif dans l’élaboration des textes législatifs."
+          },
+          {
+            "number": 2,
+            "labelFr": "les Parties Prenantes soient Hiérarchisées et classées selon leur pertinence (Voir les autres principes)",
+            "preuvesFr": "*Cartographie des Parties Prenantes",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Afin d'Identifier les attentes de toutes les parties par type il faut:",
+        "criteres": [
+          {
+            "number": 3,
+            "labelFr": "les questions qui intéressent les parties prenantes soient déterminées",
+            "preuvesFr": "*Cartographie des attentes /intérêts des parties prenantes *Enquêtes concernant les attentes *PVs de Réunions",
+            "referencesFr": null
+          },
+          {
+            "number": 4,
+            "labelFr": "les interactions entre les différents groupes et la manière dont ces interactions peuvent aider ou nuire aux intérêts de l’organisme soient identifiées",
+            "preuvesFr": "une information documentée qui définie les interractions entre les différents groupes des parties prenantes et leurs conséquences",
+            "referencesFr": null
+          },
+          {
+            "number": 5,
+            "labelFr": "les risques, les problèmes ou les malentendus qui pourraient perturber le fonctionnement de l’organisme soient identifiées",
+            "preuvesFr": "documents, PVs, réclamations,..",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Afin de Dialoguer, échanger et communiquer avec les différentes Partires Prenantes il faut:",
+        "criteres": [
+          {
+            "number": 6,
+            "labelFr": "un processus du dialogue avec les parties prenantes soint conçu",
+            "preuvesFr": "document qui définie les activités, fiche processus dialogue",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "des espaces de dialogue propices soient crées",
+            "preuvesFr": "espace physique, espaces virtuels",
+            "referencesFr": null
+          },
+          {
+            "number": 8,
+            "labelFr": "les parties prenantes soient impliquées dans une approche stratégique",
+            "preuvesFr": "PVs d'élaboration des plans stratégiques",
+            "referencesFr": null
+          },
+          {
+            "number": 9,
+            "labelFr": "les bonnes pratiquesde gouvernance soient diffusées aux différentes Parties Prenantes",
+            "preuvesFr": "les supports de diffusion (papier, virtuel, oral, ….)",
+            "referencesFr": null
+          },
+          {
+            "number": 10,
+            "labelFr": "les représentants des parties prenantes soient intégrées dans les instances de gouvernance (CA par ex)",
+            "preuvesFr": "composition de l'instance de gouvernance",
+            "referencesFr": null
+          },
+          {
+            "number": 11,
+            "labelFr": "des comités des parties prenantes soient crées",
+            "preuvesFr": "document de création des comités des parties prenantes",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "labelFr": "Afin d'Evaluer régulièrement l’efficacité du dialogue et la communication avec les parties prenantes il faut que:",
+        "criteres": [
+          {
+            "number": 12,
+            "labelFr": "un processus de prise en compte des préoccupations et des commentaires des Parties Prenantess soient formalisées",
+            "preuvesFr": "*Listes des commentaires et réponses *Enquêtes de satisfactions /d’opinions *débat public *référendum *sondage * mécanismes de reglement des griefs *Mécanismes de réception, de traitement et de suivi des requêtes des Parties Prenantes",
+            "referencesFr": null
+          },
+          {
+            "number": 13,
+            "labelFr": "l’approche du ‘’reporting intégré’’ soit adoptée (Integrated reporting) dans la réalisation du rapport annuel.",
+            "preuvesFr": "Rapports",
+            "referencesFr": null
+          },
+          {
+            "number": 14,
+            "labelFr": "l’accès à l’information aux parties prenantes et la publication de manière volontaire et proactive des informations qui les intéressent soient assurées",
+            "preuvesFr": "*Décision de nomination de resonsable accès à l'information et son supléant *rapports périodiques sur la gestion de l'accès à l'information - supports physiques et virtuels",
+            "referencesFr": "*Loi organique n° 2016-22 du 24 mars 2016 relative au droit d’accès à l’information *Décret gouvernemental n° 2021-3 du 6 janvier 2021, relatif aux données publiques ouvertes"
+          }
+        ]
+      }
+    ],
+    "criteresCount": 14
+  },
+  {
+    "number": 7,
+    "sheetName": "7 Leadership",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin de Faire preuve d’un leadership authentique il faut vérifier que:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "les regles de fonctionnement de l'organe de gouvernance soient définis",
+            "preuvesFr": "La charte ou les statuts ou le règlement intérieur de l'organe de gouvernance, les PV de réunion de l'organe de gouvernance (donnant une idée sur sa composition, fréquence des réunions, rôles et responsabilités des membres, processus de prise de décision, communication et transparence,etc).",
+            "referencesFr": null
+          },
+          {
+            "number": 2,
+            "labelFr": "Les valeurs et les objectifs de performance de l'organisme soient définies",
+            "preuvesFr": "Objectifs de performance (Plan stratégique, Plans opérationnels) Valeurs (Code de conduite) (Voir création de valeur/ voir Stratégie)",
+            "referencesFr": null
+          },
+          {
+            "number": 3,
+            "labelFr": "Les attentes vis-à-vis des des parties prenantes soient défines",
+            "preuvesFr": "politiques et procédures spécifiques à la gestion des parties prenantes (Voir dialogue avec les parties prenantes)",
+            "referencesFr": null
+          },
+          {
+            "number": 4,
+            "labelFr": "Les processus de suivi et d'évaluation de l'atteinte des attentes de l'organe de gouvernance soient mis en place",
+            "preuvesFr": "Tableaux de bord, rapport de suivi et d'évaluation de la performance/ interviews ou analyses de documents permettant de suivre des aspects tels que la satisfaction, la communication, la collaboration des parties prenantes.",
+            "referencesFr": null
+          },
+          {
+            "number": 5,
+            "labelFr": "Les processus de suivi et d'évaluation de l'atteinte des attentes des Parties Prenantes soient mis en place",
+            "preuvesFr": "interviews ou analyses de documents permettant de suivre des aspects tels que la satisfaction, la communication, la collaboration des parties prenantes.",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Afin d'Agir comme modèle et démontrer un engagement envers les valeurs de l'organisme par les membres de l'organe de gouvernance il faut que:",
+        "criteres": [
+          {
+            "number": 6,
+            "labelFr": "une communication claire et régulière sur les valeurs de l'organisme à l'ensemble du personnel soit assuré par l'organe de gouvernance",
+            "preuvesFr": "Messagerie interne, notes internes, PV de réunions, newsletter, plan de communication dédié aux valeurs, atelier de travail, séminaires, ... etc (Voir finalité)",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "un code d'éthique soit signé par les membres de l'organe de gouvernance.",
+            "preuvesFr": "code d'éthique signé",
+            "referencesFr": null
+          },
+          {
+            "number": 8,
+            "labelFr": "les comportements et les réalisations qui illustrent les valeurs de l'organisme soient encouragée.",
+            "preuvesFr": "différentes formes de reconnaissance",
+            "referencesFr": null
+          },
+          {
+            "number": 9,
+            "labelFr": "des programmes de formation pour aider le personnel à comprendre et à mettre en pratique les valeurs de l'organisme soient mis en place.",
+            "preuvesFr": "Programmes de formation",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Afin d'Assurer un leadership éthique il faut vérifier que :",
+        "criteres": [
+          {
+            "number": 10,
+            "labelFr": "Les valeurs soient pris en compte dans les décisions",
+            "preuvesFr": "décisions",
+            "referencesFr": null
+          },
+          {
+            "number": 11,
+            "labelFr": "Une cellule de veille soit mis en place pour surveiller le respect des valeurs de l'organisme.",
+            "preuvesFr": "Rapport, document de création de la cellule",
+            "referencesFr": null
+          },
+          {
+            "number": 12,
+            "labelFr": "Des mesures soit mises en place en cas de non respect des valeurs de l'organisme",
+            "preuvesFr": "document des mesures de non respect des valeurs",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "labelFr": "Afin de Résoudre les dilemmes il faut s'assurer que :",
+        "criteres": [
+          {
+            "number": 13,
+            "labelFr": "les décisions soit prises sur la base d'une analyse des scénaris possibles",
+            "preuvesFr": "document d'analyse des décisions possibles",
+            "referencesFr": null
+          },
+          {
+            "number": 14,
+            "labelFr": "les décisions et les conséquences soient communiquées",
+            "preuvesFr": "documentation prouvant la communication d'une décision relative à un dilemme et le processus de sa résolution,",
+            "referencesFr": null
+          },
+          {
+            "number": 15,
+            "labelFr": "Un dispositif de dialogue et de résolution constructive des conflits soit mis en place",
+            "preuvesFr": "Procédures pour la gestion des conflits",
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 15
+  },
+  {
+    "number": 8,
+    "sheetName": "8 Données et décisions",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Afin de garantir un processus efficace de prise de décision au sein de l'organe de gouvernace il faut que:",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "un équlibre entre la prise de décision et à ce que chaque membre ait la possibilité d'exprimer son avis en toute indépedance soit maintenu",
+            "preuvesFr": "PVs de l'organe de gouvernance,",
+            "referencesFr": "statut, ISO37000"
+          },
+          {
+            "number": 2,
+            "labelFr": "un engagement à soutenir la décision collective à la documenter clairement et à y donner suite soit assuré",
+            "preuvesFr": "Document, charte, ….",
+            "referencesFr": null
+          },
+          {
+            "number": 3,
+            "labelFr": "les liens d'interets lors de la prise de décision soient traités avec soins",
+            "preuvesFr": "PVs",
+            "referencesFr": null
+          },
+          {
+            "number": 4,
+            "labelFr": "la dynamique de l'organe de gouvernance y compris la dépendance excessive à l'égart d'un membre pour la prise de désision soit considérées",
+            "preuvesFr": "Conflits, réclamations,…",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Afi de vérifier la reconnaissance des données comme ressource stratégique, il faut s'assurer que :",
+        "criteres": [
+          {
+            "number": 5,
+            "labelFr": "L'utilisation des données soit comprise par toutes les parties prenantes",
+            "preuvesFr": "politique de traitement de gestion et de protection des données, accès à l'information (site web)",
+            "referencesFr": "Loi organique n° 2016-22 du 24 mars 2016, relative au droit d'accès à l'information, Loi organique n° 63 - 2004, du 27 juillet 2004, portant sur la protection des données,"
+          },
+          {
+            "number": 6,
+            "labelFr": "Les outils, les technologies et les moyens appropriés soient mis en place pour le traitement des données",
+            "preuvesFr": "Moyens, logitiels,….",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "Un dispositif d'intégrité et fiabilité des données soit mis en place",
+            "preuvesFr": "document de politique gestion de la qualité des données",
+            "referencesFr": "Loi organique n° 2016-22 du 24 mars 2016, relative au droit d'accès à l'information, Loi ,organique n° 63 - 2004, du 27 juillet 2004, portant sur la protection des données,"
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Afin de s'assurer de l'utilisation responsable des données, il faut vérifier que :",
+        "criteres": [
+          {
+            "number": 8,
+            "labelFr": "Un processus de l'utilisation éthique des données soit mis en place",
+            "preuvesFr": "politique de gestion et traitement des données",
+            "referencesFr": "code ethique ou de déontologie"
+          },
+          {
+            "number": 9,
+            "labelFr": "Un système de management de la sécurité de l'information, de la protection des données et de la sécurisation des documents soit mis en place",
+            "preuvesFr": "système de management de la sécurité de l'information",
+            "referencesFr": "Loi n° 5 - 2004 du 3 février 2004, relative à la sécurité informatique et portant sur l'organisation du domaine de la sécurité informatique et fixant les règles générales de protection des systèmes informatiques et des réseaux.  / Loi organique n° 63 - 2004, du 27 juillet 2004, portant sur la protection des données a caractère personnel. / Loi n° 99-89 du 2 aout 1999 (Articles : 199 bis et 199 ter), modifiant et complétant certaines dispositions du code pénal relative au Cybercriminalité."
+          },
+          {
+            "number": 10,
+            "labelFr": "Des procédures de conformité de conservation des données selon la réglementation en vigueur soient mises en place",
+            "preuvesFr": "procédure de conservation des données",
+            "referencesFr": "Loi organique n° 63 - 2004, du 27 juillet 2004, portant sur la protection des données a caractère personnel."
+          },
+          {
+            "number": 11,
+            "labelFr": "Un dispositif pour garantir que les droits, obligations et contraintes des ensembles de données soit adopté",
+            "preuvesFr": "procédure de gestion et traitement des données",
+            "referencesFr": "Loi n° 5 - 2004 du 3 février 2004, relative à la sécurité informatique et portant sur l'organisation du domaine de la sécurité informatique et fixant les règles générales de protection des systèmes informatiques et des réseaux.  / Loi organique n° 63 - 2004, du 27 juillet 2004, portant sur la protection des données a caractère personnel."
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "labelFr": "A fin de s'assurer que le processus de prise de décision au sein de l'organisme soit efficace il faut que:",
+        "criteres": [
+          {
+            "number": 12,
+            "labelFr": "un processus de délégation soit mis en place",
+            "preuvesFr": "PVs, notes, décision de délégation,…",
+            "referencesFr": "article 32 de la constitution tunisienne, Loi organique n° 2016-22 du 24 mars 2016, relative au droit d'accès à l'information"
+          },
+          {
+            "number": 13,
+            "labelFr": "L'adéquation entre l'autorité et le niveau de responsabilités associé aux décisions prises soit vérifiée",
+            "preuvesFr": "fiche de poste, organigramme nominatif,….",
+            "referencesFr": "textes d'organisation de la structure"
+          },
+          {
+            "number": 14,
+            "labelFr": "le suivi et l'atténuation potentielle des décisions erronées soient suffisantes pour garantir la coformité aux exigences de l'organisme",
+            "preuvesFr": "procédure de suivi et d'atténuation des décisions erronées",
+            "referencesFr": "article 32 de la constitution tunisienne, Loi organique n° 2016-22 du 24 mars 2016, relative au droit d'accès à l'information"
+          }
+        ]
+      }
+    ],
+    "criteresCount": 14
+  },
+  {
+    "number": 9,
+    "sheetName": "9 Gouvernance de risque",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Etablir un cadre de gestion des risques : A fin de vérifier qu'un cadre de management des risques est établi, il faut s'assurer que :",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "Un processus de gestion des risques soit mis en place",
+            "preuvesFr": "Fiche processus",
+            "referencesFr": "ISO 31000 :2018, Management du risque- Principes et lignes directrices ISO 37000:Gouvernance des organismes - Recommandations"
+          },
+          {
+            "number": 2,
+            "labelFr": "Des sessions de formation sur la gestion des risques soient assurées",
+            "preuvesFr": "Plan de formation",
+            "referencesFr": null
+          },
+          {
+            "number": 3,
+            "labelFr": "La gestion des risques soit intégré dans toutes les activités et les fonctions",
+            "preuvesFr": "Procédures - Cartographies des risques par activité - Plans (stratégique, opérationnel, ,,,)",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Assurer une gestion efficace des risques : Pour assurer une gestion efficace des risques, il faut vérifier que :",
+        "criteres": [
+          {
+            "number": 4,
+            "labelFr": "Un processus d'identification précoce des risques pour identifier les menaces potentielles soit mis en place.",
+            "preuvesFr": "Fiche descriptive du Processus",
+            "referencesFr": null
+          },
+          {
+            "number": 5,
+            "labelFr": "Un dispositif de traitement des risques en cohérence avec la politique de gouvernance de l'organisme soit mis en place.",
+            "preuvesFr": "Plan de Traitement des risques",
+            "referencesFr": null
+          },
+          {
+            "number": 6,
+            "labelFr": "Des ressources humaines soient deployées .",
+            "preuvesFr": "Fiche de poste - décision d'affectation - Loi cadre",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "Des ressources Financières soient allouées .",
+            "preuvesFr": "Budget",
+            "referencesFr": null
+          },
+          {
+            "number": 8,
+            "labelFr": "Les parties prenantes soient impliquées dans le processus d'évaluation des risques,",
+            "preuvesFr": "PV de réunions - Ateliers",
+            "referencesFr": null
+          },
+          {
+            "number": 9,
+            "labelFr": "Les risques résiduels soient évalués",
+            "preuvesFr": "Fiche ou rapport d'évaluation des risques",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Surveiller et communiquer sur les résultats du processus de gestion des risques : Pour surveiller et communiquer sur les risques, il faut vérifier que :",
+        "criteres": [
+          {
+            "number": 10,
+            "labelFr": "Le processus d'évaluation des risques soit revu régulièrement",
+            "preuvesFr": "revue de processus de gestion des risques",
+            "referencesFr": null
+          },
+          {
+            "number": 11,
+            "labelFr": "Un mecanisme de communication sur les risques aux parties prenantes intervenant dans les processus de réalisation des activités soit mis en place.",
+            "preuvesFr": "Rapport sur les risques",
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 11
+  },
+  {
+    "number": 10,
+    "sheetName": "10 Responsabilité sociétale",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Instaurer un dialogue avec les PP pour comprendre leurs attentes et objectifs",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "Un dispositif de communication active mise en place",
+            "preuvesFr": "Plan de communication, pvs, plateforme, site web, réseaux sociaux, communiqués..",
+            "referencesFr": "ISO 37000 - ISO 26000"
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Adapter les objectifs et les valeurs de l’organisme aux attentes des PP",
+        "criteres": [
+          {
+            "number": 2,
+            "labelFr": "Objectifs RS inscrits dans la politique de gouvernance de l’organisme",
+            "preuvesFr": "Politique de gouvernance des organismes",
+            "referencesFr": null
+          },
+          {
+            "number": 3,
+            "labelFr": "Des valeurs et éthiques orientés PP soient intégrés dans les valeurs et les documents éthiques de l'organisme",
+            "preuvesFr": "document éthique - valeurs",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "Intégrer les attentes des PP dans les activités de pilotage et de réalisation",
+        "criteres": [
+          {
+            "number": 4,
+            "labelFr": "Une organisation administrative soit adaptée à la RS",
+            "preuvesFr": "Organigramme renfermant une structure fonctionnelle dédiée à la participation citoyenne",
+            "referencesFr": null
+          },
+          {
+            "number": 5,
+            "labelFr": "Les attentes des PP soient prises en considération dans la définition des attributions",
+            "preuvesFr": "Manuel de procedures, fiches de poste…",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "labelFr": "Mesurer les performances par rapport aux objectifs liés aux comportements socialement responsables",
+        "criteres": [
+          {
+            "number": 6,
+            "labelFr": "Des indicateurs de mesure de suivi et d’évaluation soient mis en place conformément aux attentes des PP",
+            "preuvesFr": "Rapport d’évaluation, de suivi, Fiche d’évaluation",
+            "referencesFr": null
+          },
+          {
+            "number": 7,
+            "labelFr": "Des Mesures de performances par rapport aux objectifs liés aux comportements socialement responsables soient établies",
+            "preuvesFr": null,
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 7
+  },
+  {
+    "number": 11,
+    "sheetName": "11 Viabilité et pérennité de Pe",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Avoir une vue complète et intégrée du fonctionnement de l'organisation : Pour avoir une vue complète et intégrée du fonctionnement de l'organisme, il faut s'assurer que :",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "La performance et les attentes des PP soit identifiés.",
+            "preuvesFr": "Document Attentes des PP - les indicateurs de performances - Stratégie",
+            "referencesFr": "ISO 37000"
+          },
+          {
+            "number": 2,
+            "labelFr": "Les ressources clés de l'organisme soient identifiés.",
+            "preuvesFr": "Contrat programme approuvé, budget approuvé",
+            "referencesFr": null
+          },
+          {
+            "number": 3,
+            "labelFr": "Un système de contrôle interne soit mis en place",
+            "preuvesFr": "Les rapports de contrôle interne",
+            "referencesFr": null
+          },
+          {
+            "number": 4,
+            "labelFr": "Les PP externes soient identifiés ,",
+            "preuvesFr": "Cartographie des PP",
+            "referencesFr": null
+          },
+          {
+            "number": 5,
+            "labelFr": "Un dispositif de veille stratégique soit mis en place",
+            "preuvesFr": "Contrats de veille - Décision de nomination d'un responsable de veille",
+            "referencesFr": null
+          },
+          {
+            "number": 6,
+            "labelFr": "L'analyse stratégique soit actualisée",
+            "preuvesFr": "Document d'analyse strategique",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Assurer la durabilité de l’organisme dans le temps : Pour s'assurer de la durabilité de l'organisme dans le temps, il faut vérifier :",
+        "criteres": [
+          {
+            "number": 7,
+            "labelFr": "Un audit stratégique soit réalisé périodiquement",
+            "preuvesFr": "Rapport d'audit stratégique",
+            "referencesFr": null
+          },
+          {
+            "number": 8,
+            "labelFr": "Un audit environnemental et RSE soit réalisé périodiquement",
+            "preuvesFr": "Rapport d'audit environnemental",
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 8
+  },
+  {
+    "number": 12,
+    "sheetName": "12maitrise de la corruption",
+    "bonnesPratiques": [
+      {
+        "number": 1,
+        "labelFr": "Code d'éthique",
+        "criteres": [
+          {
+            "number": 1,
+            "labelFr": "un code d'éthique soit élaboré",
+            "preuvesFr": "code ou charte d'éthique",
+            "referencesFr": "decret 4030 code d'éthique de l'agent public codes d'éthiques sectoriels"
+          },
+          {
+            "number": 2,
+            "labelFr": "le personnel de l'organisme soit sensiblisés sur le code d'éthique",
+            "preuvesFr": "Plan de sensibilisation / état de presence aux séances de sensibilisation",
+            "referencesFr": null
+          },
+          {
+            "number": 3,
+            "labelFr": "le code d'éthique soit signé par tous les membres de l'organisme",
+            "preuvesFr": "registre des signataires ayant reçu le code",
+            "referencesFr": null
+          },
+          {
+            "number": 4,
+            "labelFr": "le code d'éthique soint révisé périodiquement",
+            "preuvesFr": "Indice et date de révision",
+            "referencesFr": null
+          },
+          {
+            "number": 5,
+            "labelFr": "le suivi, le respect du code et sanctions éventuelles soient assurés",
+            "preuvesFr": "Rapport périodique",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "labelFr": "Gestion des conflits d'intérêts",
+        "criteres": [
+          {
+            "number": 6,
+            "labelFr": "un processus de déclaration et de vérification des biens et intérêts soit définis",
+            "preuvesFr": "registre des personnes ayant l'obligation de déclarer leurs patrimoine et intérêt / fiche descriptive du processus (objectif, activités, informations documentées …)",
+            "referencesFr": "*Loi n°2018-46 du 1 Aout 2018 relative à la déclaration du patrimoine et des intérêts, et de la lutte contre l’enrichissement illégal et le conflit d’intérêt *Loi organique 10 de 2017 sur la dénonciation et la protection des dénonciateurs *decret 1039 de 2014 *guide pratique des cellules de Gouvernance"
+          },
+          {
+            "number": 7,
+            "labelFr": "Mise a jour des déclarations des biens et intérêts soit assuré",
+            "preuvesFr": "Périodicité et plan de màj  / Calendrier de réalisation des màj / registre des personnes ayant l'obligation de déclarer leurs patrimoine et intérêt",
+            "referencesFr": null
+          },
+          {
+            "number": 8,
+            "labelFr": "la verification des biens et intérêts soit assurée",
+            "preuvesFr": "Rapport de verification",
+            "referencesFr": null
+          },
+          {
+            "number": 9,
+            "labelFr": "L'analyse et l'évaluation des risques de corruption soit élaborée",
+            "preuvesFr": "Cartographie des risques de corruption",
+            "referencesFr": null
+          },
+          {
+            "number": 10,
+            "labelFr": "une Politique des cadeaux soit mis en place",
+            "preuvesFr": "politique de cadeaux",
+            "referencesFr": null
+          },
+          {
+            "number": 11,
+            "labelFr": "Transparence des décisions et actes publics soit assurée",
+            "preuvesFr": "Politique de transparence et de communication",
+            "referencesFr": null
+          },
+          {
+            "number": 12,
+            "labelFr": "un organe chargé de gestion des conflits d intérêts soit crée",
+            "preuvesFr": "*Composition de la cellule de Gouvernance *Composition de la cellule d'écoute",
+            "referencesFr": null
+          },
+          {
+            "number": 13,
+            "labelFr": "des mesures de prevention du Népotisme dans les recrutements soit mis en place",
+            "preuvesFr": "des procédures de Népotisme dans les recrutements soit mis en place",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "labelFr": "gestion des requêtes et des signalements",
+        "criteres": [
+          {
+            "number": 14,
+            "labelFr": "une gestion des requêtes et signalements soit mis en place",
+            "preuvesFr": "création de cellule de gouvernance ou cellule d'écoute BRC  / * registre de traitement des requêtes",
+            "referencesFr": "Loi organique 10 de 2017 sur la dénonciation et la protection des dénonciateurs *decret 1039 de 2014 * e-poeple :plateforme de dénonciation des actes de suspicion de corruption"
+          },
+          {
+            "number": 15,
+            "labelFr": "des actions correctives au système soient engagées",
+            "preuvesFr": "* Plan d'actions correctives / *suivi des actions correctives",
+            "referencesFr": null
+          },
+          {
+            "number": 16,
+            "labelFr": "des poursuites contre les personnes concernées soine engagées",
+            "preuvesFr": "Pvs conseil de discipline  / *décisions disciplinaires",
+            "referencesFr": null
+          },
+          {
+            "number": 17,
+            "labelFr": "un dispositif d'alerte interne soit mis en place",
+            "preuvesFr": "*création de cellule de gouvernance ou cellule d'écoute BRC *formulaire et registre d'enregistrement des signalements",
+            "referencesFr": null
+          },
+          {
+            "number": 18,
+            "labelFr": "un dispositif de Protection des lanceurs d'alerte soit mis en place",
+            "preuvesFr": "Procedures et actions de protection des lanceurs d'alerte",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "labelFr": "Népotisme dans les recrutements",
+        "criteres": [
+          {
+            "number": 19,
+            "labelFr": "les besoins réels de l'organisme en ressources humaine soient fixées",
+            "preuvesFr": "*Loi cadre *Budget",
+            "referencesFr": "* loi des finances *Loi n° 83-112 du 12 décembre 1983, portant statut général des personnels de l'Etat, des collectivités publiques locales et des établissements publics *loi n° 85-78 du 5 août 1985, portant statut général des agents des offices, des établissements publics à caractère industriel et commercial et des sociétés dont le capital appartient directement et entièrement à l'Etat ou aux collectivités publiques locales, telle que modifiée et complétée par les textes subséquents et notamment la loi n° 2003-21 du 17 mars 2003 * circulaire 38-1997"
+          },
+          {
+            "number": 20,
+            "labelFr": "le processus d'élaboration des critères de recrutement soit transparent",
+            "preuvesFr": "procédures ressources humaines  / politique de communication",
+            "referencesFr": null
+          },
+          {
+            "number": 21,
+            "labelFr": "les résultats de recrutement soient publiées",
+            "preuvesFr": "Insertions sur les supports de communication",
+            "referencesFr": null
+          },
+          {
+            "number": 22,
+            "labelFr": "les compétances des membres de la comité de recrutement soient démontrées",
+            "preuvesFr": "*criteres de choix des membres du comité / *rapport d'évaluation des candidats en fonction des critères arretés",
+            "referencesFr": null
+          }
+        ]
+      },
+      {
+        "number": 5,
+        "labelFr": "Corruption liée aux achats",
+        "criteres": [
+          {
+            "number": 23,
+            "labelFr": "les besoins réels de l'organisme en matiere d'achat soient fixées",
+            "preuvesFr": "Budget * plan de passation des marchés *plan prévisionnel de passation des marchés *plan annuel des dépenses *projet annuel des performances",
+            "referencesFr": "* Décret n° 2014-1039 du 13 mars 2014, portant réglementation des marchés publics."
+          },
+          {
+            "number": 24,
+            "labelFr": "les procédures d'achat soient Transparentes",
+            "preuvesFr": "manuel des procédures",
+            "referencesFr": null
+          },
+          {
+            "number": 25,
+            "labelFr": "les criteres de choix des membres des commissions des achats soient définis",
+            "preuvesFr": "décision commission des marchés",
+            "referencesFr": null
+          },
+          {
+            "number": 26,
+            "labelFr": "un suivi de la procedure d'achat soit assuré",
+            "preuvesFr": "tableaux de suivi des marchés soumis au conseil d'administration",
+            "referencesFr": null
+          }
+        ]
+      }
+    ],
+    "criteresCount": 26
+  }
+]
