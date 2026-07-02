@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: sse-backend
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/actuator/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sse-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SSE_MAIL_ENABLED
+        value: false
+
+  - type: web
+    name: sse-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeployTrigger: commit
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: sse-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: sse-db
+    plan: free
+    region: frankfurt
+    databaseName: sse_db
+    user: sse_user

@@ -2,7 +2,22 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 import type { AuthResponse } from '@/types';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const normalizeApiBaseUrl = (rawUrl?: string) => {
+  const value = rawUrl?.trim();
+  if (!value) {
+    return '/api';
+  }
+
+  if (value.startsWith('/')) {
+    return value.replace(/\/+$/, '') || '/api';
+  }
+
+  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  const trimmed = withProtocol.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
