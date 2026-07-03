@@ -63,19 +63,26 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
     
-    public String generateAccessToken(UUID userId, String email, String role) {
+    public String generateAccessToken(UUID userId, String email, String role, int tokenVersion) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId.toString());
         claims.put("role", role);
         claims.put("type", "access");
+        claims.put("tokenVersion", tokenVersion);
         return createToken(claims, email, accessTokenExpiration);
     }
     
-    public String generateRefreshToken(UUID userId, String email) {
+    public String generateRefreshToken(UUID userId, String email, int tokenVersion) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId.toString());
         claims.put("type", "refresh");
+        claims.put("tokenVersion", tokenVersion);
         return createToken(claims, email, refreshTokenExpiration);
+    }
+
+    public int extractTokenVersion(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.get("tokenVersion", Integer.class);
     }
     
     private String createToken(Map<String, Object> claims, String subject, long expiration) {

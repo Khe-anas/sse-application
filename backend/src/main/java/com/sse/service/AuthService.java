@@ -40,12 +40,14 @@ public class AuthService {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            
+
+            int newVersion = user.getTokenVersion() + 1;
+            user.setTokenVersion(newVersion);
             user.setLastLoginAt(LocalDateTime.now());
             userRepository.save(user);
             
-            String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
-            String refreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getEmail());
+            String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name(), newVersion);
+            String refreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getEmail(), newVersion);
             
             return new AuthResponse(accessToken, refreshToken, "Bearer", 
                 jwtUtil.getAccessTokenExpiration() / 1000, mapToUserResponse(user));
@@ -64,8 +66,13 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new BadCredentialsException("User not found"));
         ensureUserCanAuthenticate(user);
-        
-        String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+
+        int refreshTokenVersion = jwtUtil.extractTokenVersion(refreshToken);
+        if (user.getTokenVersion() != refreshTokenVersion) {
+            throw new BadCredentialsException("Session expired - please login again");
+        }
+
+        String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name(), user.getTokenVersion());
         
         return new AuthResponse(newAccessToken, refreshToken, "Bearer",
             jwtUtil.getAccessTokenExpiration() / 1000, mapToUserResponse(user));

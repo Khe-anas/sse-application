@@ -27,23 +27,23 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'navigation.adminDashboard', icon: LayoutDashboard, path: '/admin/dashboard', roles: [Role.ADMIN] },
-  { label: 'navigation.users', icon: Users, path: '/admin/users', roles: [Role.ADMIN] },
-  { label: 'navigation.accountRequests', icon: FileCheck2, path: '/admin/account-requests', roles: [Role.ADMIN] },
-  { label: 'navigation.organismes', icon: Building2, path: '/admin/organismes', roles: [Role.ADMIN] },
-  { label: 'navigation.evaluations', icon: ClipboardList, path: '/admin/evaluations', roles: [Role.ADMIN] },
-  { label: 'navigation.principes', icon: BookOpen, path: '/admin/principes', roles: [Role.ADMIN] },
-  { label: 'navigation.reclamations', icon: MessageSquareWarning, path: '/admin/reclamations', roles: [Role.ADMIN] },
-  { label: 'navigation.emailJobs', icon: Mail, path: '/admin/email-jobs', roles: [Role.ADMIN] },
-  { label: 'navigation.notifications', icon: Bell, path: '/admin/notifications', roles: [Role.ADMIN] },
+  { label: 'navigation.adminDashboard', icon: LayoutDashboard, path: '/admin/dashboard', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.users', icon: Users, path: '/admin/users', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.accountRequests', icon: FileCheck2, path: '/admin/account-requests', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.organismes', icon: Building2, path: '/admin/organismes', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.evaluations', icon: ClipboardList, path: '/admin/evaluations', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.principes', icon: BookOpen, path: '/admin/principes', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.reclamations', icon: MessageSquareWarning, path: '/admin/reclamations', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.emailJobs', icon: Mail, path: '/admin/email-jobs', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.notifications', icon: Bell, path: '/admin/notifications', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
   
   { label: 'navigation.myEvaluations', icon: ClipboardList, path: '/responsable/dashboard', roles: [Role.RESPONSABLE] },
   { label: 'navigation.principes', icon: BookOpen, path: '/responsable/principes', roles: [Role.RESPONSABLE] },
   
-  { label: 'navigation.governmentDashboard', icon: LayoutDashboard, path: '/gouvernement/dashboard', roles: [Role.ADMIN, Role.GOUVERNEMENT] },
+  { label: 'navigation.governmentDashboard', icon: LayoutDashboard, path: '/gouvernement/dashboard', roles: [Role.ADMIN, Role.SUPER_ADMIN, Role.GOUVERNEMENT] },
   { label: 'navigation.evaluations', icon: ClipboardList, path: '/gouvernement/evaluations', roles: [Role.GOUVERNEMENT] },
-  { label: 'navigation.ranking', icon: Trophy, path: '/gouvernement/ranking', roles: [Role.ADMIN, Role.GOUVERNEMENT] },
-  { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.RESPONSABLE, Role.GOUVERNEMENT] },
+  { label: 'navigation.ranking', icon: Trophy, path: '/gouvernement/ranking', roles: [Role.ADMIN, Role.SUPER_ADMIN, Role.GOUVERNEMENT] },
+  { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.SUPER_ADMIN, Role.RESPONSABLE, Role.GOUVERNEMENT] },
 ];
 
 export default function Sidebar() {

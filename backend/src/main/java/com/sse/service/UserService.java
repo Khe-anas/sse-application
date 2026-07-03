@@ -8,6 +8,7 @@ import com.sse.enums.UserStatus;
 import com.sse.enums.TypeOrganisme;
 import com.sse.repository.OrganismeRepository;
 import com.sse.repository.UserRepository;
+import com.sse.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
     private final AccountActivationService accountActivationService;
+    private final CurrentUserService currentUserService;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -36,6 +38,12 @@ public class UserService {
 
     @Transactional
     public UserCreationResult createUserWithResult(CreateUserRequest request) {
+        if (request.getRole() == Role.ADMIN || request.getRole() == Role.SUPER_ADMIN) {
+            User currentUser = currentUserService.getCurrentUser();
+            if (currentUser.getRole() != Role.SUPER_ADMIN) {
+                throw new RuntimeException("Only SUPER_ADMIN can create users with " + request.getRole() + " role");
+            }
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
@@ -95,10 +103,20 @@ public class UserService {
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+
+        User currentUser = currentUserService.getCurrentUser();
         
-        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) user.setLastName(request.getLastName());
         if (request.getRole() != null) {
+            if (user.getRole() == Role.SUPER_ADMIN && currentUser.getRole() != Role.SUPER_ADMIN) {
+                throw new RuntimeException("Only SUPER_ADMIN can modify a SUPER_ADMIN user");
+            }
+            if ((request.getRole() == Role.ADMIN || request.getRole() == Role.SUPER_ADMIN)
+                && currentUser.getRole() != Role.SUPER_ADMIN) {
+                throw new RuntimeException("Only SUPER_ADMIN can assign " + request.getRole() + " role");
+            }
+            if (request.getRole() == Role.SUPER_ADMIN && currentUser.getRole() != Role.SUPER_ADMIN) {
+                throw new RuntimeException("Only SUPER_ADMIN can assign SUPER_ADMIN role");
+            }
             user.setRole(request.getRole());
             if (request.getRole() != Role.RESPONSABLE) {
                 user.setOrganisme(null);
@@ -138,6 +156,9 @@ public class UserService {
     public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getRole() == Role.SUPER_ADMIN) {
+            throw new RuntimeException("Cannot delete a SUPER_ADMIN user");
+        }
         user.setIsActive(false);
         user.setStatus(UserStatus.DISABLED);
         userRepository.save(user);

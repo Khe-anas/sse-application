@@ -116,6 +116,7 @@ function RoleRedirect() {
   if (!user) return <Navigate to="/login" />;
   
   switch (user.role) {
+    case Role.SUPER_ADMIN:
     case Role.ADMIN:
       return <Navigate to="/admin/dashboard" replace />;
     case Role.RESPONSABLE:

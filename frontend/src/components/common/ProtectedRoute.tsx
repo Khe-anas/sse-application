@@ -21,7 +21,7 @@ export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole && user?.role !== Role.ADMIN) {
+  if (requiredRole && user?.role !== requiredRole && user?.role !== Role.ADMIN && user?.role !== Role.SUPER_ADMIN) {
     return <Navigate to="/" replace />;
   }
 

@@ -132,6 +132,7 @@
   },
   "user": {
     "role": {
+      "SUPER_ADMIN": "المدير الممتاز",
       "ADMIN": "مدير",
       "RESPONSABLE": "مسؤول مؤسسة",
       "GOUVERNEMENT": "حكومة"

@@ -7,11 +7,13 @@ import { userService, type CreateUserRequest } from '@/services/userService';
 import { organismeService } from '@/services/organismeService';
 import { Role, UserStatus } from '@/types';
 import type { User, PageResponse, Organisme } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 import KPICard from '@/components/dashboard/KPICard';
 import { Users } from 'lucide-react';
 
 export default function UsersPage() {
   const { t } = useTranslation();
+  const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState<PageResponse<User> | null>(null);
   const [organismes, setOrganismes] = useState<Organisme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -190,6 +192,7 @@ export default function UsersPage() {
                   <td className="table-td text-gray-500">{user.email}</td>
                   <td className="table-td">
                     <span className={`badge ${
+                      user.role === Role.SUPER_ADMIN ? 'bg-red-100 text-red-700' :
                       user.role === Role.ADMIN ? 'bg-purple-100 text-purple-700' :
                       user.role === Role.GOUVERNEMENT ? 'bg-blue-100 text-blue-700' :
                       'bg-green-100 text-green-700'
@@ -243,6 +246,7 @@ export default function UsersPage() {
               <div>
                 <label className="label">{t('users.roleLabel')} *</label>
                 <select className="select" value={formData.role} onChange={(e) => handleRoleChange(e.target.value as Role)}>
+                  {isSuperAdmin && <option value={Role.SUPER_ADMIN}>{t('user.role.SUPER_ADMIN')}</option>}
                   <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
                   <option value={Role.RESPONSABLE}>{t('user.role.RESPONSABLE')}</option>
                   <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>

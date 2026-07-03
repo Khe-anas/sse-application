@@ -1,5 +1,7 @@
 package com.sse.security;
 
+import com.sse.entity.User;
+import com.sse.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+    private final UserRepository userRepository;
     
     @Override
     protected void doFilterInternal(HttpServletRequest request, 
@@ -46,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.warn("Invalid or expired JWT: {}", ex.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write("{\"message\":\"Invalid or expired token\"}");
+            response.getWriter().write("{\"message\":\"" + ex.getMessage() + "\"}");
             return;
         }
         
@@ -64,6 +67,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throw new RuntimeException("Invalid local JWT");
         }
 
+        UUID userId = jwtUtil.extractUserId(jwt);
+        int tokenVersion = jwtUtil.extractTokenVersion(jwt);
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!user.getTokenVersion().equals(tokenVersion)) {
+            throw new RuntimeException("Session expired - another session has been opened");
+        }
+
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
                 userDetails,
@@ -73,7 +85,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        UUID userId = jwtUtil.extractUserId(jwt);
         request.setAttribute("userId", userId);
     }
     

@@ -132,6 +132,7 @@
   },
   "user": {
     "role": {
+      "SUPER_ADMIN": "Super Admin",
       "ADMIN": "Administrateur",
       "RESPONSABLE": "Responsable d'entreprise",
       "GOUVERNEMENT": "Gouvernement"

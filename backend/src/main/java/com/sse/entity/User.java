@@ -48,6 +48,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(length = 32)
     private UserStatus status = UserStatus.ACTIVE;
+
+    @Column(nullable = false)
+    private Integer tokenVersion = 0;
     
     @CreationTimestamp
     private LocalDateTime createdAt;
