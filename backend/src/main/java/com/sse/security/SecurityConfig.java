@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -48,14 +50,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/account-requests").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 // Admin endpoints
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Responsable endpoints
-                .requestMatchers("/responsable/**").hasAnyRole("RESPONSABLE", "ADMIN")
+                .requestMatchers("/responsable/**").hasAnyRole("RESPONSABLE", "ADMIN", "SUPER_ADMIN")
                 // Gouvernement endpoints
-                .requestMatchers("/gouvernement/**").hasAnyRole("GOUVERNEMENT", "ADMIN")
+                .requestMatchers("/gouvernement/**").hasAnyRole("GOUVERNEMENT", "ADMIN", "SUPER_ADMIN")
                 // Public endpoints that need auth
                 .requestMatchers(HttpMethod.GET, "/organismes/**").authenticated()
-                .requestMatchers("/organismes/**").hasRole("ADMIN")
+                .requestMatchers("/organismes/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/principes/**").authenticated()
                 .requestMatchers("/evaluations/**").authenticated()
                 .requestMatchers("/reponses/**").authenticated()
@@ -91,6 +93,13 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+    @Bean
+    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+        handler.setRoleHierarchy(roleHierarchy);
+        return handler;
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
