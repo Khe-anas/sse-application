@@ -1,17 +1,18 @@
 package com.sse.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -37,17 +38,25 @@ public class FileStorageService {
         "/XFA",
         "/Encrypt"
     };
-    
-    @Value("${aws.s3.bucket:sse-uploads-bucket}")
-    private String bucketName;
 
-    @Value("${aws.region:eu-central-1}")
-    private String awsRegion;
+    @Value("${upload.dir:uploads}")
+    private String uploadDir;
 
     @Value("${upload.max-file-size:10485760}")
     private long maxFileSize;
 
-    private S3Client s3Client;
+    private Path uploadPath;
+
+    @PostConstruct
+    public void init() {
+        uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(uploadPath);
+            log.info("File storage initialized at: {}", uploadPath);
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not create upload directory: " + uploadPath, ex);
+        }
+    }
 
     public String store(MultipartFile file) {
         return store(file, null);
@@ -70,20 +79,21 @@ public class FileStorageService {
             }
 
             String filename = UUID.randomUUID().toString() + extension;
+            Path targetPath = uploadPath.resolve(filename).normalize();
 
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(filename)
-                    .contentType(file.getContentType())
-                    .build();
+            if (!targetPath.startsWith(uploadPath)) {
+                throw new RuntimeException("Invalid file path");
+            }
 
-            getS3Client().putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
 
-            log.info("File stored in S3: {}", filename);
+            log.info("File stored locally: {}", filename);
             return "/uploads/" + filename;
 
         } catch (IOException ex) {
-            throw new RuntimeException("Could not store file to S3", ex);
+            throw new RuntimeException("Could not store file", ex);
         }
     }
 
@@ -160,37 +170,31 @@ public class FileStorageService {
     public void delete(String fileUrl) {
         try {
             String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            Path targetPath = uploadPath.resolve(filename).normalize();
 
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(filename)
-                    .build();
+            if (!targetPath.startsWith(uploadPath)) {
+                log.warn("Invalid file path for deletion: {}", fileUrl);
+                return;
+            }
 
-            getS3Client().deleteObject(deleteObjectRequest);
-            log.info("File deleted from S3: {}", filename);
+            Files.deleteIfExists(targetPath);
+            log.info("File deleted: {}", filename);
         } catch (Exception ex) {
-            log.error("Could not delete file from S3: {}", fileUrl, ex);
+            log.error("Could not delete file: {}", fileUrl, ex);
         }
     }
 
     public byte[] getFileContent(String filename) {
-        String cleanFilename = filename.replaceAll("[^a-zA-Z0-9.-]", "");
+        try {
+            Path targetPath = uploadPath.resolve(filename).normalize();
 
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(cleanFilename)
-                .build();
+            if (!targetPath.startsWith(uploadPath)) {
+                throw new RuntimeException("Invalid file path");
+            }
 
-        ResponseBytes<GetObjectResponse> objectBytes = getS3Client().getObjectAsBytes(getObjectRequest);
-        return objectBytes.asByteArray();
-    }
-
-    private S3Client getS3Client() {
-        if (s3Client == null) {
-            s3Client = S3Client.builder()
-                .region(Region.of(awsRegion))
-                .build();
+            return Files.readAllBytes(targetPath);
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not read file: " + filename, ex);
         }
-        return s3Client;
     }
 }
