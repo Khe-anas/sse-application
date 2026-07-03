@@ -2,6 +2,7 @@ package com.sse.controller;
 
 import com.sse.dto.AuditLogResponse;
 import com.sse.dto.PageResponse;
+import com.sse.enums.Role;
 import com.sse.service.AuditLogService;
 import com.sse.util.PageableUtils;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class AuditLogController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String entity,
             @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) Role role,
             @RequestParam(required = false) LocalDateTime from,
             @RequestParam(required = false) LocalDateTime to,
             @RequestParam(defaultValue = "0") int page,
@@ -44,7 +46,7 @@ public class AuditLogController {
             Set.of("createdAt", "action", "entity")
         );
 
-        var result = auditLogService.getAll(action, entity, userId, from, to, pageable);
+        var result = auditLogService.getAll(action, entity, userId, role, from, to, pageable);
         return ResponseEntity.ok(new PageResponse<>(
             result.getContent(), result.getNumber(), result.getSize(),
             result.getTotalElements(), result.getTotalPages(), result.isLast(), result.isFirst()

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, Filter, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { auditLogService } from '@/services/auditLogService';
+import { Role } from '@/types';
 import type { AuditLog, PageResponse } from '@/types';
 import { formatBackendDateTime } from '@/utils/date';
 import KPICard from '@/components/dashboard/KPICard';
@@ -16,6 +17,7 @@ export default function AuditLogsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [action, setAction] = useState('');
   const [entity, setEntity] = useState('');
+  const [role, setRole] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
 
   const loadLogs = useCallback(async () => {
@@ -24,6 +26,7 @@ export default function AuditLogsPage() {
       const data = await auditLogService.getAll({
         action: action || undefined,
         entity: entity || undefined,
+        role: role || undefined,
         page: 0,
         size: 100,
       });
@@ -33,7 +36,7 @@ export default function AuditLogsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [action, entity, t]);
+  }, [action, entity, role, t]);
 
   useEffect(() => {
     loadLogs();
@@ -53,7 +56,7 @@ export default function AuditLogsPage() {
 
       {/* Filters */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="label">{t('auditLogs.actionLabel')}</label>
             <select className="select" value={action} onChange={(e) => setAction(e.target.value)}>
@@ -68,8 +71,18 @@ export default function AuditLogsPage() {
             <select className="select" value={entity} onChange={(e) => setEntity(e.target.value)}>
               <option value="">{t('common.all')}</option>
               {ENTITIES.map((e) => (
-                <option key={e} value={e}>{t(`auditLogs.entity.${e}`, e)}</option>
+                <option key={e} value={e}>{t(`auditLogs.entityValues.${e}`, e)}</option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">{t('common.role')}</label>
+            <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">{t('common.all')}</option>
+              <option value={Role.SUPER_ADMIN}>{t('user.role.SUPER_ADMIN')}</option>
+              <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
+              <option value={Role.RESPONSABLE}>{t('user.role.RESPONSABLE')}</option>
+              <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
             </select>
           </div>
           <div>
@@ -121,6 +134,7 @@ export default function AuditLogsPage() {
                   <td className="table-td">
                     <div className="text-sm font-medium">{log.userFullName}</div>
                     <div className="text-xs text-gray-500">{log.userEmail}</div>
+                    <div className="text-xs">{log.userRole && t(`user.role.${log.userRole}`, log.userRole)}</div>
                   </td>
                   <td className="table-td">
                     <span className={`badge ${actionBadgeClass(log.action)}`}>

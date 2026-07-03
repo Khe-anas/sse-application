@@ -1,5 +1,6 @@
 package com.sse.dto;
 
+import com.sse.enums.Role;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -10,6 +11,7 @@ public class AuditLogResponse {
     private UUID userId;
     private String userEmail;
     private String userFullName;
+    private String userRole;
     private UUID evaluationId;
     private String action;
     private String entity;

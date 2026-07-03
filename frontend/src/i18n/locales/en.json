@@ -30,6 +30,8 @@
     "actions": "Actions",
     "details": "Details",
     "all": "All",
+    "allRoles": "All roles",
+    "role": "Role",
     "refresh": "Refresh",
     "name": "Name",
     "year": "Year",

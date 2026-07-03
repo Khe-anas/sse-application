@@ -18,6 +18,7 @@ export default function UsersPage() {
   const [organismes, setOrganismes] = useState<Organisme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newEntrepriseName, setNewEntrepriseName] = useState('');
@@ -35,7 +36,7 @@ export default function UsersPage() {
   const loadUsers = useCallback(async () => {
     try {
       const [usersData, organismesData] = await Promise.all([
-        userService.getAll({ search: search || undefined }),
+        userService.getAll({ search: search || undefined, role: (roleFilter as any) || undefined }),
         organismeService.getAll({ size: 100 }),
       ]);
       setUsers(usersData);
@@ -45,7 +46,7 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [search, t]);
+  }, [search, roleFilter, t]);
 
   useEffect(() => {
     loadUsers();
@@ -167,15 +168,26 @@ export default function UsersPage() {
 
       {/* Search */}
       <div className="card p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('users.searchPlaceholder')}
-            className="input pl-10"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('users.searchPlaceholder')}
+              className="input pl-10"
+            />
+          </div>
+          <div>
+            <select className="select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+              <option value="">{t('common.allRoles')}</option>
+              <option value={Role.SUPER_ADMIN}>{t('user.role.SUPER_ADMIN')}</option>
+              <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
+              <option value={Role.RESPONSABLE}>{t('user.role.RESPONSABLE')}</option>
+              <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
+            </select>
+          </div>
         </div>
       </div>
 

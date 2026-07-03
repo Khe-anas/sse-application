@@ -4,6 +4,7 @@ import com.sse.dto.AuditLogResponse;
 import com.sse.entity.AuditLog;
 import com.sse.entity.Evaluation;
 import com.sse.entity.User;
+import com.sse.enums.Role;
 import com.sse.repository.AuditLogRepository;
 import com.sse.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
@@ -53,10 +54,12 @@ public class AuditLogService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AuditLogResponse> getAll(String action, String entity, UUID userId, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+    public Page<AuditLogResponse> getAll(String action, String entity, UUID userId, Role role, LocalDateTime from, LocalDateTime to, Pageable pageable) {
         Page<AuditLog> logs;
 
-        if (action != null && entity != null && userId != null) {
+        if (role != null) {
+            logs = auditLogRepository.findByUserRole(role, pageable);
+        } else if (action != null && entity != null && userId != null) {
             logs = auditLogRepository.findByActionAndEntityAndUserId(action, entity, userId, pageable);
         } else if (action != null && entity != null) {
             logs = auditLogRepository.findByActionAndEntity(action, entity, pageable);
@@ -78,6 +81,7 @@ public class AuditLogService {
             response.setUserId(auditLog.getUser().getId());
             response.setUserEmail(auditLog.getUser().getEmail());
             response.setUserFullName(auditLog.getUser().getFullName());
+            response.setUserRole(auditLog.getUser().getRole().name());
         }
         if (auditLog.getEvaluation() != null) {
             response.setEvaluationId(auditLog.getEvaluation().getId());

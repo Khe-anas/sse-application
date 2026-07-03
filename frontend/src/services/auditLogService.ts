@@ -6,6 +6,7 @@ export const auditLogService = {
     action?: string;
     entity?: string;
     userId?: string;
+    role?: string;
     from?: string;
     to?: string;
     page?: number;
