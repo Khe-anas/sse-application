@@ -6,6 +6,7 @@ import com.sse.dto.ApproveAccountRequest;
 import com.sse.dto.ApproveAccountRequestResponse;
 import com.sse.dto.CreateUserRequest;
 import com.sse.dto.RejectAccountRequest;
+import com.sse.dto.UserCreationResult;
 import com.sse.dto.UserResponse;
 import com.sse.entity.AccountRequest;
 import com.sse.entity.Organisme;
@@ -117,20 +118,16 @@ public class AccountRequestService {
         }
 
         Organisme organisme = resolveOrganisme(accountRequest);
-        String temporaryPassword = request.getPassword() != null && !request.getPassword().isBlank()
-            ? request.getPassword().trim()
-            : generateTemporaryPassword();
-
         CreateUserRequest createUserRequest = new CreateUserRequest();
         createUserRequest.setEmail(accountRequest.getCompanyEmail());
         createUserRequest.setFirstName(accountRequest.getResponsibleFirstName());
         createUserRequest.setLastName(accountRequest.getResponsibleLastName());
         createUserRequest.setPhone(accountRequest.getPhone());
         createUserRequest.setRole(Role.RESPONSABLE);
-        createUserRequest.setPassword(temporaryPassword);
         createUserRequest.setOrganismeId(organisme.getId());
 
-        UserResponse userResponse = userService.createUser(createUserRequest);
+        UserCreationResult creationResult = userService.createUserWithResult(createUserRequest);
+        UserResponse userResponse = creationResult.getUser();
         User createdUser = userRepository.findById(userResponse.getId())
             .orElseThrow(() -> new RuntimeException("Created user not found"));
 
@@ -141,8 +138,12 @@ public class AccountRequestService {
         accountRequest.setCreatedUser(createdUser);
 
         AccountRequest saved = accountRequestRepository.save(accountRequest);
-        accountRequestEmailService.sendApproved(saved, userResponse, temporaryPassword);
-        return new ApproveAccountRequestResponse(mapToResponse(saved), userResponse, temporaryPassword);
+        return new ApproveAccountRequestResponse(
+            mapToResponse(saved),
+            userResponse,
+            creationResult.getEmailJobId(),
+            creationResult.getActivationExpiresAt()
+        );
     }
 
     @Transactional
@@ -283,13 +284,4 @@ public class AccountRequestService {
         return normalized.isBlank() ? null : normalized;
     }
 
-    private String generateTemporaryPassword() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
-        StringBuilder sb = new StringBuilder();
-        java.util.Random random = new java.util.Random();
-        for (int i = 0; i < 12; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
-    }
 }

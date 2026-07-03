@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import KPICard from '@/components/dashboard/KPICard';
 import { reclamationService } from '@/services/reclamationService';
 import { useAuthStore } from '@/stores/authStore';
+import { formatBackendDateTime } from '@/utils/date';
 import { ReclamationStatus } from '@/types';
 import type { PageResponse, Reclamation } from '@/types';
 
@@ -21,8 +22,8 @@ export default function ReclamationsPage() {
   const [adminResponse, setAdminResponse] = useState('');
   const [isResolving, setIsResolving] = useState(false);
 
-  const loadReclamations = useCallback(async () => {
-    setIsLoading(true);
+  const loadReclamations = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     try {
       const data = await reclamationService.getAll({
         status: status || undefined,
@@ -40,6 +41,40 @@ export default function ReclamationsPage() {
   useEffect(() => {
     loadReclamations();
   }, [loadReclamations]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (!document.hidden) {
+        void loadReclamations(false);
+      }
+    };
+
+    const interval = window.setInterval(refresh, 5000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [loadReclamations]);
+
+  useEffect(() => {
+    if (!selectedReclamation || selectedReclamation.status === ReclamationStatus.RESOLVED) return undefined;
+
+    const keepLockAlive = () => {
+      if (!document.hidden) {
+        void reclamationService.claim(selectedReclamation.id).catch(() => undefined);
+      }
+    };
+
+    const interval = window.setInterval(keepLockAlive, 60000);
+    return () => {
+      window.clearInterval(interval);
+      void reclamationService.release(selectedReclamation.id).catch(() => undefined);
+    };
+  }, [selectedReclamation]);
 
   const openReclamation = async (reclamation: Reclamation) => {
     if (isLockedByOther(reclamation, user?.id)) return;
@@ -74,16 +109,16 @@ export default function ReclamationsPage() {
     }
   };
 
+  const closeSelectedReclamation = () => {
+    if (selectedReclamation?.status !== ReclamationStatus.RESOLVED) {
+      void reclamationService.release(selectedReclamation.id).catch(() => undefined);
+      void loadReclamations(false);
+    }
+    setSelectedReclamation(null);
+  };
+
   const formatDate = (value?: string) => {
-    if (!value) return '-';
-    const locale = document.documentElement.lang === 'ar' ? 'ar-TN' : document.documentElement.lang === 'en' ? 'en-US' : 'fr-FR';
-    return new Intl.DateTimeFormat(locale, {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(value));
+    return formatBackendDateTime(value);
   };
 
   const pendingCount = reclamations?.content.filter((item) => item.status === ReclamationStatus.PENDING).length || 0;
@@ -205,7 +240,7 @@ export default function ReclamationsPage() {
                   <h2 className="mt-1 text-xl font-bold text-gray-900">{selectedReclamation.subject}</h2>
                   <p className="mt-1 text-sm text-gray-500">{selectedReclamation.organismeName} - {formatDate(selectedReclamation.createdAt)}</p>
                 </div>
-                <button onClick={() => setSelectedReclamation(null)} className="btn-outline btn-sm">{t('common.close')}</button>
+                <button onClick={closeSelectedReclamation} className="btn-outline btn-sm">{t('common.close')}</button>
               </div>
             </div>
 
@@ -280,7 +315,8 @@ function Info({ label, value }: { label: string; value: string }) {
 }
 
 function isLockedByOther(reclamation: Reclamation, userId?: string) {
-  return Boolean(reclamation.openedById && reclamation.openedById !== userId);
+  return reclamation.status !== ReclamationStatus.RESOLVED
+    && Boolean(reclamation.openedById && reclamation.openedById !== userId);
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

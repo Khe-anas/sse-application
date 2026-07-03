@@ -79,6 +79,7 @@
     "reports": "Reports",
     "notifications": "Notifications",
     "reclamations": "Complaints",
+    "emailJobs": "Emails",
     "settings": "Settings",
     "profile": "Profile",
     "auditLogs": "Audit Logs"
@@ -108,7 +109,7 @@
     "status": {
       "EN_COURS": "In progress",
       "SOUMISE": "Submitted",
-      "EN_VALIDATION": "In validation",
+      "EN_VALIDATION": "In processing",
       "VALIDEE": "Validated",
       "REJETEE": "Rejected"
     },
@@ -135,6 +136,11 @@
       "RESPONSABLE": "Company manager",
       "GOUVERNEMENT": "Government"
     }
+  },
+  "userStatus": {
+    "PENDING_ACTIVATION": "Pending activation",
+    "ACTIVE": "Active",
+    "DISABLED": "Disabled"
   },
   "organisme": {
     "type": {
@@ -168,7 +174,7 @@
     "newEntreprise": "New company",
     "newEntreprisePlaceholder": "Company name",
     "passwordEditPlaceholder": "Leave blank to keep unchanged",
-    "passwordCreatePlaceholder": "Leave blank to generate",
+    "passwordCreatePlaceholder": "Leave blank to send an activation link",
     "newPassword": "New password",
     "editTitle": "Edit user",
     "createTitle": "New user",
@@ -210,10 +216,12 @@
     "adminComment": "Admin comment",
     "adminCommentPlaceholder": "Internal note or rejection reason",
     "reject": "Reject",
-    "approveAndCreate": "Approve and create account",
+    "approveAndCreate": "Approve and send activation",
     "accountCreated": "Account created",
+    "activationQueued": "Account created. Activation email queued.",
+    "activationJobLabel": "Email job:",
     "tempPasswordLabel": "Temporary password:",
-    "approved": "Responsible account created",
+    "approved": "Responsible account created, activation pending",
     "approvedError": "Error during approval",
     "rejected": "Request rejected",
     "rejectedError": "Error during rejection",
@@ -338,7 +346,7 @@
   },
   "reclamationStatus": {
     "PENDING": "Pending",
-    "IN_REVIEW": "In review",
+    "IN_REVIEW": "In processing",
     "RESOLVED": "Closed"
   },
   "principesPage": {
@@ -481,7 +489,7 @@
     "representCompany": "You represent a company?",
     "representCompanyDesc": "Submit a request. The administrator will verify the information before creating your account.",
     "requestAccountLink": "Request a responsible account",
-    "footer": "© 2024 SSE - Government Presidency",
+    "footer": "© 2026 SSE - CNI",
     "loginInProgress": "Signing in..."
   },
   "requestAccount": {
@@ -548,10 +556,45 @@
     "darkMode": "Turn on dark mode",
     "lightMode": "Turn on light mode"
   },
+  "activation": {
+    "title": "Activate account",
+    "subtitle": "Choose your password to finish activation.",
+    "password": "New password",
+    "confirmPassword": "Confirm password",
+    "submit": "Activate account",
+    "activating": "Activating...",
+    "success": "Account activated",
+    "doneText": "Your account is active. You can now sign in.",
+    "goToLogin": "Go to login",
+    "missingToken": "Activation link is invalid or incomplete.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordMismatch": "Passwords do not match.",
+    "error": "Unable to activate this account. The link may be expired or already used."
+  },
+  "emailJobs": {
+    "title": "Activation emails",
+    "subtitle": "Track pending or failed emails and retry sending.",
+    "kpiDisplayed": "Displayed jobs",
+    "kpiPending": "Pending",
+    "kpiFailed": "Failed",
+    "subject": "Subject",
+    "attempts": "Attempts",
+    "nextAttempt": "Next attempt",
+    "resend": "Retry",
+    "resendQueued": "Email requeued",
+    "resendError": "Error retrying email",
+    "loadError": "Error loading emails",
+    "empty": "No emails"
+  },
+  "emailJobStatus": {
+    "PENDING": "Pending",
+    "SENT": "Sent",
+    "FAILED": "Failed"
+  },
   "charts": {
     "byType": "Distribution by organization type",
     "byStatus": "Evaluations by status",
-    "piePlaceholder": "Pie chart - to be implemented with Recharts",
-    "barPlaceholder": "Bar chart - to be implemented with Recharts"
+    "piePlaceholder": "No data to display",
+    "barPlaceholder": "No data to display"
   }
 }

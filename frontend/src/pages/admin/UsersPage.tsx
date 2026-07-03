@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { userService, type CreateUserRequest } from '@/services/userService';
 import { organismeService } from '@/services/organismeService';
-import { Role } from '@/types';
+import { Role, UserStatus } from '@/types';
 import type { User, PageResponse, Organisme } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
 import { Users } from 'lucide-react';
@@ -199,8 +199,8 @@ export default function UsersPage() {
                   </td>
                   <td className="table-td text-gray-500">{user.organismeName || '-'}</td>
                   <td className="table-td">
-                    <span className={`badge ${user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {user.isActive ? t('users.statusActive') : t('users.statusInactive')}
+                    <span className={`badge ${userStatusClass(user.status, user.isActive)}`}>
+                      {t(`userStatus.${user.status || (user.isActive ? UserStatus.ACTIVE : UserStatus.DISABLED)}`)}
                     </span>
                   </td>
                   <td className="table-td">
@@ -308,4 +308,11 @@ export default function UsersPage() {
       )}
     </div>
   );
+}
+
+function userStatusClass(status: UserStatus | undefined, isActive: boolean) {
+  const resolved = status || (isActive ? UserStatus.ACTIVE : UserStatus.DISABLED);
+  if (resolved === UserStatus.PENDING_ACTIVATION) return 'bg-amber-100 text-amber-700';
+  if (resolved === UserStatus.ACTIVE) return 'bg-green-100 text-green-700';
+  return 'bg-red-100 text-red-700';
 }

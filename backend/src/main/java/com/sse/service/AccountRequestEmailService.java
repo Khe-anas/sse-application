@@ -1,7 +1,6 @@
 package com.sse.service;
 
 import com.sse.config.SseMailProperties;
-import com.sse.dto.UserResponse;
 import com.sse.entity.AccountRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,32 +16,6 @@ public class AccountRequestEmailService {
 
     private final JavaMailSender mailSender;
     private final SseMailProperties mailProperties;
-
-    @Async
-    public void sendApproved(AccountRequest request, UserResponse user, String temporaryPassword) {
-        String subject = "Votre compte SSE a été approuvé";
-        String body = """
-            Bonjour %s,
-
-            Votre demande de compte responsable pour %s a été approuvée.
-
-            Vous pouvez vous connecter avec les informations suivantes :
-            Identifiant : %s
-            Mot de passe temporaire : %s
-
-            Lien de connexion : %s/login
-
-            Pour votre sécurité, changez le mot de passe après votre première connexion.
-            """.formatted(
-            request.getResponsibleFullName(),
-            request.getCompanyName(),
-            user.getEmail(),
-            temporaryPassword,
-            trimTrailingSlash(mailProperties.getAppUrl())
-        );
-
-        send(request.getCompanyEmail(), subject, body, true);
-    }
 
     @Async
     public void sendRejected(AccountRequest request, String reason) {
@@ -62,15 +35,12 @@ public class AccountRequestEmailService {
             reason
         );
 
-        send(request.getCompanyEmail(), subject, body, false);
+        send(request.getCompanyEmail(), subject, body);
     }
 
-    private void send(String to, String subject, String body, boolean containsCredentials) {
+    private void send(String to, String subject, String body) {
         if (!mailProperties.isEnabled()) {
-            log.warn("Mail disabled. Would send '{}' to {}{}.",
-                subject,
-                to,
-                containsCredentials ? " with generated account credentials" : "");
+            log.warn("Mail disabled. Would send '{}' to {}.", subject, to);
             return;
         }
 
@@ -87,10 +57,4 @@ public class AccountRequestEmailService {
         }
     }
 
-    private String trimTrailingSlash(String value) {
-        if (value == null || value.isBlank()) {
-            return "http://localhost:3000";
-        }
-        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
-    }
 }

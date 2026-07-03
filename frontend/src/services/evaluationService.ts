@@ -2,7 +2,7 @@ import api from './api';
 import type { Evaluation, PageResponse, StatusEvaluation, Reponse } from '@/types';
 
 export const evaluationService = {
-  getAll: async (params?: { status?: StatusEvaluation; organismeId?: string; year?: number; page?: number; size?: number }): Promise<PageResponse<Evaluation>> => {
+  getAll: async (params?: { status?: StatusEvaluation; organismeId?: string; year?: number; page?: number; size?: number; _ts?: number }): Promise<PageResponse<Evaluation>> => {
     const response = await api.get<PageResponse<Evaluation>>('/evaluations', { params });
     return response.data;
   },
@@ -25,6 +25,10 @@ export const evaluationService = {
   claimValidation: async (id: string): Promise<Evaluation> => {
     const response = await api.put<Evaluation>(`/evaluations/${id}/claim-validation`);
     return response.data;
+  },
+
+  releaseValidation: async (id: string): Promise<void> => {
+    await api.put(`/evaluations/${id}/release-validation`);
   },
 
   validate: async (id: string, comments?: string): Promise<Evaluation> => {

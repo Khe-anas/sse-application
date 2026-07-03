@@ -1,6 +1,7 @@
 package com.sse.entity;
 
 import com.sse.enums.Role;
+import com.sse.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,7 +28,6 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
     
-    @Column(nullable = false)
     private String password;
     
     @Column(nullable = false)
@@ -44,6 +44,10 @@ public class User {
     
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private UserStatus status = UserStatus.ACTIVE;
     
     @CreationTimestamp
     private LocalDateTime createdAt;

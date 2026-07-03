@@ -33,8 +33,22 @@ public class DashboardService {
             evaluationRepository.countByStatus(StatusEvaluation.VALIDEE),
             evaluationRepository.countByStatus(StatusEvaluation.SOUMISE),
             evaluationRepository.findAverageScoreByYear(currentYear),
-            (long) evaluationRepository.findPendingValidations().size()
+            (long) evaluationRepository.findPendingValidations().size(),
+            getOrganismesByType(),
+            getEvaluationsByStatus()
         );
+    }
+
+    private List<DashboardDistributionItem> getOrganismesByType() {
+        return java.util.Arrays.stream(TypeOrganisme.values())
+            .map(type -> new DashboardDistributionItem(type.name(), organismeRepository.countByType(type)))
+            .toList();
+    }
+
+    private List<DashboardDistributionItem> getEvaluationsByStatus() {
+        return java.util.Arrays.stream(StatusEvaluation.values())
+            .map(status -> new DashboardDistributionItem(status.name(), evaluationRepository.countByStatus(status)))
+            .toList();
     }
     
     public List<RankingItem> getRanking(Integer year, TypeOrganisme type) {

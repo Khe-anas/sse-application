@@ -10,8 +10,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApproveAccountRequestResponse {
-    private AccountRequestResponse request;
+public class UserCreationResult {
     private UserResponse user;
     private UUID emailJobId;
     private LocalDateTime activationExpiresAt;

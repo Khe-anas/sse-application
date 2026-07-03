@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   MessageSquareWarning,
   Settings,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { label: 'navigation.evaluations', icon: ClipboardList, path: '/admin/evaluations', roles: [Role.ADMIN] },
   { label: 'navigation.principes', icon: BookOpen, path: '/admin/principes', roles: [Role.ADMIN] },
   { label: 'navigation.reclamations', icon: MessageSquareWarning, path: '/admin/reclamations', roles: [Role.ADMIN] },
+  { label: 'navigation.emailJobs', icon: Mail, path: '/admin/email-jobs', roles: [Role.ADMIN] },
   { label: 'navigation.notifications', icon: Bell, path: '/admin/notifications', roles: [Role.ADMIN] },
   
   { label: 'navigation.myEvaluations', icon: ClipboardList, path: '/responsable/dashboard', roles: [Role.RESPONSABLE] },

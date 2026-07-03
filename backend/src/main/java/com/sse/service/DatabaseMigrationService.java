@@ -10,6 +10,19 @@ public class DatabaseMigrationService {
 
     private final JdbcTemplate jdbcTemplate;
 
+    public void updateUserActivationSchema() {
+        jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(32)");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password DROP NOT NULL");
+        jdbcTemplate.update("""
+            UPDATE users
+            SET status = CASE
+                WHEN is_active = true THEN 'ACTIVE'
+                ELSE 'DISABLED'
+            END
+            WHERE status IS NULL
+            """);
+    }
+
     public void updateNotificationTypeConstraint() {
         jdbcTemplate.execute("ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check");
         jdbcTemplate.execute("""

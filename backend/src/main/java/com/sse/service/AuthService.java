@@ -3,6 +3,7 @@ package com.sse.service;
 import com.sse.dto.*;
 import com.sse.entity.User;
 import com.sse.enums.Role;
+import com.sse.enums.UserStatus;
 import com.sse.repository.UserRepository;
 import com.sse.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -27,16 +28,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final AccountActivationService accountActivationService;
     
     @Transactional
     public AuthResponse login(LoginRequest request) {
         try {
+            User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+            ensureUserCanAuthenticate(user);
+
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            
-            User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
             
             user.setLastLoginAt(LocalDateTime.now());
             userRepository.save(user);
@@ -60,16 +63,24 @@ public class AuthService {
         String email = jwtUtil.extractUsername(refreshToken);
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new BadCredentialsException("User not found"));
+        ensureUserCanAuthenticate(user);
         
         String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         
         return new AuthResponse(newAccessToken, refreshToken, "Bearer",
             jwtUtil.getAccessTokenExpiration() / 1000, mapToUserResponse(user));
     }
+
+    @Transactional
+    public UserResponse activateAccount(String rawToken, String password) {
+        User activated = accountActivationService.activate(rawToken, password);
+        return mapToUserResponse(activated);
+    }
     
     public UserResponse getCurrentUser(UUID userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureUserCanAuthenticate(user);
         return mapToUserResponse(user);
     }
     
@@ -90,6 +101,8 @@ public class AuthService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
+        ensureUserCanAuthenticate(user);
+
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new BadCredentialsException("Old password is incorrect");
         }
@@ -108,6 +121,7 @@ public class AuthService {
         response.setRole(user.getRole());
         response.setPhone(user.getPhone());
         response.setIsActive(user.getIsActive());
+        response.setStatus(user.getStatus() != null ? user.getStatus() : inferStatus(user));
         response.setCreatedAt(user.getCreatedAt());
         response.setLastLoginAt(user.getLastLoginAt());
         if (user.getOrganisme() != null) {
@@ -115,5 +129,19 @@ public class AuthService {
             response.setOrganismeName(user.getOrganisme().getName());
         }
         return response;
+    }
+
+    private void ensureUserCanAuthenticate(User user) {
+        UserStatus status = user.getStatus() != null ? user.getStatus() : inferStatus(user);
+        if (!Boolean.TRUE.equals(user.getIsActive())
+            || status != UserStatus.ACTIVE
+            || user.getPassword() == null
+            || user.getPassword().isBlank()) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+    }
+
+    private UserStatus inferStatus(User user) {
+        return Boolean.TRUE.equals(user.getIsActive()) ? UserStatus.ACTIVE : UserStatus.DISABLED;
     }
 }

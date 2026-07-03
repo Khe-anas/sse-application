@@ -16,4 +16,6 @@ public class DashboardKPIs {
     private Long evaluationsSoumises;
     private Double averageScore;
     private Long pendingValidations;
+    private java.util.List<DashboardDistributionItem> organismesByType;
+    private java.util.List<DashboardDistributionItem> evaluationsByStatus;
 }

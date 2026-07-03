@@ -76,6 +76,13 @@ public class ReclamationController {
         return ResponseEntity.ok(reclamationService.claim(id));
     }
 
+    @PutMapping("/admin/reclamations/{id}/release")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> release(@PathVariable UUID id) {
+        reclamationService.release(id);
+        return ResponseEntity.ok().build();
+    }
+
     @PutMapping("/admin/reclamations/{id}/resolve")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReclamationResponse> resolve(

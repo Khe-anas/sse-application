@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Eye,
   FileText,
-  KeyRound,
   Lock,
   Search,
   ShieldCheck,
@@ -15,6 +14,7 @@ import { toast } from 'sonner';
 import { accountRequestService } from '@/services/accountRequestService';
 import { fileService } from '@/services/fileService';
 import { useAuthStore } from '@/stores/authStore';
+import { formatBackendDateTime } from '@/utils/date';
 import { AccountRequestStatus } from '@/types';
 import type { AccountRequest, PageResponse, TypeOrganisme } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
@@ -27,9 +27,8 @@ export default function AccountRequestsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<AccountRequestStatus | ''>(AccountRequestStatus.PENDING);
-  const [password, setPassword] = useState('');
   const [adminComment, setAdminComment] = useState('');
-  const [temporaryPassword, setTemporaryPassword] = useState('');
+  const [queuedEmailJobId, setQueuedEmailJobId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [claimingRequestId, setClaimingRequestId] = useState<string | null>(null);
 
@@ -79,9 +78,8 @@ export default function AccountRequestsPage() {
 
   const selectRequest = (request: AccountRequest) => {
     setSelectedRequest(request);
-    setPassword('');
     setAdminComment(request.adminComment || '');
-    setTemporaryPassword('');
+    setQueuedEmailJobId('');
   };
 
   const handleApprove = async () => {
@@ -90,11 +88,10 @@ export default function AccountRequestsPage() {
     setIsSubmitting(true);
     try {
       const response = await accountRequestService.approve(selectedRequest.id, {
-        password: password.trim() || undefined,
         adminComment: adminComment.trim() || undefined,
       });
       setSelectedRequest(response.request);
-      setTemporaryPassword(response.temporaryPassword);
+      setQueuedEmailJobId(response.emailJobId || '');
       toast.success(t('accountRequests.approved'));
       loadRequests();
     } catch (error) {
@@ -133,14 +130,7 @@ export default function AccountRequestsPage() {
   };
 
   const formatDate = (value: string) => {
-    const locale = document.documentElement.lang === 'ar' ? 'ar-TN' : document.documentElement.lang === 'en' ? 'en-US' : 'fr-FR';
-    return new Intl.DateTimeFormat(locale, {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(value));
+    return formatBackendDateTime(value);
   };
 
   const pendingCount = requests?.content.filter((request) => request.status === AccountRequestStatus.PENDING).length || 0;
@@ -327,19 +317,6 @@ export default function AccountRequestsPage() {
               {selectedRequest.status === AccountRequestStatus.PENDING && (
                 <div className="space-y-4 rounded-lg border border-primary-100 p-4">
                   <div>
-                    <label className="label">{t('accountRequests.tempPassword')}</label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        className="input pl-10"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder={t('accountRequests.tempPasswordPlaceholder')}
-                      />
-                    </div>
-                  </div>
-                  <div>
                     <label className="label">{t('accountRequests.adminComment')}</label>
                     <textarea
                       rows={3}
@@ -370,11 +347,11 @@ export default function AccountRequestsPage() {
                 </div>
               )}
 
-              {temporaryPassword && (
+              {queuedEmailJobId && (
                 <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                  <p className="text-sm font-semibold text-green-900">{t('accountRequests.accountCreated')}</p>
+                  <p className="text-sm font-semibold text-green-900">{t('accountRequests.activationQueued')}</p>
                   <p className="mt-1 text-sm text-green-800">
-                    {t('accountRequests.tempPasswordLabel')} <span className="font-mono font-semibold">{temporaryPassword}</span>
+                    {t('accountRequests.activationJobLabel')} <span className="font-mono font-semibold">{queuedEmailJobId}</span>
                   </p>
                 </div>
               )}

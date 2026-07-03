@@ -4,6 +4,7 @@ import com.sse.dto.*;
 import com.sse.entity.Organisme;
 import com.sse.entity.User;
 import com.sse.enums.Role;
+import com.sse.enums.UserStatus;
 import com.sse.enums.TypeOrganisme;
 import com.sse.repository.OrganismeRepository;
 import com.sse.repository.UserRepository;
@@ -26,9 +27,15 @@ public class UserService {
     private final OrganismeRepository organismeRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
+    private final AccountActivationService accountActivationService;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
+        return createUserWithResult(request).getUser();
+    }
+
+    @Transactional
+    public UserCreationResult createUserWithResult(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
@@ -40,22 +47,33 @@ public class UserService {
         user.setRole(request.getRole());
         user.setPhone(request.getPhone());
         
-        // Generate random password if not provided
-        String password = request.getPassword() != null && !request.getPassword().isBlank()
-            ? request.getPassword()
-            : generateRandomPassword();
-        user.setPassword(passwordEncoder.encode(password));
-        
         if (request.getRole() == Role.RESPONSABLE) {
             user.setOrganisme(resolveResponsableOrganisme(request.getOrganismeId(), request.getEntrepriseName()));
+        }
+
+        boolean hasPassword = request.getPassword() != null && !request.getPassword().isBlank();
+        if (hasPassword) {
+            user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+            user.setIsActive(true);
+            user.setStatus(UserStatus.ACTIVE);
+        } else {
+            user.setPassword(null);
+            user.setIsActive(false);
+            user.setStatus(UserStatus.PENDING_ACTIVATION);
         }
         
         User saved = userRepository.save(user);
         log.info("User created: {} with role {}", saved.getEmail(), saved.getRole());
-        
-        // TODO: Send email with generated password
-        
-        return authService.mapToUserResponse(saved);
+
+        AccountActivationService.QueuedActivation queuedActivation = hasPassword
+            ? null
+            : accountActivationService.queueActivationEmail(saved);
+
+        return new UserCreationResult(
+            authService.mapToUserResponse(saved),
+            queuedActivation != null ? queuedActivation.getEmailJobId() : null,
+            queuedActivation != null ? queuedActivation.getExpiresAt() : null
+        );
     }
     
     public Page<UserResponse> getAllUsers(Role role, UUID organismeId, String search, Pageable pageable) {
@@ -89,8 +107,19 @@ public class UserService {
         if (request.getPhone() != null) user.setPhone(request.getPhone());
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setStatus(UserStatus.ACTIVE);
+            user.setIsActive(true);
         }
-        if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
+        if (request.getIsActive() != null) {
+            user.setIsActive(request.getIsActive());
+            if (!request.getIsActive()) {
+                user.setStatus(UserStatus.DISABLED);
+            } else if (user.getPassword() == null || user.getPassword().isBlank()) {
+                user.setStatus(UserStatus.PENDING_ACTIVATION);
+            } else {
+                user.setStatus(UserStatus.ACTIVE);
+            }
+        }
         
         if (user.getRole() == Role.RESPONSABLE && request.getOrganismeId() != null) {
             Organisme org = organismeRepository.findById(request.getOrganismeId())
@@ -110,30 +139,26 @@ public class UserService {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIsActive(false);
+        user.setStatus(UserStatus.DISABLED);
         userRepository.save(user);
     }
     
     @Transactional
-    public String resetPassword(UUID id) {
+    public UserCreationResult resetPassword(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        String newPassword = generateRandomPassword();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-        
-        // TODO: Send email with new password
-        return newPassword;
-    }
-    
-    private String generateRandomPassword() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
-        StringBuilder sb = new StringBuilder();
-        java.util.Random random = new java.util.Random();
-        for (int i = 0; i < 12; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
+
+        user.setPassword(null);
+        user.setIsActive(false);
+        user.setStatus(UserStatus.PENDING_ACTIVATION);
+        User saved = userRepository.save(user);
+        AccountActivationService.QueuedActivation queuedActivation = accountActivationService.queueActivationEmail(saved);
+
+        return new UserCreationResult(
+            authService.mapToUserResponse(saved),
+            queuedActivation.getEmailJobId(),
+            queuedActivation.getExpiresAt()
+        );
     }
 
     private Organisme resolveResponsableOrganisme(UUID organismeId, String entrepriseName) {

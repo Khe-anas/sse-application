@@ -1,6 +1,7 @@
 package com.sse.security;
 
 import com.sse.entity.User;
+import com.sse.enums.UserStatus;
 import com.sse.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,7 +25,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
         
-        if (!user.getIsActive()) {
+        UserStatus status = user.getStatus() != null
+            ? user.getStatus()
+            : (Boolean.TRUE.equals(user.getIsActive()) ? UserStatus.ACTIVE : UserStatus.DISABLED);
+
+        if (!Boolean.TRUE.equals(user.getIsActive()) || status != UserStatus.ACTIVE || user.getPassword() == null) {
             throw new UsernameNotFoundException("User account is disabled");
         }
         

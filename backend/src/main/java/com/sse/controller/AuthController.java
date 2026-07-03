@@ -27,6 +27,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/activate")
+    public ResponseEntity<UserResponse> activateAccount(@Valid @RequestBody ActivateAccountRequest request) {
+        return ResponseEntity.ok(authService.activateAccount(request.getToken(), request.getPassword()));
+    }
     
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshToken(@RequestHeader("X-Refresh-Token") String refreshToken) {

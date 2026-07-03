@@ -79,6 +79,7 @@
     "reports": "التقارير",
     "notifications": "الإشعارات",
     "reclamations": "الشكاوى",
+    "emailJobs": "رسائل البريد",
     "settings": "الإعدادات",
     "profile": "الملف الشخصي",
     "auditLogs": "سجلات التدقيق"
@@ -108,7 +109,7 @@
     "status": {
       "EN_COURS": "قيد التنفيذ",
       "SOUMISE": "مرسلة",
-      "EN_VALIDATION": "قيد المصادقة",
+      "EN_VALIDATION": "قيد المعالجة",
       "VALIDEE": "مصادق عليها",
       "REJETEE": "مرفوضة"
     },
@@ -135,6 +136,11 @@
       "RESPONSABLE": "مسؤول مؤسسة",
       "GOUVERNEMENT": "حكومة"
     }
+  },
+  "userStatus": {
+    "PENDING_ACTIVATION": "بانتظار التفعيل",
+    "ACTIVE": "نشط",
+    "DISABLED": "معطل"
   },
   "organisme": {
     "type": {
@@ -168,7 +174,7 @@
     "newEntreprise": "مؤسسة جديدة",
     "newEntreprisePlaceholder": "اسم المؤسسة",
     "passwordEditPlaceholder": "اتركه فارغاً لعدم التغيير",
-    "passwordCreatePlaceholder": "اتركه فارغاً للتوليد التلقائي",
+    "passwordCreatePlaceholder": "اتركه فارغاً لإرسال رابط التفعيل",
     "newPassword": "كلمة مرور جديدة",
     "editTitle": "تعديل المستخدم",
     "createTitle": "مستخدم جديد",
@@ -210,10 +216,12 @@
     "adminComment": "تعليق المدير",
     "adminCommentPlaceholder": "ملاحظة داخلية أو سبب الرفض",
     "reject": "رفض",
-    "approveAndCreate": "الموافقة وإنشاء الحساب",
+    "approveAndCreate": "الموافقة وإرسال التفعيل",
     "accountCreated": "تم إنشاء الحساب",
+    "activationQueued": "تم إنشاء الحساب ووضع بريد التفعيل في قائمة الإرسال.",
+    "activationJobLabel": "مهمة البريد:",
     "tempPasswordLabel": "كلمة المرور المؤقتة:",
-    "approved": "تم إنشاء حساب المسؤول",
+    "approved": "تم إنشاء حساب المسؤول بانتظار التفعيل",
     "approvedError": "خطأ أثناء الموافقة",
     "rejected": "تم رفض الطلب",
     "rejectedError": "خطأ أثناء الرفض",
@@ -338,7 +346,7 @@
   },
   "reclamationStatus": {
     "PENDING": "قيد الانتظار",
-    "IN_REVIEW": "قيد الفحص",
+    "IN_REVIEW": "قيد المعالجة",
     "RESOLVED": "مغلقة"
   },
   "principesPage": {
@@ -481,7 +489,7 @@
     "representCompany": "هل تمثل مؤسسة؟",
     "representCompanyDesc": "أرسل طلباً. سيتحقق المدير من المعلومات قبل إنشاء حسابك.",
     "requestAccountLink": "طلب حساب مسؤول",
-    "footer": "© 2024 نظام المتابعة والتقييم - رئاسة الحكومة",
+    "footer": "© 2026 نظام المتابعة والتقييم - CNI",
     "loginInProgress": "جاري تسجيل الدخول..."
   },
   "requestAccount": {
@@ -548,10 +556,45 @@
     "darkMode": "تفعيل الوضع الداكن",
     "lightMode": "تفعيل الوضع الفاتح"
   },
+  "activation": {
+    "title": "تفعيل الحساب",
+    "subtitle": "اختر كلمة المرور لإكمال التفعيل.",
+    "password": "كلمة مرور جديدة",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "submit": "تفعيل الحساب",
+    "activating": "جار التفعيل...",
+    "success": "تم تفعيل الحساب",
+    "doneText": "حسابك مفعل الآن. يمكنك تسجيل الدخول.",
+    "goToLogin": "الذهاب إلى تسجيل الدخول",
+    "missingToken": "رابط التفعيل غير صالح أو غير مكتمل.",
+    "passwordTooShort": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+    "error": "تعذر تفعيل هذا الحساب. قد يكون الرابط منتهي الصلاحية أو مستعملاً."
+  },
+  "emailJobs": {
+    "title": "رسائل التفعيل",
+    "subtitle": "تابع الرسائل المعلقة أو الفاشلة وأعد إرسالها.",
+    "kpiDisplayed": "المهام المعروضة",
+    "kpiPending": "قيد الانتظار",
+    "kpiFailed": "فاشلة",
+    "subject": "الموضوع",
+    "attempts": "المحاولات",
+    "nextAttempt": "المحاولة القادمة",
+    "resend": "إعادة الإرسال",
+    "resendQueued": "تمت إعادة الرسالة إلى قائمة الإرسال",
+    "resendError": "خطأ أثناء إعادة الإرسال",
+    "loadError": "خطأ أثناء تحميل الرسائل",
+    "empty": "لا توجد رسائل"
+  },
+  "emailJobStatus": {
+    "PENDING": "قيد الانتظار",
+    "SENT": "مرسل",
+    "FAILED": "فشل"
+  },
   "charts": {
     "byType": "التوزيع حسب نوع الهيئة",
     "byStatus": "التقييمات حسب الحالة",
-    "piePlaceholder": "رسم بياني دائري - سيُنفذ بـ Recharts",
-    "barPlaceholder": "رسم بياني بالأعمدة - سيُنفذ بـ Recharts"
+    "piePlaceholder": "لا توجد بيانات للعرض",
+    "barPlaceholder": "لا توجد بيانات للعرض"
   }
 }

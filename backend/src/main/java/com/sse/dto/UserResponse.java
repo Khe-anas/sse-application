@@ -1,6 +1,7 @@
 package com.sse.dto;
 
 import com.sse.enums.Role;
+import com.sse.enums.UserStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ public class UserResponse {
     private Role role;
     private String phone;
     private Boolean isActive;
+    private UserStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
     private UUID organismeId;

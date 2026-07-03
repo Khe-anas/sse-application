@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -25,19 +25,41 @@ export default function EvaluationsPage() {
   const isAdmin = user?.role === Role.ADMIN;
   const isGovernment = user?.role === Role.GOUVERNEMENT;
 
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async (showError = true) => {
     try {
       const [evalsData, orgsData] = await Promise.all([
-        evaluationService.getAll(),
+        evaluationService.getAll({ _ts: Date.now() }),
         organismeService.getAll({ size: 100 }),
       ]);
       setEvaluations(evalsData);
       setOrganismes(orgsData.content);
-    } catch (error) { toast.error(t('evaluations.loadError')); }
+    } catch (error) {
+      if (showError) toast.error(t('evaluations.loadError'));
+    }
     finally { setIsLoading(false); }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (!document.hidden) {
+        void loadData(false);
+      }
+    };
+
+    const interval = window.setInterval(refresh, 3000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [loadData]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +139,7 @@ export default function EvaluationsPage() {
                 <td className="table-td">
                   {(() => {
                     const canExamine = isAdmin && (ev.status === StatusEvaluation.SOUMISE || ev.status === StatusEvaluation.EN_VALIDATION);
-                    const canReadOnly = isAdmin || isGovernment || ev.status !== StatusEvaluation.EN_COURS;
+                    const canReadOnly = ev.status === StatusEvaluation.VALIDEE && (isAdmin || isGovernment);
 
                     if (!canExamine && !canReadOnly) {
                       return <span className="text-gray-400">-</span>;

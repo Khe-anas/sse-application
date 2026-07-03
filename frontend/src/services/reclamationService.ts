@@ -27,6 +27,10 @@ export const reclamationService = {
     return response.data;
   },
 
+  release: async (id: string): Promise<void> => {
+    await api.put(`/admin/reclamations/${id}/release`);
+  },
+
   resolve: async (id: string, adminResponse?: string): Promise<Reclamation> => {
     const response = await api.put<Reclamation>(`/admin/reclamations/${id}/resolve`, { adminResponse });
     return response.data;

@@ -23,6 +23,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReclamationService {
 
+    private static final long REVIEW_LOCK_TIMEOUT_MINUTES = 10;
+
     private final ReclamationRepository reclamationRepository;
     private final CurrentUserService currentUserService;
     private final NotificationService notificationService;
@@ -47,18 +49,19 @@ public class ReclamationService {
         return mapToResponse(saved, true);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<ReclamationResponse> getAll(ReclamationStatus status, String search, Pageable pageable) {
         String normalizedSearch = search != null && !search.isBlank() ? search.trim() : null;
         Page<Reclamation> result = normalizedSearch == null
             ? reclamationRepository.findAllWithStatus(status, pageable)
             : reclamationRepository.findAllWithSearch(status, normalizedSearch, pageable);
 
+        result.forEach(this::releaseExpiredReviewLock);
         return result
             .map(reclamation -> mapToResponse(reclamation, false));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ReclamationResponse getById(UUID id) {
         User admin = currentUserService.getCurrentUser();
         Reclamation reclamation = findById(id);
@@ -74,6 +77,24 @@ public class ReclamationService {
 
         claimForAdmin(reclamation, admin);
         return mapToResponse(reclamationRepository.save(reclamation), true);
+    }
+
+    @Transactional
+    public void release(UUID id) {
+        User admin = currentUserService.getCurrentUser();
+        Reclamation reclamation = reclamationRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new RuntimeException("Reclamation not found"));
+
+        User openedBy = reclamation.getOpenedBy();
+        if (reclamation.getStatus() != ReclamationStatus.RESOLVED
+            && openedBy != null
+            && openedBy.getId().equals(admin.getId())) {
+            clearReviewLock(reclamation);
+            if (reclamation.getStatus() == ReclamationStatus.IN_REVIEW) {
+                reclamation.setStatus(ReclamationStatus.PENDING);
+            }
+            reclamationRepository.save(reclamation);
+        }
     }
 
     @Transactional
@@ -97,6 +118,12 @@ public class ReclamationService {
     }
 
     private void claimForAdmin(Reclamation reclamation, User admin) {
+        if (reclamation.getStatus() == ReclamationStatus.RESOLVED) {
+            return;
+        }
+
+        releaseExpiredReviewLock(reclamation);
+
         User openedBy = reclamation.getOpenedBy();
         if (openedBy == null) {
             reclamation.setOpenedBy(admin);
@@ -110,13 +137,41 @@ public class ReclamationService {
         if (!openedBy.getId().equals(admin.getId())) {
             throw new ResourceLockedException("Cette reclamation est deja ouverte par " + openedBy.getFullName());
         }
+
+        reclamation.setOpenedAt(LocalDateTime.now());
     }
 
     private void ensureCanOpen(Reclamation reclamation, User admin) {
+        if (reclamation.getStatus() == ReclamationStatus.RESOLVED) {
+            return;
+        }
+
+        releaseExpiredReviewLock(reclamation);
         User openedBy = reclamation.getOpenedBy();
         if (openedBy != null && !openedBy.getId().equals(admin.getId())) {
             throw new ResourceLockedException("Cette reclamation est deja ouverte par " + openedBy.getFullName());
         }
+    }
+
+    private void releaseExpiredReviewLock(Reclamation reclamation) {
+        if (reclamation.getOpenedBy() == null || reclamation.getOpenedAt() == null) {
+            return;
+        }
+
+        LocalDateTime expiresAt = reclamation.getOpenedAt().plusMinutes(REVIEW_LOCK_TIMEOUT_MINUTES);
+        if (expiresAt.isAfter(LocalDateTime.now())) {
+            return;
+        }
+
+        clearReviewLock(reclamation);
+        if (reclamation.getStatus() == ReclamationStatus.IN_REVIEW) {
+            reclamation.setStatus(ReclamationStatus.PENDING);
+        }
+    }
+
+    private void clearReviewLock(Reclamation reclamation) {
+        reclamation.setOpenedBy(null);
+        reclamation.setOpenedAt(null);
     }
 
     private ReclamationResponse mapToResponse(Reclamation reclamation, boolean includeMessage) {

@@ -79,6 +79,7 @@
     "reports": "Rapports",
     "notifications": "Notifications",
     "reclamations": "Réclamations",
+    "emailJobs": "Emails",
     "settings": "Paramètres",
     "profile": "Profil",
     "auditLogs": "Journaux d'audit"
@@ -108,7 +109,7 @@
     "status": {
       "EN_COURS": "En cours",
       "SOUMISE": "Soumise",
-      "EN_VALIDATION": "En validation",
+      "EN_VALIDATION": "En cours de traitement",
       "VALIDEE": "Validée",
       "REJETEE": "Rejetée"
     },
@@ -135,6 +136,11 @@
       "RESPONSABLE": "Responsable d'entreprise",
       "GOUVERNEMENT": "Gouvernement"
     }
+  },
+  "userStatus": {
+    "PENDING_ACTIVATION": "Activation en attente",
+    "ACTIVE": "Actif",
+    "DISABLED": "Désactivé"
   },
   "organisme": {
     "type": {
@@ -168,7 +174,7 @@
     "newEntreprise": "Nouvelle entreprise",
     "newEntreprisePlaceholder": "Nom de l'entreprise",
     "passwordEditPlaceholder": "Laisser vide pour ne pas changer",
-    "passwordCreatePlaceholder": "Laisser vide pour générer",
+    "passwordCreatePlaceholder": "Laisser vide pour envoyer un lien d'activation",
     "newPassword": "Nouveau mot de passe",
     "editTitle": "Modifier utilisateur",
     "createTitle": "Nouvel utilisateur",
@@ -210,10 +216,12 @@
     "adminComment": "Commentaire admin",
     "adminCommentPlaceholder": "Note interne ou motif de rejet",
     "reject": "Rejeter",
-    "approveAndCreate": "Approuver et créer le compte",
+    "approveAndCreate": "Approuver et envoyer l'activation",
     "accountCreated": "Compte créé",
+    "activationQueued": "Compte créé. Email d'activation mis en file d'attente.",
+    "activationJobLabel": "Job email :",
     "tempPasswordLabel": "Mot de passe temporaire :",
-    "approved": "Compte responsable créé",
+    "approved": "Compte responsable créé, activation en attente",
     "approvedError": "Erreur lors de l'approbation",
     "rejected": "Demande rejetée",
     "rejectedError": "Erreur lors du rejet",
@@ -338,7 +346,7 @@
   },
   "reclamationStatus": {
     "PENDING": "En attente",
-    "IN_REVIEW": "En examen",
+    "IN_REVIEW": "En cours de traitement",
     "RESOLVED": "Clôturée"
   },
   "principesPage": {
@@ -481,7 +489,7 @@
     "representCompany": "Vous représentez une entreprise ?",
     "representCompanyDesc": "Envoyez une demande. L'administrateur vérifiera les informations avant de créer votre compte.",
     "requestAccountLink": "Demander un compte responsable",
-    "footer": "© 2024 SSE - Présidence du Gouvernement",
+    "footer": "© 2026 SSE - CNI",
     "loginInProgress": "Connexion en cours..."
   },
   "requestAccount": {
@@ -548,10 +556,45 @@
     "darkMode": "Activer le mode sombre",
     "lightMode": "Activer le mode clair"
   },
+  "activation": {
+    "title": "Activer le compte",
+    "subtitle": "Choisissez votre mot de passe pour finaliser l'activation.",
+    "password": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "submit": "Activer le compte",
+    "activating": "Activation...",
+    "success": "Compte activé",
+    "doneText": "Votre compte est actif. Vous pouvez maintenant vous connecter.",
+    "goToLogin": "Aller à la connexion",
+    "missingToken": "Lien d'activation invalide ou incomplet.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "error": "Impossible d'activer ce compte. Le lien peut être expiré ou déjà utilisé."
+  },
+  "emailJobs": {
+    "title": "Emails d'activation",
+    "subtitle": "Suivez les emails en attente ou échoués et relancez l'envoi.",
+    "kpiDisplayed": "Jobs affichés",
+    "kpiPending": "En attente",
+    "kpiFailed": "Échoués",
+    "subject": "Sujet",
+    "attempts": "Tentatives",
+    "nextAttempt": "Prochain essai",
+    "resend": "Relancer",
+    "resendQueued": "Envoi remis en file d'attente",
+    "resendError": "Erreur lors de la relance",
+    "loadError": "Erreur lors du chargement des emails",
+    "empty": "Aucun email"
+  },
+  "emailJobStatus": {
+    "PENDING": "En attente",
+    "SENT": "Envoyé",
+    "FAILED": "Échoué"
+  },
   "charts": {
     "byType": "Répartition par type d'organisme",
     "byStatus": "Évaluations par statut",
-    "piePlaceholder": "Graphique circulaire - à implémenter avec Recharts",
-    "barPlaceholder": "Graphique en barres - à implémenter avec Recharts"
+    "piePlaceholder": "Aucune donnée à afficher",
+    "barPlaceholder": "Aucune donnée à afficher"
   }
 }

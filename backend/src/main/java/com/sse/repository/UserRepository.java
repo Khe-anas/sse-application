@@ -36,8 +36,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     
     @Query("SELECT u FROM User u WHERE " +
            "(:role IS NULL OR u.role = :role) AND " +
-           "(:organismeId IS NULL OR u.organisme.id = :organismeId) AND " +
-           "u.isActive = true")
+           "(:organismeId IS NULL OR u.organisme.id = :organismeId)")
     Page<User> findAllWithFilters(@Param("role") Role role,
                                    @Param("organismeId") UUID organismeId,
                                    Pageable pageable);
@@ -47,8 +46,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
            "(:organismeId IS NULL OR u.organisme.id = :organismeId) AND " +
            "(LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "u.isActive = true")
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<User> findAllWithSearch(@Param("role") Role role,
                                    @Param("organismeId") UUID organismeId,
                                    @Param("search") String search,

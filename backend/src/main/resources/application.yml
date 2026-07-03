@@ -60,6 +60,18 @@ sse:
     enabled: ${SSE_MAIL_ENABLED:false}
     from: ${SSE_MAIL_FROM:no-reply@sse.local}
     app-url: ${SSE_MAIL_APP_URL:http://localhost:3000}
+    activation-token-ttl-hours: ${SSE_MAIL_ACTIVATION_TOKEN_TTL_HOURS:48}
+    job-max-attempts: ${SSE_MAIL_JOB_MAX_ATTEMPTS:5}
+    job-retry-delay-minutes: ${SSE_MAIL_JOB_RETRY_DELAY_MINUTES:15}
+    job-batch-size: ${SSE_MAIL_JOB_BATCH_SIZE:20}
+    jobs:
+      initial-delay-ms: ${SSE_MAIL_JOBS_INITIAL_DELAY_MS:10000}
+      fixed-delay-ms: ${SSE_MAIL_JOBS_FIXED_DELAY_MS:60000}
+
+aws:
+  region: ${AWS_REGION:eu-central-1}
+  s3:
+    bucket: ${AWS_S3_BUCKET:sse-uploads-bucket}
 
 # File Upload
 upload:

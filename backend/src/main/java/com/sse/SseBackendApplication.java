@@ -27,6 +27,7 @@ public class SseBackendApplication {
             DemoDataService demoDataService,
             EvaluationService evaluationService) {
         return args -> {
+            databaseMigrationService.updateUserActivationSchema();
             databaseMigrationService.updateNotificationTypeConstraint();
             principeService.seedPrincipes();
             demoDataService.seedDemoData();

@@ -21,6 +21,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { changeLanguage, LANGUAGES } from '@/i18n';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { API_BASE_URL } from '@/services/api';
+import { formatBackendShortDateTime } from '@/utils/date';
 import type { Notification } from '@/types';
 
 export default function Header() {
@@ -253,13 +254,7 @@ export default function Header() {
   };
 
   const formatNotificationDate = (date: string) => {
-    const locale = language === 'ar' ? 'ar-TN' : language === 'en' ? 'en-US' : 'fr-FR';
-    return new Intl.DateTimeFormat(locale, {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
+    return formatBackendShortDateTime(date, language);
   };
 
   const handleNotificationClick = async (notification: Notification) => {

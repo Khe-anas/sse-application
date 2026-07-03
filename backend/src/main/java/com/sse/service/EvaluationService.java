@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class EvaluationService {
+
+    private static final long VALIDATION_LOCK_TIMEOUT_MINUTES = 10;
     
     private final EvaluationRepository evaluationRepository;
     private final OrganismeRepository organismeRepository;
@@ -116,8 +118,11 @@ public class EvaluationService {
         return mapToResponse(saved);
     }
     
+    @Transactional
     public Page<EvaluationResponse> getEvaluations(StatusEvaluation status, UUID organismeId, Integer year, Pageable pageable) {
-        return evaluationRepository.findAllWithFilters(status, organismeId, year, pageable)
+        Page<Evaluation> evaluations = evaluationRepository.findAllWithFilters(status, organismeId, year, pageable);
+        evaluations.forEach(this::releaseExpiredValidationLock);
+        return evaluations
             .map(this::mapToResponse);
     }
     
@@ -135,6 +140,22 @@ public class EvaluationService {
 
         claimValidationForAdmin(eval, admin);
         return mapToResponse(evaluationRepository.save(eval));
+    }
+
+    @Transactional
+    public void releaseValidation(UUID id) {
+        User admin = currentUserService.getCurrentUser();
+        Evaluation eval = evaluationRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+
+        User openedBy = eval.getValidationOpenedBy();
+        if (openedBy != null && openedBy.getId().equals(admin.getId())) {
+            clearValidationLock(eval);
+            if (eval.getStatus() == StatusEvaluation.EN_VALIDATION) {
+                eval.setStatus(StatusEvaluation.SOUMISE);
+            }
+            evaluationRepository.save(eval);
+        }
     }
     
     public List<EvaluationResponse> getEvaluationsByOrganisme(UUID organismeId) {
@@ -354,6 +375,8 @@ public class EvaluationService {
     }
 
     private void claimValidationForAdmin(Evaluation eval, User admin) {
+        releaseExpiredValidationLock(eval);
+
         if (eval.getStatus() != StatusEvaluation.SOUMISE && eval.getStatus() != StatusEvaluation.EN_VALIDATION) {
             throw new RuntimeException("Only submitted evaluations can be examined");
         }
@@ -370,6 +393,7 @@ public class EvaluationService {
             throw new ResourceLockedException("Cette validation est deja ouverte par " + openedBy.getFullName());
         }
 
+        eval.setValidationOpenedAt(LocalDateTime.now());
         if (eval.getStatus() == StatusEvaluation.SOUMISE) {
             eval.setStatus(StatusEvaluation.EN_VALIDATION);
         }
@@ -382,6 +406,22 @@ public class EvaluationService {
     private void clearValidationLock(Evaluation eval) {
         eval.setValidationOpenedBy(null);
         eval.setValidationOpenedAt(null);
+    }
+
+    private void releaseExpiredValidationLock(Evaluation eval) {
+        if (eval.getValidationOpenedBy() == null || eval.getValidationOpenedAt() == null) {
+            return;
+        }
+
+        LocalDateTime expiresAt = eval.getValidationOpenedAt().plusMinutes(VALIDATION_LOCK_TIMEOUT_MINUTES);
+        if (expiresAt.isAfter(LocalDateTime.now())) {
+            return;
+        }
+
+        clearValidationLock(eval);
+        if (eval.getStatus() == StatusEvaluation.EN_VALIDATION) {
+            eval.setStatus(StatusEvaluation.SOUMISE);
+        }
     }
 
     private void initializeCriteres(Principe principe) {

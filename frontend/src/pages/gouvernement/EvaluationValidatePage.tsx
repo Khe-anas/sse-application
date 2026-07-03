@@ -58,6 +58,23 @@ export default function EvaluationValidatePage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  useEffect(() => {
+    if (!id) return undefined;
+
+    const keepLockAlive = () => {
+      if (!document.hidden) {
+        void evaluationService.claimValidation(id).catch(() => undefined);
+      }
+    };
+
+    const interval = window.setInterval(keepLockAlive, 60000);
+
+    return () => {
+      window.clearInterval(interval);
+      void evaluationService.releaseValidation(id).catch(() => undefined);
+    };
+  }, [id]);
+
   const updateReponseInState = (updatedReponse: Reponse) => {
     setReponses((current) => ({
       ...current,

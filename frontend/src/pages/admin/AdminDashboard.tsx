@@ -1,5 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import {
   Building2,
   Users,
@@ -10,17 +23,15 @@ import {
 import { dashboardService } from '@/services/dashboardService';
 import type { DashboardKPIs } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
+import { formatTodayLong } from '@/utils/date';
 
 export default function AdminDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadKPIs();
-  }, []);
-
-  const loadKPIs = async () => {
+  const loadKPIs = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     try {
       const data = await dashboardService.getKPIs();
       setKpis(data);
@@ -29,6 +40,51 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadKPIs();
+  }, [loadKPIs]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (!document.hidden) {
+        void loadKPIs(false);
+      }
+    };
+
+    const interval = window.setInterval(refresh, 10000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [loadKPIs]);
+
+  const typeData = useMemo(() => (
+    kpis?.organismesByType?.map((item) => ({
+      ...item,
+      name: t(`organisme.type.${item.key}`),
+    })).filter((item) => item.count > 0) || []
+  ), [kpis, t]);
+
+  const statusData = useMemo(() => (
+    kpis?.evaluationsByStatus?.map((item) => ({
+      ...item,
+      name: t(`evaluation.status.${item.key}`),
+    })) || []
+  ), [kpis, t]);
+
+  const typeColors = ['#2563eb', '#16a34a', '#f59e0b'];
+  const statusColors: Record<string, string> = {
+    EN_COURS: '#f59e0b',
+    SOUMISE: '#2563eb',
+    EN_VALIDATION: '#7c3aed',
+    VALIDEE: '#16a34a',
+    REJETEE: '#dc2626',
   };
 
   if (isLoading) {
@@ -44,7 +100,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('navigation.dashboard')}</h1>
         <span className="text-sm text-gray-500">
-          {new Date().toLocaleDateString(document.documentElement.lang === 'ar' ? 'ar-TN' : document.documentElement.lang === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {formatTodayLong(i18n.resolvedLanguage || i18n.language)}
         </span>
       </div>
 
@@ -88,21 +144,65 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Charts placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('charts.byType')}</h3>
-          <div className="h-64 flex items-center justify-center text-gray-400">
-            {t('charts.piePlaceholder')}
-          </div>
+          {typeData.length === 0 ? (
+            <ChartEmpty label={t('common.noData')} />
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={typeData}
+                    dataKey="count"
+                    nameKey="name"
+                    innerRadius={52}
+                    outerRadius={86}
+                    paddingAngle={3}
+                  >
+                    {typeData.map((entry, index) => (
+                      <Cell key={entry.key} fill={typeColors[index % typeColors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('charts.byStatus')}</h3>
-          <div className="h-64 flex items-center justify-center text-gray-400">
-            {t('charts.barPlaceholder')}
-          </div>
+          {statusData.every((item) => item.count === 0) ? (
+            <ChartEmpty label={t('common.noData')} />
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={statusData} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" angle={-20} textAnchor="end" height={60} tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {statusData.map((entry) => (
+                      <Cell key={entry.key} fill={statusColors[entry.key] || '#64748b'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ChartEmpty({ label }: { label: string }) {
+  return (
+    <div className="flex h-64 items-center justify-center text-sm text-gray-400">
+      {label}
     </div>
   );
 }

@@ -137,7 +137,7 @@ export default function ResponsableDashboard() {
                     {t('responsable.fill')}
                   </button>
                 )}
-                {ev.status !== StatusEvaluation.EN_COURS && (
+                {ev.status === StatusEvaluation.VALIDEE && (
                   <div className="flex flex-wrap items-center gap-2">
                     <button onClick={() => navigate(`/evaluations/${ev.id}/view`)} className="btn-outline btn-sm gap-2">
                       <Eye className="h-4 w-4" /> {t('common.details')}

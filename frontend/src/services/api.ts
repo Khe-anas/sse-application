@@ -25,10 +25,12 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 20000,
 });
 
 const refreshApi = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },

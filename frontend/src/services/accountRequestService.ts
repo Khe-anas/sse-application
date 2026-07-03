@@ -17,7 +17,8 @@ export interface AccountRequestSubmitForm {
 export interface ApproveAccountRequestResponse {
   request: AccountRequest;
   user: User;
-  temporaryPassword: string;
+  emailJobId?: string;
+  activationExpiresAt?: string;
 }
 
 export const accountRequestService = {
@@ -61,7 +62,7 @@ export const accountRequestService = {
 
   approve: async (
     id: string,
-    data: { password?: string; adminComment?: string }
+    data: { adminComment?: string }
   ): Promise<ApproveAccountRequestResponse> => {
     const response = await api.put<ApproveAccountRequestResponse>(`/admin/account-requests/${id}/approve`, data);
     return response.data;

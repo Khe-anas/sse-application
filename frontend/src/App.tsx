@@ -11,6 +11,7 @@ import AppLayout from '@/components/layout/AppLayout';
 // Auth
 import LoginPage from '@/pages/auth/LoginPage';
 import AccountRequestPage from '@/pages/auth/AccountRequestPage';
+import ActivateAccountPage from '@/pages/auth/ActivateAccountPage';
 import EvaluationReadOnlyPage from '@/pages/common/EvaluationReadOnlyPage';
 import SettingsPage from '@/pages/common/SettingsPage';
 
@@ -23,6 +24,7 @@ import EvaluationsPage from '@/pages/admin/EvaluationsPage';
 import PrincipesPage from '@/pages/admin/PrincipesPage';
 import NotificationsPage from '@/pages/admin/NotificationsPage';
 import ReclamationsPage from '@/pages/admin/ReclamationsPage';
+import EmailJobsPage from '@/pages/admin/EmailJobsPage';
 
 // Responsable pages
 import ResponsableDashboard from '@/pages/responsable/ResponsableDashboard';
@@ -63,6 +65,7 @@ function App() {
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
       <Route path="/request-account" element={!isAuthenticated ? <AccountRequestPage /> : <Navigate to="/" />} />
+      <Route path="/activate-account" element={!isAuthenticated ? <ActivateAccountPage /> : <Navigate to="/" />} />
       
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
@@ -77,6 +80,7 @@ function App() {
             <Route path="/admin/principes" element={<PrincipesPage />} />
             <Route path="/admin/notifications" element={<NotificationsPage />} />
             <Route path="/admin/reclamations" element={<ReclamationsPage />} />
+            <Route path="/admin/email-jobs" element={<EmailJobsPage />} />
           </Route>
 
           <Route path="/evaluations/:id/view" element={<EvaluationReadOnlyPage />} />

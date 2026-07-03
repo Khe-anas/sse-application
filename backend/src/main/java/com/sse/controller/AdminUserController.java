@@ -71,8 +71,7 @@ public class AdminUserController {
     }
     
     @PutMapping("/{id}/reset-password")
-    public ResponseEntity<String> resetPassword(@PathVariable UUID id) {
-        String newPassword = userService.resetPassword(id);
-        return ResponseEntity.ok(newPassword);
+    public ResponseEntity<UserCreationResult> resetPassword(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.resetPassword(id));
     }
 }

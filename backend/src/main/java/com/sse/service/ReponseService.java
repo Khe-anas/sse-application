@@ -26,6 +26,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ReponseService {
+
+    private static final long VALIDATION_LOCK_TIMEOUT_MINUTES = 10;
     
     private final ReponseRepository reponseRepository;
     private final EvaluationRepository evaluationRepository;
@@ -220,6 +222,8 @@ public class ReponseService {
     }
 
     private void ensureValidationOwner(Evaluation evaluation) {
+        releaseExpiredValidationLock(evaluation);
+
         if (evaluation.getStatus() != StatusEvaluation.SOUMISE && evaluation.getStatus() != StatusEvaluation.EN_VALIDATION) {
             throw new RuntimeException("Evaluation must be SOUMISE or EN_VALIDATION to review responses");
         }
@@ -238,10 +242,33 @@ public class ReponseService {
         if (!openedBy.getId().equals(admin.getId())) {
             throw new ResourceLockedException("Cette validation est deja ouverte par " + openedBy.getFullName());
         }
+
+        evaluation.setValidationOpenedAt(LocalDateTime.now());
+        if (evaluation.getStatus() == StatusEvaluation.SOUMISE) {
+            evaluation.setStatus(StatusEvaluation.EN_VALIDATION);
+        }
+        evaluationRepository.save(evaluation);
     }
 
     private void clearValidationLock(Evaluation evaluation) {
         evaluation.setValidationOpenedBy(null);
         evaluation.setValidationOpenedAt(null);
+    }
+
+    private void releaseExpiredValidationLock(Evaluation evaluation) {
+        if (evaluation.getValidationOpenedBy() == null || evaluation.getValidationOpenedAt() == null) {
+            return;
+        }
+
+        LocalDateTime expiresAt = evaluation.getValidationOpenedAt().plusMinutes(VALIDATION_LOCK_TIMEOUT_MINUTES);
+        if (expiresAt.isAfter(LocalDateTime.now())) {
+            return;
+        }
+
+        clearValidationLock(evaluation);
+        if (evaluation.getStatus() == StatusEvaluation.EN_VALIDATION) {
+            evaluation.setStatus(StatusEvaluation.SOUMISE);
+        }
+        evaluationRepository.save(evaluation);
     }
 }

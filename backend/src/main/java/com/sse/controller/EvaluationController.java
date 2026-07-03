@@ -81,6 +81,13 @@ public class EvaluationController {
     public ResponseEntity<EvaluationResponse> claimValidation(@PathVariable UUID id) {
         return ResponseEntity.ok(evaluationService.claimValidation(id));
     }
+
+    @PutMapping("/{id}/release-validation")
+    @PreAuthorize("@accessControl.isAdmin()")
+    public ResponseEntity<Void> releaseValidation(@PathVariable UUID id) {
+        evaluationService.releaseValidation(id);
+        return ResponseEntity.ok().build();
+    }
     
     @PutMapping("/{id}/validate")
     @PreAuthorize("@accessControl.isAdmin()")

@@ -66,6 +66,22 @@ export enum ReclamationStatus {
   RESOLVED = 'RESOLVED',
 }
 
+export enum UserStatus {
+  PENDING_ACTIVATION = 'PENDING_ACTIVATION',
+  ACTIVE = 'ACTIVE',
+  DISABLED = 'DISABLED',
+}
+
+export enum EmailJobStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  FAILED = 'FAILED',
+}
+
+export enum EmailJobType {
+  ACCOUNT_ACTIVATION = 'ACCOUNT_ACTIVATION',
+}
+
 // ==================== ENTITY TYPES ====================
 export interface User {
   id: string;
@@ -76,6 +92,7 @@ export interface User {
   role: Role;
   phone?: string;
   isActive: boolean;
+  status?: UserStatus;
   createdAt: string;
   lastLoginAt?: string;
   organismeId?: string;
@@ -253,6 +270,23 @@ export interface Reclamation {
   updatedAt: string;
 }
 
+export interface EmailJob {
+  id: string;
+  type: EmailJobType;
+  status: EmailJobStatus;
+  userId?: string;
+  userName?: string;
+  toEmail: string;
+  subject: string;
+  attempts: number;
+  maxAttempts: number;
+  lastError?: string;
+  nextAttemptAt?: string;
+  sentAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // ==================== DTO TYPES ====================
 export interface LoginRequest {
   email: string;
@@ -285,6 +319,13 @@ export interface DashboardKPIs {
   evaluationsSoumises: number;
   averageScore?: number;
   pendingValidations: number;
+  organismesByType: DashboardDistributionItem[];
+  evaluationsByStatus: DashboardDistributionItem[];
+}
+
+export interface DashboardDistributionItem {
+  key: string;
+  count: number;
 }
 
 export interface RankingItem {

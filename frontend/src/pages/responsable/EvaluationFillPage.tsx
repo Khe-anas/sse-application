@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ChevronLeft, Save, Send, Upload, Link, FileText, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, Send, Upload, Link, FileText, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { evaluationService, reponseService } from '@/services/evaluationService';
 import { fileService } from '@/services/fileService';
@@ -29,6 +29,7 @@ export default function EvaluationFillPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [touchedCorrectionIds, setTouchedCorrectionIds] = useState<Set<string>>(new Set());
+  const commentSaveTimers = useRef<Record<string, number>>({});
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -50,6 +51,12 @@ export default function EvaluationFillPage() {
   }, [id, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(commentSaveTimers.current).forEach(window.clearTimeout);
+    };
+  }, []);
 
   const canEditReponse = (reponse: Reponse | undefined) =>
     evaluation?.status === StatusEvaluation.EN_COURS
@@ -80,24 +87,65 @@ export default function EvaluationFillPage() {
   const isReponseComplete = (reponse: Reponse | undefined) =>
     !!reponse && reponse.niveau != null && isCorrectionAddressed(reponse);
 
+  const saveReponseDraft = async (reponse: Reponse) => {
+    if (!id) return;
+
+    try {
+      const updatedReponses = await reponseService.saveBatch(id, [{
+        critereId: reponse.critereId,
+        niveau: reponse.niveau,
+        commentaire: reponse.commentaire,
+        preuveLinks: reponse.preuveLinks,
+        correctionAddressed: Boolean(reponse.correctionAddressed) || touchedCorrectionIds.has(reponse.critereId),
+      }]);
+      const updated = updatedReponses.find((item) => item.critereId === reponse.critereId);
+      if (updated) {
+        setReponses(prev => ({ ...prev, [updated.critereId]: updated }));
+      }
+    } catch (error) {
+      toast.error(t('evaluationFill.saveError'));
+    }
+  };
+
+  const scheduleReponseDraftSave = (reponse: Reponse) => {
+    window.clearTimeout(commentSaveTimers.current[reponse.critereId]);
+    commentSaveTimers.current[reponse.critereId] = window.setTimeout(() => {
+      void saveReponseDraft(reponse);
+    }, 600);
+  };
+
   const handleNiveauChange = (critereId: string, niveau: Niveau) => {
     if (!canEditCritere(critereId)) return;
 
+    const existing = reponses[critereId];
+    const updated = {
+      ...existing,
+      critereId,
+      niveau,
+      status: existing?.status || StatusReponse.BROUILLON,
+      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
+    } as Reponse;
+
     markCorrectionAddressed(critereId);
-    setReponses(prev => {
-      const existing = prev[critereId];
-      return { ...prev, [critereId]: { ...existing, critereId, niveau, status: existing?.status || StatusReponse.BROUILLON } as Reponse };
-    });
+    setReponses(prev => ({ ...prev, [critereId]: updated }));
+    void saveReponseDraft(updated);
   };
 
   const handleCommentChange = (critereId: string, commentaire: string) => {
     if (!canEditCritere(critereId)) return;
 
+    const existing = reponses[critereId];
+    const updated = {
+      ...existing,
+      critereId,
+      commentaire,
+      status: existing?.status || StatusReponse.BROUILLON,
+      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
+    } as Reponse;
+
     markCorrectionAddressed(critereId);
-    setReponses(prev => {
-      const existing = prev[critereId];
-      return { ...prev, [critereId]: { ...existing, critereId, commentaire } as Reponse };
-    });
+    setReponses(prev => ({ ...prev, [critereId]: updated }));
+    scheduleReponseDraftSave(updated);
   };
 
   const handleAddLink = (critereId: string) => {
@@ -107,38 +155,35 @@ export default function EvaluationFillPage() {
     const trimmedUrl = url?.trim();
     if (!trimmedUrl) return;
 
+    const existing = reponses[critereId];
+    const preuveLinks = existing?.preuveLinks || [];
+    const updated = {
+      ...existing,
+      critereId,
+      preuveLinks: [...preuveLinks, trimmedUrl],
+      status: existing?.status || StatusReponse.BROUILLON,
+      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
+    } as Reponse;
+
     markCorrectionAddressed(critereId);
-    setReponses(prev => {
-      const existing = prev[critereId];
-      const preuveLinks = existing?.preuveLinks || [];
-      return {
-        ...prev,
-        [critereId]: {
-          ...existing,
-          critereId,
-          preuveLinks: [...preuveLinks, trimmedUrl],
-          status: existing?.status || StatusReponse.BROUILLON,
-        } as Reponse,
-      };
-    });
+    setReponses(prev => ({ ...prev, [critereId]: updated }));
+    void saveReponseDraft(updated);
   };
 
   const handleRemoveLink = (critereId: string, linkToRemove: string) => {
     if (!canEditCritere(critereId)) return;
 
-    markCorrectionAddressed(critereId);
-    setReponses(prev => {
-      const existing = prev[critereId];
-      if (!existing) return prev;
+    const existing = reponses[critereId];
+    if (!existing) return;
+    const updated = {
+      ...existing,
+      preuveLinks: (existing.preuveLinks || []).filter(link => link !== linkToRemove),
+      correctionAddressed: existing.status === StatusReponse.A_CORRIGER ? true : existing.correctionAddressed,
+    } as Reponse;
 
-      return {
-        ...prev,
-        [critereId]: {
-          ...existing,
-          preuveLinks: (existing.preuveLinks || []).filter(link => link !== linkToRemove),
-        },
-      };
-    });
+    markCorrectionAddressed(critereId);
+    setReponses(prev => ({ ...prev, [critereId]: updated }));
+    void saveReponseDraft(updated);
   };
 
   const handleFileUpload = async (critereId: string, files?: FileList | File[]) => {
@@ -234,22 +279,6 @@ export default function EvaluationFillPage() {
     setTouchedCorrectionIds(new Set());
   };
 
-  const handleSave = async () => {
-    if (!id) return;
-
-    if (buildEditableReponsesPayload().length === 0) {
-      toast.error(t('evaluationFill.noEditableResponses'));
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await saveEditableReponses();
-      toast.success(t('evaluationFill.saved'));
-    } catch (error) { toast.error(t('evaluationFill.saveError')); }
-    finally { setIsSaving(false); }
-  };
-
   const handleSubmit = async () => {
     if (!id) return;
 
@@ -303,9 +332,6 @@ export default function EvaluationFillPage() {
             <div className="w-32 h-2 bg-gray-300 rounded-full"><div className="h-full bg-primary-600 rounded-full transition-all" style={{ width: `${getProgress()}%` }} /></div>
             <span className="text-sm font-medium">{getProgress()}%</span>
           </div>
-          <button onClick={handleSave} disabled={isSaving} className="btn-outline gap-2">
-            <Save className="w-4 h-4" /> {isSaving ? t('evaluationFill.saving') : t('evaluationFill.save')}
-          </button>
           <button onClick={handleSubmit} disabled={isSaving || evaluation.status !== StatusEvaluation.EN_COURS} className="btn-success gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <Send className="w-4 h-4" /> {t('evaluationFill.submit')}
           </button>
