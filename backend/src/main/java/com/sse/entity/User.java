@@ -49,7 +49,7 @@ public class User {
     @Column(length = 32)
     private UserStatus status = UserStatus.ACTIVE;
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "integer default 0 not null")
     private Integer tokenVersion = 0;
     
     @CreationTimestamp
