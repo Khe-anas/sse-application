@@ -14,6 +14,7 @@ import {
   MessageSquareWarning,
   Settings,
   Mail,
+  History,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { label: 'navigation.reclamations', icon: MessageSquareWarning, path: '/admin/reclamations', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
   { label: 'navigation.emailJobs', icon: Mail, path: '/admin/email-jobs', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
   { label: 'navigation.notifications', icon: Bell, path: '/admin/notifications', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
+  { label: 'navigation.auditLogs', icon: History, path: '/admin/audit-logs', roles: [Role.ADMIN, Role.SUPER_ADMIN] },
   
   { label: 'navigation.myEvaluations', icon: ClipboardList, path: '/responsable/dashboard', roles: [Role.RESPONSABLE] },
   { label: 'navigation.principes', icon: BookOpen, path: '/responsable/principes', roles: [Role.RESPONSABLE] },

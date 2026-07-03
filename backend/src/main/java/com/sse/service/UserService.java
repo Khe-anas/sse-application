@@ -30,6 +30,7 @@ public class UserService {
     private final AuthService authService;
     private final AccountActivationService accountActivationService;
     private final CurrentUserService currentUserService;
+    private final AuditLogService auditLogService;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -72,6 +73,7 @@ public class UserService {
         
         User saved = userRepository.save(user);
         log.info("User created: {} with role {}", saved.getEmail(), saved.getRole());
+        auditLogService.log("CREATE", "USER", "Created user " + saved.getEmail() + " with role " + saved.getRole());
 
         AccountActivationService.QueuedActivation queuedActivation = hasPassword
             ? null
@@ -153,7 +155,9 @@ public class UserService {
             throw new RuntimeException("A responsable d'entreprise must be assigned to an organisme");
         }
         
-        return authService.mapToUserResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        auditLogService.log("UPDATE", "USER", "Updated user " + saved.getEmail());
+        return authService.mapToUserResponse(saved);
     }
     
     @Transactional
@@ -166,6 +170,7 @@ public class UserService {
         user.setIsActive(false);
         user.setStatus(UserStatus.DISABLED);
         userRepository.save(user);
+        auditLogService.log("DELETE", "USER", "Deleted (disabled) user " + user.getEmail());
     }
     
     @Transactional
@@ -177,6 +182,7 @@ public class UserService {
         user.setIsActive(false);
         user.setStatus(UserStatus.PENDING_ACTIVATION);
         User saved = userRepository.save(user);
+        auditLogService.log("RESET_PASSWORD", "USER", "Password reset for user " + saved.getEmail());
         AccountActivationService.QueuedActivation queuedActivation = accountActivationService.queueActivationEmail(saved);
 
         return new UserCreationResult(

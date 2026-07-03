@@ -23,6 +23,7 @@ import OrganismesPage from '@/pages/admin/OrganismesPage';
 import EvaluationsPage from '@/pages/admin/EvaluationsPage';
 import PrincipesPage from '@/pages/admin/PrincipesPage';
 import NotificationsPage from '@/pages/admin/NotificationsPage';
+import AuditLogsPage from '@/pages/admin/AuditLogsPage';
 import ReclamationsPage from '@/pages/admin/ReclamationsPage';
 import EmailJobsPage from '@/pages/admin/EmailJobsPage';
 
@@ -81,6 +82,7 @@ function App() {
             <Route path="/admin/notifications" element={<NotificationsPage />} />
             <Route path="/admin/reclamations" element={<ReclamationsPage />} />
             <Route path="/admin/email-jobs" element={<EmailJobsPage />} />
+            <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           </Route>
 
           <Route path="/evaluations/:id/view" element={<EvaluationReadOnlyPage />} />

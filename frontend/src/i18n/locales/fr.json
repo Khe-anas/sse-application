@@ -84,6 +84,35 @@
     "profile": "Profil",
     "auditLogs": "Journaux d'audit"
   },
+  "auditLogs": {
+    "total": "Nombre d'événements",
+    "actionLabel": "Action",
+    "entityLabel": "Entité",
+    "details": "Détails",
+    "searchByEmail": "Rechercher par email...",
+    "loadError": "Erreur lors du chargement des journaux",
+    "empty": "Aucun journal d'audit trouvé",
+    "actionValues": {
+      "CREATE": "Création",
+      "UPDATE": "Modification",
+      "DELETE": "Suppression",
+      "APPROVE": "Approbation",
+      "REJECT": "Rejet",
+      "SUBMIT": "Soumission",
+      "VALIDATE": "Validation",
+      "SEND": "Envoi",
+      "RESET_PASSWORD": "Réinitialisation mot de passe",
+      "RESOLVE": "Résolution"
+    },
+    "entityValues": {
+      "USER": "Utilisateur",
+      "EVALUATION": "Évaluation",
+      "ACCOUNT_REQUEST": "Demande de compte",
+      "RECLAMATION": "Réclamation",
+      "MESSAGE": "Message",
+      "ANNOUNCEMENT": "Annonce"
+    }
+  },
   "evaluation": {
     "title": "Évaluation",
     "newEvaluation": "Nouvelle évaluation",

@@ -28,6 +28,7 @@ public class ReclamationService {
     private final ReclamationRepository reclamationRepository;
     private final CurrentUserService currentUserService;
     private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public ReclamationResponse submit(SubmitReclamationRequest request) {
@@ -46,6 +47,7 @@ public class ReclamationService {
 
         Reclamation saved = reclamationRepository.save(reclamation);
         notificationService.sendReclamationSubmitted(saved.getId(), organisme.getName(), saved.getSubject());
+        auditLogService.log("SUBMIT", "RECLAMATION", "Reclamation submitted: " + saved.getSubject());
         return mapToResponse(saved, true);
     }
 
@@ -109,7 +111,9 @@ public class ReclamationService {
         reclamation.setResolvedAt(LocalDateTime.now());
         reclamation.setAdminResponse(normalizeNullable(request.getAdminResponse()));
 
-        return mapToResponse(reclamationRepository.save(reclamation), true);
+        Reclamation saved = reclamationRepository.save(reclamation);
+        auditLogService.log("RESOLVE", "RECLAMATION", "Reclamation " + id + " resolved");
+        return mapToResponse(saved, true);
     }
 
     private Reclamation findById(UUID id) {

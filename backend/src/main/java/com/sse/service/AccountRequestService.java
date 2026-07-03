@@ -46,6 +46,7 @@ public class AccountRequestService {
     private final NotificationService notificationService;
     private final AccountRequestEmailService accountRequestEmailService;
     private final CurrentUserService currentUserService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public AccountRequestResponse submit(AccountRequestSubmitRequest request) {
@@ -138,6 +139,7 @@ public class AccountRequestService {
         accountRequest.setCreatedUser(createdUser);
 
         AccountRequest saved = accountRequestRepository.save(accountRequest);
+        auditLogService.log("APPROVE", "ACCOUNT_REQUEST", "Approved account request for " + accountRequest.getCompanyEmail());
         return new ApproveAccountRequestResponse(
             mapToResponse(saved),
             userResponse,
@@ -161,6 +163,7 @@ public class AccountRequestService {
         accountRequest.setProcessedAt(LocalDateTime.now());
         AccountRequest saved = accountRequestRepository.save(accountRequest);
         accountRequestEmailService.sendRejected(saved, saved.getAdminComment());
+        auditLogService.log("REJECT", "ACCOUNT_REQUEST", "Rejected account request for " + accountRequest.getCompanyEmail());
         return mapToResponse(saved);
     }
 

@@ -84,6 +84,35 @@
     "profile": "Profile",
     "auditLogs": "Audit Logs"
   },
+  "auditLogs": {
+    "total": "Total events",
+    "actionLabel": "Action",
+    "entityLabel": "Entity",
+    "details": "Details",
+    "searchByEmail": "Search by email...",
+    "loadError": "Error loading audit logs",
+    "empty": "No audit logs found",
+    "actionValues": {
+      "CREATE": "Create",
+      "UPDATE": "Update",
+      "DELETE": "Delete",
+      "APPROVE": "Approve",
+      "REJECT": "Reject",
+      "SUBMIT": "Submit",
+      "VALIDATE": "Validate",
+      "SEND": "Send",
+      "RESET_PASSWORD": "Reset Password",
+      "RESOLVE": "Resolve"
+    },
+    "entityValues": {
+      "USER": "User",
+      "EVALUATION": "Evaluation",
+      "ACCOUNT_REQUEST": "Account Request",
+      "RECLAMATION": "Complaint",
+      "MESSAGE": "Message",
+      "ANNOUNCEMENT": "Announcement"
+    }
+  },
   "evaluation": {
     "title": "Evaluation",
     "newEvaluation": "New Evaluation",

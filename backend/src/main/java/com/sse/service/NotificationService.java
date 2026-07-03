@@ -39,6 +39,7 @@ public class NotificationService {
     private final EvaluationRepository evaluationRepository;
     private final ReponseRepository reponseRepository;
     private final NotificationStreamService notificationStreamService;
+    private final AuditLogService auditLogService;
     
     @Transactional
     public void sendEvaluationAssigned(UUID userId, String organismeName, Integer year) {
@@ -146,7 +147,9 @@ public class NotificationService {
         }
 
         List<User> recipients = userRepository.findAllById(request.getRecipientUserIds());
-        return sendToUsers(recipients, TypeNotification.ADMIN_MESSAGE, request);
+        int sent = sendToUsers(recipients, TypeNotification.ADMIN_MESSAGE, request);
+        auditLogService.log("SEND", "MESSAGE", "Admin sent message to " + request.getRecipientUserIds().size() + " recipient(s)");
+        return sent;
     }
 
     @Transactional
@@ -155,7 +158,10 @@ public class NotificationService {
             ? userRepository.findByIsActiveTrue()
             : userRepository.findByRoleInAndIsActiveTrue(request.getRoles());
 
-        return sendToUsers(recipients, TypeNotification.ANNOUNCEMENT, request);
+        int sent = sendToUsers(recipients, TypeNotification.ANNOUNCEMENT, request);
+        String targetDesc = request.getRoles() != null ? request.getRoles().toString() : "ALL_ACTIVE";
+        auditLogService.log("SEND", "ANNOUNCEMENT", "Admin sent announcement to " + targetDesc + " (" + sent + " users)");
+        return sent;
     }
 
     @Transactional

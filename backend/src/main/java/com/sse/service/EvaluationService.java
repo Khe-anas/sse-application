@@ -36,6 +36,7 @@ public class EvaluationService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final CurrentUserService currentUserService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void ensureReponsesForExistingEvaluations() {
@@ -106,6 +107,7 @@ public class EvaluationService {
         }
         
         log.info("Created evaluation {} for organisme {}", saved.getId(), organisme.getName());
+        auditLogService.log("CREATE", "EVALUATION", "Created evaluation for " + organisme.getName() + " year " + request.getYear(), null, saved);
         
         // Notify responsable
         List<User> responsables = organisme.getUsers().stream()
@@ -200,6 +202,7 @@ public class EvaluationService {
         
         Evaluation saved = evaluationRepository.save(eval);
         log.info("Evaluation {} submitted", id);
+        auditLogService.log("SUBMIT", "EVALUATION", "Evaluation " + id + " submitted for " + eval.getOrganisme().getName(), null, saved);
         
         List<User> admins = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN));
         for (User admin : admins) {
@@ -255,6 +258,7 @@ public class EvaluationService {
         globalScoreRepository.save(gs);
         
         log.info("Evaluation {} validated with score {} and level {}", id, globalScore, level);
+        auditLogService.log("VALIDATE", "EVALUATION", "Evaluation " + id + " validated with score " + globalScore, null, saved);
         
         // Notify responsable
         List<User> responsables = eval.getOrganisme().getUsers().stream()
@@ -280,9 +284,10 @@ public class EvaluationService {
         
         eval.setStatus(StatusEvaluation.REJETEE);
         clearValidationLock(eval);
-        evaluationRepository.save(eval);
+        Evaluation saved = evaluationRepository.save(eval);
         
         log.info("Evaluation {} rejected: {}", id, reason);
+        auditLogService.log("REJECT", "EVALUATION", "Evaluation " + id + " rejected: " + reason, null, saved);
 
         List<User> responsables = eval.getOrganisme().getUsers().stream()
             .filter(u -> u.getRole() == Role.RESPONSABLE && u.getIsActive())

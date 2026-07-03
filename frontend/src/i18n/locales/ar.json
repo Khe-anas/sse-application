@@ -84,6 +84,35 @@
     "profile": "الملف الشخصي",
     "auditLogs": "سجلات التدقيق"
   },
+  "auditLogs": {
+    "total": "إجمالي الأحداث",
+    "actionLabel": "الإجراء",
+    "entityLabel": "الكيان",
+    "details": "التفاصيل",
+    "searchByEmail": "ابحث بالبريد الإلكتروني...",
+    "loadError": "خطأ في تحميل سجلات التدقيق",
+    "empty": "لا توجد سجلات تدقيق",
+    "actionValues": {
+      "CREATE": "إنشاء",
+      "UPDATE": "تحديث",
+      "DELETE": "حذف",
+      "APPROVE": "موافقة",
+      "REJECT": "رفض",
+      "SUBMIT": "تقديم",
+      "VALIDATE": "اعتماد",
+      "SEND": "إرسال",
+      "RESET_PASSWORD": "إعادة تعيين كلمة المرور",
+      "RESOLVE": "حل"
+    },
+    "entityValues": {
+      "USER": "مستخدم",
+      "EVALUATION": "تقييم",
+      "ACCOUNT_REQUEST": "طلب حساب",
+      "RECLAMATION": "شكوى",
+      "MESSAGE": "رسالة",
+      "ANNOUNCEMENT": "إعلان"
+    }
+  },
   "evaluation": {
     "title": "تقييم",
     "newEvaluation": "تقييم جديد",

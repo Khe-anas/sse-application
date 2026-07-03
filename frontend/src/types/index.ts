@@ -288,6 +288,20 @@ export interface EmailJob {
   updatedAt?: string;
 }
 
+export interface AuditLog {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userFullName: string;
+  evaluationId?: string;
+  action: string;
+  entity: string;
+  oldValue?: string;
+  newValue?: string;
+  ipAddress?: string;
+  createdAt: string;
+}
+
 // ==================== DTO TYPES ====================
 export interface LoginRequest {
   email: string;
