@@ -187,6 +187,10 @@
     "loadError": "خطأ أثناء تحميل المستخدمين",
     "operationError": "خطأ أثناء العملية",
     "deleteError": "خطأ أثناء الحذف",
+    "toggled": "تم تغيير حالة الحساب",
+    "toggleError": "خطأ أثناء تغيير حالة الحساب",
+    "disableConfirm": "هل تريد حقاً تعطيل هذا الحساب؟",
+    "enableConfirm": "هل تريد حقاً تفعيل هذا الحساب؟",
     "empty": "لا يوجد مستخدمون"
   },
   "accountRequests": {

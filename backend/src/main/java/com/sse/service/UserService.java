@@ -129,6 +129,10 @@ public class UserService {
             user.setIsActive(true);
         }
         if (request.getIsActive() != null) {
+            if (!request.getIsActive() && user.getRole() == Role.SUPER_ADMIN) {
+                log.warn("Attempt to disable SUPER_ADMIN account: {}", user.getEmail());
+                throw new RuntimeException("Cannot disable a SUPER_ADMIN account");
+            }
             user.setIsActive(request.getIsActive());
             if (!request.getIsActive()) {
                 user.setStatus(UserStatus.DISABLED);

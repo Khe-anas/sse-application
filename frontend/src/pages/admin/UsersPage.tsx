@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { userService, type CreateUserRequest } from '@/services/userService';
@@ -93,6 +93,22 @@ export default function UsersPage() {
       const message = axios.isAxiosError(error)
         ? error.response?.data?.message || error.response?.data?.error || t('users.operationError')
         : t('users.operationError');
+      toast.error(message);
+    }
+  };
+
+  const handleToggleActive = async (user: User) => {
+    const newActive = !user.isActive;
+    const msg = newActive ? t('users.enableConfirm') : t('users.disableConfirm');
+    if (!confirm(msg)) return;
+    try {
+      await userService.update(user.id, { isActive: newActive });
+      toast.success(t('users.toggled'));
+      loadUsers();
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || t('users.toggleError')
+        : t('users.toggleError');
       toast.error(message);
     }
   };
@@ -211,6 +227,19 @@ export default function UsersPage() {
                       <button onClick={() => openEditModal(user)} className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50">
                         <Pencil className="w-4 h-4" />
                       </button>
+                      {user.role !== Role.SUPER_ADMIN && (
+                        <button
+                          onClick={() => handleToggleActive(user)}
+                          className={`p-1.5 rounded-lg ${
+                            user.isActive
+                              ? 'text-amber-600 hover:bg-amber-50'
+                              : 'text-green-600 hover:bg-green-50'
+                          }`}
+                          title={user.isActive ? t('users.disableConfirm') : t('users.enableConfirm')}
+                        >
+                          {user.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                        </button>
+                      )}
                       <button onClick={() => handleDelete(user.id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50">
                         <Trash2 className="w-4 h-4" />
                       </button>

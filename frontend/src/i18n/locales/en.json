@@ -187,6 +187,10 @@
     "loadError": "Error loading users",
     "operationError": "Error during operation",
     "deleteError": "Error during deletion",
+    "toggled": "Account status updated",
+    "toggleError": "Error updating account status",
+    "disableConfirm": "Are you sure you want to disable this account?",
+    "enableConfirm": "Are you sure you want to enable this account?",
     "empty": "No users"
   },
   "accountRequests": {

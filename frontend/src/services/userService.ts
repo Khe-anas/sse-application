@@ -31,4 +31,5 @@ export interface CreateUserRequest {
   phone?: string;
   organismeId?: string;
   entrepriseName?: string;
+  isActive?: boolean;
 }

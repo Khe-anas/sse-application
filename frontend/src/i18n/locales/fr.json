@@ -187,6 +187,10 @@
     "loadError": "Erreur lors du chargement des utilisateurs",
     "operationError": "Erreur lors de l'opération",
     "deleteError": "Erreur lors de la suppression",
+    "toggled": "Statut du compte modifié",
+    "toggleError": "Erreur lors de la modification du statut",
+    "disableConfirm": "Voulez-vous vraiment désactiver ce compte ?",
+    "enableConfirm": "Voulez-vous vraiment activer ce compte ?",
     "empty": "Aucun utilisateur"
   },
   "accountRequests": {
