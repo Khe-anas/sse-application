@@ -4,11 +4,14 @@ import com.sse.repository.EvaluationRepository;
 import com.sse.repository.ReponseRepository;
 import com.sse.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +22,7 @@ public class AccessControlService {
     private final EvaluationRepository evaluationRepository;
     private final ReponseRepository reponseRepository;
     private final UserRepository userRepository;
+    private final RoleHierarchy roleHierarchy;
 
     public boolean canListOrganismes() {
         return hasRole("ADMIN") || hasRole("GOUVERNEMENT");
@@ -126,7 +130,9 @@ public class AccessControlService {
         }
 
         String authority = "ROLE_" + role;
-        return authentication.getAuthorities().stream()
+        Collection<? extends GrantedAuthority> reachable =
+            roleHierarchy.getReachableGrantedAuthorities(authentication.getAuthorities());
+        return reachable.stream()
             .anyMatch(grantedAuthority -> authority.equals(grantedAuthority.getAuthority()));
     }
 }
