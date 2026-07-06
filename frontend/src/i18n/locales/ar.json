@@ -93,7 +93,10 @@
     "details": "التفاصيل",
     "searchByEmail": "ابحث بالبريد الإلكتروني...",
     "loadError": "خطأ في تحميل سجلات التدقيق",
-    "empty": "لا توجد سجلات تدقيق",
+    "empty": "لم يتم العثور على سجلات تدقيق",
+    "exportPdf": "تنزيل PDF",
+    "exportSuccess": "تم تصدير سجلات التدقيق بنجاح",
+    "exportError": "خطأ في تصدير السجلات",
     "actionValues": {
       "CREATE": "إنشاء",
       "UPDATE": "تحديث",
@@ -222,7 +225,10 @@
     "toggleError": "خطأ أثناء تغيير حالة الحساب",
     "disableConfirm": "هل تريد حقاً تعطيل هذا الحساب؟",
     "enableConfirm": "هل تريد حقاً تفعيل هذا الحساب؟",
-    "empty": "لا يوجد مستخدمون"
+    "empty": "لا يوجد مستخدمون",
+    "generatePassword": "إنشاء كلمة مرور جديدة",
+    "generatePasswordConfirm": "إنشاء كلمة مرور جديدة وإرسالها عبر البريد الإلكتروني لهذا المستخدم؟",
+    "generatePasswordSuccess": "تم إنشاء كلمة المرور الجديدة وإرسالها عبر البريد الإلكتروني"
   },
   "accountRequests": {
     "title": "طلبات الحسابات",
@@ -516,17 +522,27 @@
   },
   "authPage": {
     "fillAllFields": "يرجى ملء جميع الحقول",
-    "loginSuccess": "نجح تسجيل الدخول",
+    "loginSuccess": "تم تسجيل الدخول بنجاح",
     "rememberMe": "تذكرني",
     "demoAccounts": "حسابات تجريبية",
     "demoAdmin": "مدير",
     "demoResp": "مسؤول مؤسسة",
     "demoGouv": "حكومة",
-    "representCompany": "هل تمثل مؤسسة؟",
+    "representCompany": "تمثل مؤسسة؟",
     "representCompanyDesc": "أرسل طلباً. سيتحقق المدير من المعلومات قبل إنشاء حسابك.",
     "requestAccountLink": "طلب حساب مسؤول",
     "footer": "© 2026 نظام المتابعة والتقييم - CNI",
     "loginInProgress": "جاري تسجيل الدخول..."
+  },
+  "forgotPassword": {
+    "title": "نسيت كلمة المرور",
+    "subtitle": "أدخل بريدك الإلكتروني. سيتم إخطار المدير ويمكنه إنشاء كلمة مرور جديدة لك.",
+    "sending": "جاري الإرسال...",
+    "submit": "إرسال الطلب",
+    "sentTitle": "تم إرسال الطلب",
+    "sentMessage": "تم إخطار المدير. ستتلقى بريداً إلكترونياً بكلمة مرور جديدة بمجرد إنشائها.",
+    "backToLogin": "العودة إلى تسجيل الدخول",
+    "error": "حدث خطأ. يرجى المحاولة مرة أخرى."
   },
   "requestAccount": {
     "asideTitle": "طلب الوصول للمؤسسة",

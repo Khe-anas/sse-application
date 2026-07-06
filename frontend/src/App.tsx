@@ -12,6 +12,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import LoginPage from '@/pages/auth/LoginPage';
 import AccountRequestPage from '@/pages/auth/AccountRequestPage';
 import ActivateAccountPage from '@/pages/auth/ActivateAccountPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
 import EvaluationReadOnlyPage from '@/pages/common/EvaluationReadOnlyPage';
 import SettingsPage from '@/pages/common/SettingsPage';
 
@@ -67,6 +68,7 @@ function App() {
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
       <Route path="/request-account" element={!isAuthenticated ? <AccountRequestPage /> : <Navigate to="/" />} />
       <Route path="/activate-account" element={!isAuthenticated ? <ActivateAccountPage /> : <Navigate to="/" />} />
+      <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to="/" />} />
       
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>

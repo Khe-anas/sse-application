@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { userService, type CreateUserRequest } from '@/services/userService';
@@ -122,6 +122,19 @@ export default function UsersPage() {
       loadUsers();
     } catch (error) {
       toast.error(t('users.deleteError'));
+    }
+  };
+
+  const handleGeneratePassword = async (id: string) => {
+    if (!confirm(t('users.generatePasswordConfirm'))) return;
+    try {
+      await userService.generatePassword(id);
+      toast.success(t('users.generatePasswordSuccess'));
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.response?.data?.error || t('users.operationError')
+        : t('users.operationError');
+      toast.error(message);
     }
   };
 
@@ -250,6 +263,15 @@ export default function UsersPage() {
                           title={user.isActive ? t('users.disableConfirm') : t('users.enableConfirm')}
                         >
                           {user.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                        </button>
+                      )}
+                      {user.role !== Role.SUPER_ADMIN && (
+                        <button
+                          onClick={() => handleGeneratePassword(user.id)}
+                          className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50"
+                          title={t('users.generatePassword')}
+                        >
+                          <KeyRound className="w-4 h-4" />
                         </button>
                       )}
                       <button onClick={() => handleDelete(user.id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50">

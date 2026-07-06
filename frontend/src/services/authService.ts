@@ -31,4 +31,8 @@ export const authService = {
     const response = await api.post<User>('/auth/activate', data);
     return response.data;
   },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    await api.post('/auth/forgot-password', { email });
+  },
 };

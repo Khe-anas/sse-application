@@ -20,6 +20,10 @@ export const userService = {
   delete: async (id: string): Promise<void> => {
     await api.delete(`/admin/users/${id}`);
   },
+
+  generatePassword: async (id: string): Promise<void> => {
+    await api.put(`/admin/users/${id}/generate-password`);
+  },
 };
 
 export interface CreateUserRequest {

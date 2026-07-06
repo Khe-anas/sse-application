@@ -1,11 +1,18 @@
 package com.sse.service;
 
 import com.sse.dto.*;
+import com.sse.entity.EmailJob;
+import com.sse.entity.Notification;
 import com.sse.entity.Organisme;
 import com.sse.entity.User;
+import com.sse.enums.EmailJobStatus;
+import com.sse.enums.EmailJobType;
 import com.sse.enums.Role;
+import com.sse.enums.TypeNotification;
 import com.sse.enums.UserStatus;
 import com.sse.enums.TypeOrganisme;
+import com.sse.repository.EmailJobRepository;
+import com.sse.repository.NotificationRepository;
 import com.sse.repository.OrganismeRepository;
 import com.sse.repository.UserRepository;
 import com.sse.security.CurrentUserService;
@@ -17,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -31,6 +40,8 @@ public class UserService {
     private final AccountActivationService accountActivationService;
     private final CurrentUserService currentUserService;
     private final AuditLogService auditLogService;
+    private final EmailJobRepository emailJobRepository;
+    private final NotificationRepository notificationRepository;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -190,6 +201,84 @@ public class UserService {
             queuedActivation.getEmailJobId(),
             queuedActivation.getExpiresAt()
         );
+    }
+
+    @Transactional
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+        if (user == null) {
+            log.info("Forgot password requested for non-existent email: {}", email);
+            return;
+        }
+
+        List<User> admins = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN, Role.SUPER_ADMIN));
+        for (User admin : admins) {
+            Notification notif = new Notification();
+            notif.setUser(admin);
+            notif.setType(TypeNotification.SYSTEM);
+            notif.setTitleFr("Demande de réinitialisation de mot de passe");
+            notif.setTitleAr("طلب إعادة تعيين كلمة المرور");
+            notif.setTitleEn("Password reset request");
+            notif.setMessageFr("L'utilisateur " + user.getEmail() + " (" + user.getFullName() + ") a demandé la réinitialisation de son mot de passe.");
+            notif.setMessageAr("طلب المستخدم " + user.getEmail() + " (" + user.getFullName() + ") إعادة تعيين كلمة المرور.");
+            notif.setMessageEn("User " + user.getEmail() + " (" + user.getFullName() + ") has requested a password reset.");
+            notif.setLink("/admin/users");
+            notif.setIsRead(false);
+            notificationRepository.save(notif);
+        }
+
+        log.info("Password reset notification sent to admins for user: {}", user.getEmail());
+    }
+
+    @Transactional
+    public void generatePassword(UUID id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String rawPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setStatus(UserStatus.ACTIVE);
+        user.setIsActive(true);
+        userRepository.save(user);
+
+        auditLogService.log("GENERATE_PASSWORD", "USER", "Generated new password for user " + user.getEmail());
+
+        String body = """
+            Bonjour %s,
+
+            Un nouveau mot de passe a été généré pour votre compte SSE par l'administration.
+
+            Identifiant : %s
+            Mot de passe : %s
+
+            Veuillez vous connecter et changer votre mot de passe dès que possible.
+
+            -----
+
+            Hello %s,
+
+            A new password has been generated for your SSE account by the administration.
+
+            Username: %s
+            Password: %s
+
+            Please log in and change your password as soon as possible.
+            """.formatted(user.getFullName(), user.getEmail(), rawPassword,
+                          user.getFullName(), user.getEmail(), rawPassword);
+
+        EmailJob job = new EmailJob();
+        job.setType(EmailJobType.PASSWORD_RESET);
+        job.setStatus(EmailJobStatus.PENDING);
+        job.setUser(user);
+        job.setToEmail(user.getEmail());
+        job.setSubject("Your new SSE password / Votre nouveau mot de passe SSE");
+        job.setBody(body);
+        job.setAttempts(0);
+        job.setMaxAttempts(5);
+        job.setNextAttemptAt(LocalDateTime.now());
+        emailJobRepository.save(job);
+
+        log.info("New password generated and email queued for user: {}", user.getEmail());
     }
 
     private Organisme resolveResponsableOrganisme(UUID organismeId, String entrepriseName) {

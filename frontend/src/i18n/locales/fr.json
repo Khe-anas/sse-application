@@ -94,6 +94,9 @@
     "searchByEmail": "Rechercher par email...",
     "loadError": "Erreur lors du chargement des journaux",
     "empty": "Aucun journal d'audit trouvé",
+    "exportPdf": "Télécharger PDF",
+    "exportSuccess": "Journaux d'audit exportés avec succès",
+    "exportError": "Erreur lors de l'exportation des journaux",
     "actionValues": {
       "CREATE": "Création",
       "UPDATE": "Modification",
@@ -222,7 +225,10 @@
     "toggleError": "Erreur lors de la modification du statut",
     "disableConfirm": "Voulez-vous vraiment désactiver ce compte ?",
     "enableConfirm": "Voulez-vous vraiment activer ce compte ?",
-    "empty": "Aucun utilisateur"
+    "empty": "Aucun utilisateur",
+    "generatePassword": "Générer un mot de passe",
+    "generatePasswordConfirm": "Générer un nouveau mot de passe et l'envoyer par email à cet utilisateur ?",
+    "generatePasswordSuccess": "Nouveau mot de passe généré et envoyé par email"
   },
   "accountRequests": {
     "title": "Demandes de comptes",
@@ -522,11 +528,21 @@
     "demoAdmin": "Admin",
     "demoResp": "Resp. entreprise",
     "demoGouv": "Gouvernement",
-    "representCompany": "Vous représentez une entreprise ?",
+    "representCompany": "Vous représentez une entreprise?",
     "representCompanyDesc": "Envoyez une demande. L'administrateur vérifiera les informations avant de créer votre compte.",
     "requestAccountLink": "Demander un compte responsable",
     "footer": "© 2026 SSE - CNI",
     "loginInProgress": "Connexion en cours..."
+  },
+  "forgotPassword": {
+    "title": "Mot de passe oublié",
+    "subtitle": "Saisissez votre adresse email. Un administrateur sera notifié et pourra générer un nouveau mot de passe.",
+    "sending": "Envoi en cours...",
+    "submit": "Envoyer la demande",
+    "sentTitle": "Demande envoyée",
+    "sentMessage": "Un administrateur a été notifié. Vous recevrez un email avec un nouveau mot de passe une fois qu'il sera généré.",
+    "backToLogin": "Retour à la connexion",
+    "error": "Une erreur est survenue. Veuillez réessayer."
   },
   "requestAccount": {
     "asideTitle": "Demande d'accès entreprise",

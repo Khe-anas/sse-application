@@ -1,5 +1,15 @@
 package com.sse.service;
 
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import com.sse.dto.AuditLogResponse;
 import com.sse.entity.AuditLog;
 import com.sse.entity.Evaluation;
@@ -10,11 +20,15 @@ import com.sse.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -72,6 +86,50 @@ public class AuditLogService {
         }
 
         return logs.map(this::toResponse);
+    }
+
+    public byte[] exportPdf(String action, String entity, UUID userId, Role role, LocalDateTime from, LocalDateTime to) {
+        Page<AuditLogResponse> page = getAll(action, entity, userId, role, from, to, PageRequest.of(0, 10000));
+        List<AuditLogResponse> logs = page.getContent();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4.rotate());
+        PdfWriter.getInstance(document, baos);
+        document.open();
+
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
+        Paragraph title = new Paragraph("Audit Logs Export", titleFont);
+        title.setAlignment(Element.ALIGN_CENTER);
+        title.setSpacingAfter(20);
+        document.add(title);
+
+        Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+        Font cellFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
+
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{2, 2.5f, 1.2f, 1.5f, 3, 2});
+
+        for (String header : new String[]{"Date", "User", "Role", "Action", "Entity", "Details"}) {
+            PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
+            cell.setPadding(5);
+            table.addCell(cell);
+        }
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        for (AuditLogResponse log : logs) {
+            table.addCell(new PdfPCell(new Phrase(log.getCreatedAt() != null ? log.getCreatedAt().format(dtf) : "", cellFont)));
+            table.addCell(new PdfPCell(new Phrase(log.getUserEmail() != null ? log.getUserEmail() : "", cellFont)));
+            table.addCell(new PdfPCell(new Phrase(log.getUserRole() != null ? log.getUserRole() : "", cellFont)));
+            table.addCell(new PdfPCell(new Phrase(log.getAction() != null ? log.getAction() : "", cellFont)));
+            table.addCell(new PdfPCell(new Phrase(log.getEntity() != null ? log.getEntity() : "", cellFont)));
+            table.addCell(new PdfPCell(new Phrase(log.getNewValue() != null ? log.getNewValue() : "", cellFont)));
+        }
+
+        document.add(table);
+        document.close();
+
+        return baos.toByteArray();
     }
 
     private AuditLogResponse toResponse(AuditLog auditLog) {

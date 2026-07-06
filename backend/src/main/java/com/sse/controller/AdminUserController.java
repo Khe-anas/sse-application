@@ -74,4 +74,10 @@ public class AdminUserController {
     public ResponseEntity<UserCreationResult> resetPassword(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.resetPassword(id));
     }
+
+    @PutMapping("/{id}/generate-password")
+    public ResponseEntity<Void> generatePassword(@PathVariable UUID id) {
+        userService.generatePassword(id);
+        return ResponseEntity.ok().build();
+    }
 }

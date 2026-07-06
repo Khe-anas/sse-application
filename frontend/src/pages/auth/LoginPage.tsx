@@ -98,7 +98,7 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-gray-300 text-primary-700 focus:ring-primary-500" />
                 <span className="text-sm text-gray-600">{t('authPage.rememberMe')}</span>
               </label>
-              <button type="button" className="text-sm text-primary-700 hover:text-primary-800 font-medium">
+              <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm text-primary-700 hover:text-primary-800 font-medium">
                 {t('auth.forgotPassword')}
               </button>
             </div>

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, History } from 'lucide-react';
+import { Download, Search, Filter, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { auditLogService } from '@/services/auditLogService';
+import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
 import type { AuditLog, PageResponse } from '@/types';
 import { formatBackendDateTime } from '@/utils/date';
@@ -13,6 +14,7 @@ const ENTITIES = ['USER', 'EVALUATION', 'ACCOUNT_REQUEST', 'RECLAMATION', 'MESSA
 
 export default function AuditLogsPage() {
   const { t } = useTranslation();
+  const { isSuperAdmin } = useAuth();
   const [logs, setLogs] = useState<PageResponse<AuditLog> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [action, setAction] = useState('');
@@ -46,6 +48,25 @@ export default function AuditLogsPage() {
     !searchEmail || log.userEmail.toLowerCase().includes(searchEmail.toLowerCase())
   );
 
+  const handleExportPdf = async () => {
+    try {
+      const blob = await auditLogService.exportPdf({
+        action: action || undefined,
+        entity: entity || undefined,
+        role: role || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'audit-logs.pdf';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success(t('auditLogs.exportSuccess'));
+    } catch (error) {
+      toast.error(t('auditLogs.exportError'));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -55,6 +76,16 @@ export default function AuditLogsPage() {
       <KPICard title={t('auditLogs.total')} value={logs?.totalElements || 0} icon={History} color="primary" />
 
       {/* Filters */}
+      {/* Export */}
+      {isSuperAdmin && (
+        <div className="flex justify-end">
+          <button onClick={handleExportPdf} className="btn-outline gap-2">
+            <Download className="w-4 h-4" />
+            {t('auditLogs.exportPdf')}
+          </button>
+        </div>
+      )}
+
       <div className="card p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>

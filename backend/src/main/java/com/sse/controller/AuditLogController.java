@@ -8,13 +8,11 @@ import com.sse.util.PageableUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -28,6 +26,23 @@ import java.util.UUID;
 public class AuditLogController {
 
     private final AuditLogService auditLogService;
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<byte[]> exportPdf(
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String entity,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) LocalDateTime from,
+            @RequestParam(required = false) LocalDateTime to) {
+
+        byte[] pdfBytes = auditLogService.exportPdf(action, entity, userId, role, from, to);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=audit-logs.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
 
     @GetMapping
     public ResponseEntity<PageResponse<AuditLogResponse>> getAll(

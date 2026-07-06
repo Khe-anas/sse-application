@@ -94,6 +94,9 @@
     "searchByEmail": "Search by email...",
     "loadError": "Error loading audit logs",
     "empty": "No audit logs found",
+    "exportPdf": "Download PDF",
+    "exportSuccess": "Audit logs exported successfully",
+    "exportError": "Error exporting audit logs",
     "actionValues": {
       "CREATE": "Create",
       "UPDATE": "Update",
@@ -222,7 +225,10 @@
     "toggleError": "Error updating account status",
     "disableConfirm": "Are you sure you want to disable this account?",
     "enableConfirm": "Are you sure you want to enable this account?",
-    "empty": "No users"
+    "empty": "No users",
+    "generatePassword": "Generate new password",
+    "generatePasswordConfirm": "Generate a new password and send it by email to this user?",
+    "generatePasswordSuccess": "New password generated and sent by email"
   },
   "accountRequests": {
     "title": "Account requests",
@@ -527,6 +533,16 @@
     "requestAccountLink": "Request a responsible account",
     "footer": "© 2026 SSE - CNI",
     "loginInProgress": "Signing in..."
+  },
+  "forgotPassword": {
+    "title": "Forgot password",
+    "subtitle": "Enter your email address. An administrator will be notified and can generate a new password for you.",
+    "sending": "Sending...",
+    "submit": "Send request",
+    "sentTitle": "Request sent",
+    "sentMessage": "An administrator has been notified. You will receive an email with a new password once it is generated.",
+    "backToLogin": "Back to login",
+    "error": "An error occurred. Please try again."
   },
   "requestAccount": {
     "asideTitle": "Company access request",

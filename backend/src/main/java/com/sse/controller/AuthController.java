@@ -22,6 +22,7 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtil jwtUtil;
     private final CurrentUserService currentUserService;
+    private final UserService userService;
     
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -66,6 +67,12 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
     
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        userService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
     @Data
     public static class ChangePasswordRequest {
         private String oldPassword;
