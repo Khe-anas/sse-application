@@ -3,6 +3,7 @@ package com.sse.controller;
 import com.sse.dto.*;
 import com.sse.security.CurrentUserService;
 import com.sse.service.AuthService;
+import com.sse.service.UserService;
 import com.sse.security.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
