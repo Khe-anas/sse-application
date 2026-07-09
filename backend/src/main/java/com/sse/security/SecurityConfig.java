@@ -50,14 +50,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/account-requests").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 // Admin endpoints
-                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // Responsable endpoints
-                .requestMatchers("/responsable/**").hasAnyRole("RESPONSABLE", "ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // User endpoints
+                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                // Evaluateure endpoints
+                .requestMatchers("/evaluateur/**").hasAnyRole("EVALUATEUR", "ADMIN")
                 // Gouvernement endpoints
-                .requestMatchers("/gouvernement/**").hasAnyRole("GOUVERNEMENT", "ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/gouvernement/**").hasAnyRole("GOUVERNEMENT", "ADMIN")
                 // Public endpoints that need auth
                 .requestMatchers(HttpMethod.GET, "/organismes/**").authenticated()
-                .requestMatchers("/organismes/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/organismes/**").hasRole("ADMIN")
                 .requestMatchers("/principes/**").authenticated()
                 .requestMatchers("/evaluations/**").authenticated()
                 .requestMatchers("/reponses/**").authenticated()
@@ -77,7 +79,7 @@ public class SecurityConfig {
     @Bean
     public RoleHierarchy roleHierarchy() {
         RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
-        hierarchy.setHierarchy("ROLE_SUPER_ADMIN > ROLE_ADMIN > ROLE_RESPONSABLE \n ROLE_ADMIN > ROLE_GOUVERNEMENT");
+        hierarchy.setHierarchy("ROLE_ADMIN > ROLE_EVALUATEUR \n ROLE_ADMIN > ROLE_GOUVERNEMENT");
         return hierarchy;
     }
 

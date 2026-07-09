@@ -28,13 +28,15 @@ import AuditLogsPage from '@/pages/admin/AuditLogsPage';
 import ReclamationsPage from '@/pages/admin/ReclamationsPage';
 import EmailJobsPage from '@/pages/admin/EmailJobsPage';
 
-// Responsable pages
+// User pages
 import ResponsableDashboard from '@/pages/responsable/ResponsableDashboard';
 import EvaluationFillPage from '@/pages/responsable/EvaluationFillPage';
 
+// Evaluateure pages
+import EvaluationValidatePage from '@/pages/gouvernement/EvaluationValidatePage';
+
 // Gouvernement pages
 import GouvernementDashboard from '@/pages/gouvernement/GouvernementDashboard';
-import EvaluationValidatePage from '@/pages/gouvernement/EvaluationValidatePage';
 import RankingPage from '@/pages/gouvernement/RankingPage';
 
 // Components
@@ -90,11 +92,19 @@ function App() {
           <Route path="/evaluations/:id/view" element={<EvaluationReadOnlyPage />} />
           <Route path="/settings" element={<SettingsPage />} />
 
-          {/* Responsable routes */}
-          <Route element={<ProtectedRoute requiredRole={Role.RESPONSABLE} />}>
-            <Route path="/responsable/dashboard" element={<ResponsableDashboard />} />
-            <Route path="/responsable/evaluation/:id" element={<EvaluationFillPage />} />
-            <Route path="/responsable/principes" element={<PrincipesPage />} />
+          {/* User routes */}
+          <Route element={<ProtectedRoute requiredRole={Role.USER} />}>
+            <Route path="/user/dashboard" element={<ResponsableDashboard />} />
+            <Route path="/user/evaluation/:id" element={<EvaluationFillPage />} />
+            <Route path="/user/principes" element={<PrincipesPage />} />
+          </Route>
+
+          {/* Evaluateure routes */}
+          <Route element={<ProtectedRoute requiredRole={Role.EVALUATEUR} />}>
+            <Route path="/evaluateur/dashboard" element={<AdminDashboard />} />
+            <Route path="/evaluateur/evaluations" element={<EvaluationsPage />} />
+            <Route path="/evaluateur/evaluations/:id/validate" element={<EvaluationValidatePage />} />
+            <Route path="/evaluateur/notifications" element={<NotificationsPage />} />
           </Route>
 
           {/* Gouvernement routes */}
@@ -120,11 +130,12 @@ function RoleRedirect() {
   if (!user) return <Navigate to="/login" />;
   
   switch (user.role) {
-    case Role.SUPER_ADMIN:
     case Role.ADMIN:
       return <Navigate to="/admin/dashboard" replace />;
-    case Role.RESPONSABLE:
-      return <Navigate to="/responsable/dashboard" replace />;
+    case Role.USER:
+      return <Navigate to="/user/dashboard" replace />;
+    case Role.EVALUATEUR:
+      return <Navigate to="/evaluateur/dashboard" replace />;
     case Role.GOUVERNEMENT:
       return <Navigate to="/gouvernement/dashboard" replace />;
     default:

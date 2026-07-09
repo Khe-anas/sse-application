@@ -110,9 +110,9 @@ export default function AuditLogsPage() {
             <label className="label">{t('common.role')}</label>
             <select className="select" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="">{t('common.all')}</option>
-              <option value={Role.SUPER_ADMIN}>{t('user.role.SUPER_ADMIN')}</option>
               <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
-              <option value={Role.RESPONSABLE}>{t('user.role.RESPONSABLE')}</option>
+              <option value={Role.USER}>{t('user.role.USER')}</option>
+              <option value={Role.EVALUATEUR}>{t('user.role.EVALUATEUR')}</option>
               <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
             </select>
           </div>

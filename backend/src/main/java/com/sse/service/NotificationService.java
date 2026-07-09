@@ -217,7 +217,7 @@ public class NotificationService {
             long total = reponseRepository.countTotalByEvaluation(evaluationId);
             long answered = reponseRepository.countAnsweredByEvaluation(evaluationId);
 
-            List<User> responsables = userRepository.findActiveResponsablesByOrganisme(organismeId);
+            List<User> responsables = userRepository.findActiveUsersByOrganisme(organismeId);
             for (User responsable : responsables) {
                 boolean alreadySentToday = notificationRepository.existsByUserIdAndTypeAndLinkAndCreatedAtAfter(
                     responsable.getId(), TypeNotification.REMINDER, link, today.atStartOfDay());

@@ -33,38 +33,38 @@ public class AccessControlService {
     }
 
     public boolean canUpdateOrganismeContact(UUID organismeId) {
-        return hasRole("ADMIN") || (hasRole("RESPONSABLE") && ownsOrganisme(organismeId));
+        return hasRole("ADMIN");
     }
 
     public boolean canListEvaluations(UUID organismeId) {
-        if (hasRole("ADMIN") || hasRole("GOUVERNEMENT")) {
+        if (hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR")) {
             return true;
         }
 
-        return hasRole("RESPONSABLE") && ownsOrganisme(organismeId);
+        return hasRole("USER") && ownsOrganisme(organismeId);
     }
 
     public boolean canCreateEvaluation(UUID organismeId) {
-        return hasRole("ADMIN") || (hasRole("RESPONSABLE") && ownsOrganisme(organismeId));
+        return hasRole("ADMIN") || (hasRole("USER") && ownsOrganisme(organismeId));
     }
 
     public boolean canReadEvaluation(UUID evaluationId) {
-        if (hasRole("ADMIN") || hasRole("GOUVERNEMENT")) {
+        if (hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR")) {
             return true;
         }
 
-        return hasRole("RESPONSABLE")
+        return hasRole("USER")
             && evaluationRepository.findOrganismeIdByEvaluationId(evaluationId)
                 .map(this::ownsOrganisme)
                 .orElse(false);
     }
 
     public boolean canWriteEvaluation(UUID evaluationId) {
-        if (hasRole("ADMIN")) {
+        if (hasRole("ADMIN") || hasRole("EVALUATEUR")) {
             return true;
         }
 
-        return hasRole("RESPONSABLE")
+        return hasRole("USER")
             && evaluationRepository.findOrganismeIdByEvaluationId(evaluationId)
                 .map(this::ownsOrganisme)
                 .orElse(false);
@@ -79,11 +79,11 @@ public class AccessControlService {
     }
 
     public boolean canUploadProof(UUID reponseId) {
-        if (hasRole("ADMIN")) {
+        if (hasRole("ADMIN") || hasRole("EVALUATEUR")) {
             return true;
         }
 
-        return hasRole("RESPONSABLE")
+        return hasRole("USER")
             && reponseRepository.findOrganismeIdByReponseId(reponseId)
                 .map(this::ownsOrganisme)
                 .orElse(false);

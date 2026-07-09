@@ -111,7 +111,7 @@ public class EvaluationService {
         
         // Notify responsable
         List<User> responsables = organisme.getUsers().stream()
-            .filter(u -> u.getRole() == Role.RESPONSABLE && u.getIsActive())
+            .filter(u -> u.getRole() == Role.USER && u.getIsActive())
             .toList();
         for (User resp : responsables) {
             notificationService.sendEvaluationAssigned(resp.getId(), organisme.getName(), request.getYear(), saved.getId());
@@ -262,7 +262,7 @@ public class EvaluationService {
         
         // Notify responsable
         List<User> responsables = eval.getOrganisme().getUsers().stream()
-            .filter(u -> u.getRole() == Role.RESPONSABLE && u.getIsActive())
+            .filter(u -> u.getRole() == Role.USER && u.getIsActive())
             .toList();
         for (User resp : responsables) {
             notificationService.sendEvaluationValidated(resp.getId(), eval.getOrganisme().getName(), globalScore, level, eval.getId());
@@ -290,7 +290,7 @@ public class EvaluationService {
         auditLogService.log("REJECT", "EVALUATION", "Evaluation " + id + " rejected: " + reason, null, saved);
 
         List<User> responsables = eval.getOrganisme().getUsers().stream()
-            .filter(u -> u.getRole() == Role.RESPONSABLE && u.getIsActive())
+            .filter(u -> u.getRole() == Role.USER && u.getIsActive())
             .toList();
         for (User resp : responsables) {
             notificationService.sendEvaluationRejected(resp.getId(), eval.getOrganisme().getName(), reason);
@@ -325,7 +325,7 @@ public class EvaluationService {
         
         // Notify responsable
         List<User> responsables = eval.getOrganisme().getUsers().stream()
-            .filter(u -> u.getRole() == Role.RESPONSABLE && u.getIsActive())
+            .filter(u -> u.getRole() == Role.USER && u.getIsActive())
             .toList();
         for (User resp : responsables) {
             notificationService.sendCorrectionRequested(resp.getId(), eval.getOrganisme().getName(), reason, eval.getId());

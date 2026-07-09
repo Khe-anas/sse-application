@@ -13,7 +13,7 @@ import { Users } from 'lucide-react';
 
 export default function UsersPage() {
   const { t } = useTranslation();
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [users, setUsers] = useState<PageResponse<User> | null>(null);
   const [organismes, setOrganismes] = useState<Organisme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +70,7 @@ export default function UsersPage() {
     if (password) payload.password = password;
 
     try {
-      if (formData.role === Role.RESPONSABLE) {
+      if (formData.role === Role.USER) {
         if (entrepriseName && !editingUser) {
           payload.entrepriseName = entrepriseName;
         } else {
@@ -153,14 +153,14 @@ export default function UsersPage() {
   };
 
   const handleRoleChange = (role: Role) => {
-    if (role !== Role.RESPONSABLE) {
+    if (role !== Role.USER) {
       setNewEntrepriseName('');
     }
 
     setFormData({
       ...formData,
       role,
-      organismeId: role === Role.RESPONSABLE ? formData.organismeId : undefined,
+      organismeId: role === Role.USER ? formData.organismeId : undefined,
     });
   };
 
@@ -195,9 +195,9 @@ export default function UsersPage() {
           <div>
             <select className="select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
               <option value="">{t('common.allRoles')}</option>
-              <option value={Role.SUPER_ADMIN}>{t('user.role.SUPER_ADMIN')}</option>
               <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
-              <option value={Role.RESPONSABLE}>{t('user.role.RESPONSABLE')}</option>
+              <option value={Role.USER}>{t('user.role.USER')}</option>
+              <option value={Role.EVALUATEUR}>{t('user.role.EVALUATEUR')}</option>
               <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
             </select>
           </div>
@@ -233,8 +233,8 @@ export default function UsersPage() {
                   <td className="table-td text-gray-500">{user.email}</td>
                   <td className="table-td">
                     <span className={`badge ${
-                      user.role === Role.SUPER_ADMIN ? 'bg-red-100 text-red-700' :
                       user.role === Role.ADMIN ? 'bg-purple-100 text-purple-700' :
+                      user.role === Role.EVALUATEUR ? 'bg-orange-100 text-orange-700' :
                       user.role === Role.GOUVERNEMENT ? 'bg-blue-100 text-blue-700' :
                       'bg-green-100 text-green-700'
                     }`}>
@@ -252,28 +252,24 @@ export default function UsersPage() {
                       <button onClick={() => openEditModal(user)} className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50">
                         <Pencil className="w-4 h-4" />
                       </button>
-                      {user.role !== Role.SUPER_ADMIN && (
-                        <button
-                          onClick={() => handleToggleActive(user)}
-                          className={`p-1.5 rounded-lg ${
-                            user.isActive
-                              ? 'text-amber-600 hover:bg-amber-50'
-                              : 'text-green-600 hover:bg-green-50'
-                          }`}
-                          title={user.isActive ? t('users.disableConfirm') : t('users.enableConfirm')}
-                        >
-                          {user.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-                        </button>
-                      )}
-                      {user.role !== Role.SUPER_ADMIN && (
-                        <button
-                          onClick={() => handleGeneratePassword(user.id)}
-                          className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50"
-                          title={t('users.generatePassword')}
-                        >
-                          <KeyRound className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleToggleActive(user)}
+                        className={`p-1.5 rounded-lg ${
+                          user.isActive
+                            ? 'text-amber-600 hover:bg-amber-50'
+                            : 'text-green-600 hover:bg-green-50'
+                        }`}
+                        title={user.isActive ? t('users.disableConfirm') : t('users.enableConfirm')}
+                      >
+                        {user.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => handleGeneratePassword(user.id)}
+                        className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50"
+                        title={t('users.generatePassword')}
+                      >
+                        <KeyRound className="w-4 h-4" />
+                      </button>
                       <button onClick={() => handleDelete(user.id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -309,13 +305,13 @@ export default function UsersPage() {
               <div>
                 <label className="label">{t('users.roleLabel')} *</label>
                 <select className="select" value={formData.role} onChange={(e) => handleRoleChange(e.target.value as Role)}>
-                  {isSuperAdmin && <option value={Role.SUPER_ADMIN}>{t('user.role.SUPER_ADMIN')}</option>}
                   <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
-                  <option value={Role.RESPONSABLE}>{t('user.role.RESPONSABLE')}</option>
+                  <option value={Role.USER}>{t('user.role.USER')}</option>
+                  <option value={Role.EVALUATEUR}>{t('user.role.EVALUATEUR')}</option>
                   <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
                 </select>
               </div>
-              {formData.role === Role.RESPONSABLE && (
+              {formData.role === Role.USER && (
                 <div className="space-y-3">
                   <div>
                     <label className="label">{t('users.organismeExisting')}</label>

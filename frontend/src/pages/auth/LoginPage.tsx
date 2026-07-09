@@ -138,9 +138,9 @@ export default function LoginPage() {
             <p className="text-xs text-gray-500 text-center mb-3">{t('authPage.demoAccounts')}</p>
             <div className="grid grid-cols-4 gap-2">
               {[
-                { email: 'super@sse.tn', role: 'Super Admin' },
-                { email: 'admin@sse.tn', role: t('authPage.demoAdmin') },
-                { email: 'resp@sse.tn', role: t('authPage.demoResp') },
+                { email: 'admin@sse.tn', role: 'Admin' },
+                { email: 'user@sse.tn', role: t('authPage.demoResp') },
+                { email: 'evaluateur@sse.tn', role: t('authPage.demoEvaluateure') },
                 { email: 'gouv@sse.tn', role: t('authPage.demoGouv') },
               ].map((account) => (
                 <button

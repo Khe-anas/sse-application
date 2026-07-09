@@ -29,8 +29,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     
     Page<User> findByOrganismeId(UUID organismeId, Pageable pageable);
     
-    @Query("SELECT u FROM User u WHERE u.organisme.id = :organismeId AND u.role = 'RESPONSABLE' AND u.isActive = true")
-    List<User> findActiveResponsablesByOrganisme(@Param("organismeId") UUID organismeId);
+    @Query("SELECT u FROM User u WHERE u.organisme.id = :organismeId AND u.role = 'USER' AND u.isActive = true")
+    List<User> findActiveUsersByOrganisme(@Param("organismeId") UUID organismeId);
 
     List<User> findByIsActiveTrue();
 

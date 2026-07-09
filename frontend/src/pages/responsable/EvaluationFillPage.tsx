@@ -65,31 +65,17 @@ export default function EvaluationFillPage() {
 
   const canEditCritere = (critereId: string) => canEditReponse(reponses[critereId]);
 
-  const markCorrectionAddressed = (critereId: string) => {
-    const reponse = reponses[critereId];
-    if (reponse?.status !== StatusReponse.A_CORRIGER) return;
-
-    setTouchedCorrectionIds(prev => {
-      const next = new Set(prev);
-      next.add(critereId);
-      return next;
-    });
-  };
-
   const isCorrectionAddressed = (reponse: Reponse | undefined) =>
     !!reponse
-    && (
-      reponse.status !== StatusReponse.A_CORRIGER
-      || Boolean(reponse.correctionAddressed)
-      || touchedCorrectionIds.has(reponse.critereId)
-    );
+    && (reponse.status !== StatusReponse.A_CORRIGER
+        || Boolean(reponse.correctionAddressed)
+        || touchedCorrectionIds.has(reponse.critereId));
 
   const isReponseComplete = (reponse: Reponse | undefined) =>
     !!reponse && reponse.niveau != null && isCorrectionAddressed(reponse);
 
   const saveReponseDraft = async (reponse: Reponse) => {
     if (!id) return;
-
     try {
       const updatedReponses = await reponseService.saveBatch(id, [{
         critereId: reponse.critereId,
@@ -99,12 +85,8 @@ export default function EvaluationFillPage() {
         correctionAddressed: Boolean(reponse.correctionAddressed) || touchedCorrectionIds.has(reponse.critereId),
       }]);
       const updated = updatedReponses.find((item) => item.critereId === reponse.critereId);
-      if (updated) {
-        setReponses(prev => ({ ...prev, [updated.critereId]: updated }));
-      }
-    } catch (error) {
-      toast.error(t('evaluationFill.saveError'));
-    }
+      if (updated) setReponses(prev => ({ ...prev, [updated.critereId]: updated }));
+    } catch (error) { toast.error(t('evaluationFill.saveError')); }
   };
 
   const scheduleReponseDraftSave = (reponse: Reponse) => {
@@ -116,63 +98,49 @@ export default function EvaluationFillPage() {
 
   const handleNiveauChange = (critereId: string, niveau: Niveau) => {
     if (!canEditCritere(critereId)) return;
-
     const existing = reponses[critereId];
     const updated = {
-      ...existing,
-      critereId,
-      niveau,
+      ...existing, critereId, niveau,
       status: existing?.status || StatusReponse.BROUILLON,
       correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
     } as Reponse;
-
-    markCorrectionAddressed(critereId);
     setReponses(prev => ({ ...prev, [critereId]: updated }));
+    if (existing?.status === StatusReponse.A_CORRIGER) {
+      setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
+    }
     void saveReponseDraft(updated);
   };
 
   const handleCommentChange = (critereId: string, commentaire: string) => {
     if (!canEditCritere(critereId)) return;
-
     const existing = reponses[critereId];
     const updated = {
-      ...existing,
-      critereId,
-      commentaire,
+      ...existing, critereId, commentaire,
       status: existing?.status || StatusReponse.BROUILLON,
       correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
     } as Reponse;
-
-    markCorrectionAddressed(critereId);
     setReponses(prev => ({ ...prev, [critereId]: updated }));
     scheduleReponseDraftSave(updated);
   };
 
   const handleAddLink = (critereId: string) => {
     if (!canEditCritere(critereId)) return;
-
     const url = window.prompt(t('evaluationFill.proofLinkPrompt'));
     const trimmedUrl = url?.trim();
     if (!trimmedUrl) return;
-
     const existing = reponses[critereId];
-    const preuveLinks = existing?.preuveLinks || [];
     const updated = {
-      ...existing,
-      critereId,
-      preuveLinks: [...preuveLinks, trimmedUrl],
+      ...existing, critereId,
+      preuveLinks: [...(existing?.preuveLinks || []), trimmedUrl],
       status: existing?.status || StatusReponse.BROUILLON,
       correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
     } as Reponse;
-
-    markCorrectionAddressed(critereId);
     setReponses(prev => ({ ...prev, [critereId]: updated }));
     void saveReponseDraft(updated);
   };
 
   const handleRemoveLink = (critereId: string, linkToRemove: string) => {
     if (!canEditCritere(critereId)) return;
-
     const existing = reponses[critereId];
     if (!existing) return;
     const updated = {
@@ -180,98 +148,52 @@ export default function EvaluationFillPage() {
       preuveLinks: (existing.preuveLinks || []).filter(link => link !== linkToRemove),
       correctionAddressed: existing.status === StatusReponse.A_CORRIGER ? true : existing.correctionAddressed,
     } as Reponse;
-
-    markCorrectionAddressed(critereId);
     setReponses(prev => ({ ...prev, [critereId]: updated }));
     void saveReponseDraft(updated);
   };
 
   const handleFileUpload = async (critereId: string, files?: FileList | File[]) => {
     if (!canEditCritere(critereId)) return;
-
     const filesToUpload = Array.from(files || []);
     if (filesToUpload.length === 0) return;
-
     const reponse = reponses[critereId];
-    if (!reponse?.id) {
-      toast.error(t('evaluationFill.notFound'));
-      return;
-    }
-
+    if (!reponse?.id) { toast.error(t('evaluationFill.notFound')); return; }
     try {
       const uploadedFileUrls: string[] = [];
-      for (const file of filesToUpload) {
-        uploadedFileUrls.push(await reponseService.uploadProof(reponse.id, file));
-      }
+      for (const file of filesToUpload) uploadedFileUrls.push(await reponseService.uploadProof(reponse.id, file));
       setReponses(prev => {
         const existing = prev[critereId];
-        return {
-          ...prev,
-          [critereId]: {
-            ...existing,
-            preuveFiles: [...(existing?.preuveFiles || []), ...uploadedFileUrls],
-          } as Reponse,
-        };
+        return { ...prev, [critereId]: { ...existing, preuveFiles: [...(existing?.preuveFiles || []), ...uploadedFileUrls] } as Reponse };
       });
-      markCorrectionAddressed(critereId);
       toast.success(filesToUpload.length > 1 ? t('evaluationFill.uploadedMultiple') : t('evaluationFill.uploadedSingle'));
-    } catch (error) {
-      toast.error(t('evaluationFill.uploadError'));
-    }
+    } catch (error) { toast.error(t('evaluationFill.uploadError')); }
   };
 
   const handleRemoveFile = async (critereId: string, fileUrl: string) => {
     if (!canEditCritere(critereId)) return;
-
     const reponse = reponses[critereId];
     if (!reponse?.id) return;
-
     try {
       await reponseService.deleteProof(reponse.id, fileUrl);
       setReponses(prev => {
         const existing = prev[critereId];
         if (!existing) return prev;
-
-        return {
-          ...prev,
-          [critereId]: {
-            ...existing,
-            preuveFiles: (existing.preuveFiles || []).filter(existingFileUrl => existingFileUrl !== fileUrl),
-          } as Reponse,
-        };
+        return { ...prev, [critereId]: { ...existing, preuveFiles: (existing.preuveFiles || []).filter(f => f !== fileUrl) } as Reponse };
       });
-      markCorrectionAddressed(critereId);
       toast.success(t('evaluationFill.removed'));
-    } catch (error) {
-      toast.error(t('evaluationFill.removeError'));
-    }
-  };
-
-  const handleDownloadFile = async (fileUrl: string) => {
-    try {
-      await fileService.download(fileUrl);
-    } catch (error) {
-      toast.error(t('evaluationFill.downloadError'));
-    }
+    } catch (error) { toast.error(t('evaluationFill.removeError')); }
   };
 
   const buildEditableReponsesPayload = () =>
     Object.values(reponses).filter(canEditReponse).map(r => ({
-        critereId: r.critereId,
-        niveau: r.niveau,
-        commentaire: r.commentaire,
-        preuveLinks: r.preuveLinks,
-        correctionAddressed: Boolean(r.correctionAddressed) || touchedCorrectionIds.has(r.critereId),
-      }));
+      critereId: r.critereId, niveau: r.niveau, commentaire: r.commentaire,
+      preuveLinks: r.preuveLinks, correctionAddressed: Boolean(r.correctionAddressed) || touchedCorrectionIds.has(r.critereId),
+    }));
 
   const saveEditableReponses = async () => {
     if (!id) return;
-
     const reponsesToSave = buildEditableReponsesPayload();
-    if (reponsesToSave.length === 0) {
-      return;
-    }
-
+    if (reponsesToSave.length === 0) return;
     const updatedReponses = await reponseService.saveBatch(id, reponsesToSave);
     const repMap: Record<string, Reponse> = {};
     updatedReponses.forEach(r => { repMap[r.critereId] = r; });
@@ -281,23 +203,19 @@ export default function EvaluationFillPage() {
 
   const handleSubmit = async () => {
     if (!id) return;
-
     const pendingCorrections = Object.values(reponses).filter(r =>
-      r.status === StatusReponse.A_CORRIGER && !isCorrectionAddressed(r)
-    );
+      r.status === StatusReponse.A_CORRIGER && !isCorrectionAddressed(r));
     if (pendingCorrections.length > 0) {
       toast.error(t('evaluationFill.pendingCorrections', { count: pendingCorrections.length }));
-      setActivePrincipe(pendingCorrections[0].principeId);
       return;
     }
-
     if (!confirm(t('evaluation.submitConfirm') + '\n' + t('evaluation.submitWarning'))) return;
     setIsSaving(true);
     try {
       await saveEditableReponses();
       await evaluationService.submit(id);
       toast.success(t('evaluationFill.submitted'));
-      navigate('/responsable/dashboard');
+      navigate('/user/dashboard');
     } catch (error) { toast.error(t('evaluationFill.submitError')); }
     finally { setIsSaving(false); }
   };
@@ -309,33 +227,43 @@ export default function EvaluationFillPage() {
     return Math.round((answered / total) * 100);
   };
 
+  const getAllCriteres = () => {
+    const active = principes.find(p => p.id === activePrincipe);
+    if (!active) return [];
+    const rows: { principe: Principe; bp: any; critere: any }[] = [];
+    active.bonnesPratiques.forEach(bp => {
+      bp.criteres.forEach(critere => {
+        rows.push({ principe: active, bp, critere });
+      });
+    });
+    return rows;
+  };
+
   if (isLoading || !evaluation) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div></div>;
   }
 
+  const rows = getAllCriteres();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/responsable/dashboard')} className="p-2 rounded-lg hover:bg-gray-100">
+          <button onClick={() => navigate('/user/dashboard')} className="p-2 rounded-lg hover:bg-gray-100">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{evaluation.organismeName}</h1>
-            <p className="text-gray-500">{t('evaluationFill.evaluationLabel', { year: evaluation.year })}</p>
+            <h1 className="text-xl font-bold text-gray-900">{evaluation.organismeName} - {evaluation.year}</h1>
+            <div className="flex items-center gap-2">
+              <div className="w-40 h-2 bg-gray-200 rounded-full"><div className="h-full bg-primary-600 rounded-full transition-all" style={{ width: `${getProgress()}%` }} /></div>
+              <span className="text-sm font-medium text-gray-600">{getProgress()}%</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
-            <span className="text-sm text-gray-600">{t('evaluationFill.progressLabel')}</span>
-            <div className="w-32 h-2 bg-gray-300 rounded-full"><div className="h-full bg-primary-600 rounded-full transition-all" style={{ width: `${getProgress()}%` }} /></div>
-            <span className="text-sm font-medium">{getProgress()}%</span>
-          </div>
-          <button onClick={handleSubmit} disabled={isSaving || evaluation.status !== StatusEvaluation.EN_COURS} className="btn-success gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-            <Send className="w-4 h-4" /> {t('evaluationFill.submit')}
-          </button>
-        </div>
+        <button onClick={handleSubmit} disabled={isSaving || evaluation.status !== StatusEvaluation.EN_COURS} className="btn-success gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          <Send className="w-4 h-4" /> {t('evaluationFill.submit')}
+        </button>
       </div>
 
       {/* Principle tabs */}
@@ -345,21 +273,11 @@ export default function EvaluationFillPage() {
           const completed = principeReponses.filter(isReponseComplete).length;
           const total = principeReponses.length;
           const isComplete = total > 0 && completed === total;
-          const hasCorrection = principeReponses.some(r => r?.status === StatusReponse.A_CORRIGER);
           return (
-            <button
-              key={p.id}
-              onClick={() => setActivePrincipe(p.id)}
-              title={hasCorrection ? t('evaluationFill.principeNeedsCorrection') : undefined}
-              className={`relative flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            <button key={p.id} onClick={() => setActivePrincipe(p.id)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activePrincipe === p.id ? 'bg-primary-700 text-white' : isComplete ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {hasCorrection && (
-                <span className={`absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ${
-                  activePrincipe === p.id ? 'ring-2 ring-white' : ''
-                }`} />
-              )}
+              }`}>
               <span className="mr-1">{p.number}.</span>{getLocalizedField(p, 'name', language)}
               <span className="ml-1 opacity-70">({completed}/{total})</span>
             </button>
@@ -367,170 +285,121 @@ export default function EvaluationFillPage() {
         })}
       </div>
 
-      {/* Active principle content */}
-      {principes.filter(p => p.id === activePrincipe).map((principe) => (
-        <div key={principe.id} className="space-y-6">
-          <div className="card p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{principe.number}. {getLocalizedField(principe, 'name', language)}</h2>
-            {getLocalizedField(principe, 'description', language) && (
-              <p className="text-gray-500">{getLocalizedField(principe, 'description', language)}</p>
-            )}
-          </div>
+      {/* Table */}
+      <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Principe</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
+              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N0</th>
+              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N1</th>
+              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N2</th>
+              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N3</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 min-w-[160px]">Preuves & Commentaire</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map((row, idx) => {
+              const reponse = reponses[row.critere.id];
+              const canEdit = canEditReponse(reponse);
+              const preuvesAttendues = getLocalizedField(row.critere, 'preuves', language);
+              const references = getLocalizedField(row.critere, 'references', language);
 
-          {principe.bonnesPratiques.map((bp) => (
-            <div key={bp.id} className="card">
-              <div className="p-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-semibold text-gray-900">{getLocalizedField(bp, 'label', language)}</h3>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {bp.criteres.map((critere) => {
-                  const reponse = reponses[critere.id];
-                  const canEdit = canEditReponse(reponse);
-                  const preuves = getLocalizedField(critere, 'preuves', language);
-                  const references = getLocalizedField(critere, 'references', language);
-
-                  return (
-                    <div key={critere.id} className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{critere.number}. {getLocalizedField(critere, 'label', language)}</p>
-                        </div>
+              return (
+                <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
+                  <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
+                  <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.principe, 'name', language)}</td>
+                  <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
+                  <td className="px-3 py-2 text-gray-900 align-top">
+                    <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
+                    {reponse?.status === StatusReponse.A_CORRIGER && (
+                      <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {reponse.validatorComment || t('evaluationFill.correctionRequested')}
                       </div>
-
-                      {reponse?.status === StatusReponse.A_CORRIGER && (
-                        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                          <div className="flex gap-2">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                            <div>
-                              <p className="font-semibold">{t('evaluationFill.correctionRequested')}</p>
-                              {reponse.validatorComment && <p className="mt-1 text-xs leading-5">{reponse.validatorComment}</p>}
-                            </div>
+                    )}
+                  </td>
+                  {niveaux.map((n) => (
+                    <td key={n.key} className="px-1 py-2 text-center align-top">
+                      <div className="flex items-center justify-center min-h-[28px]">
+                        <input
+                          type="radio"
+                          name={`niveau-${row.critere.id}`}
+                          checked={reponse?.niveau === n.key}
+                          onChange={() => handleNiveauChange(row.critere.id, n.key)}
+                          disabled={!canEdit}
+                          className="w-4 h-4 text-primary-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        />
+                      </div>
+                    </td>
+                  ))}
+                  <td className="px-3 py-2 align-top">
+                    {/* Commentaire */}
+                    <textarea
+                      value={reponse?.commentaire || ''}
+                      onChange={(e) => handleCommentChange(row.critere.id, e.target.value)}
+                      placeholder={t('evaluationFill.commentairePlaceholder')}
+                      disabled={!canEdit}
+                      rows={2}
+                      className="w-full text-xs border border-gray-200 rounded-lg p-1.5 resize-none disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    />
+                    {/* Preuves attendues */}
+                    {preuvesAttendues && (
+                      <div className="mt-1 rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800">
+                        <div className="flex items-center gap-1 font-semibold"><FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}</div>
+                        <p className="mt-0.5">{preuvesAttendues}</p>
+                      </div>
+                    )}
+                    {/* References */}
+                    {references && (
+                      <div className="mt-1 rounded bg-gray-50 border border-gray-200 p-1.5 text-xs text-gray-600">
+                        <span className="font-semibold">{t('evaluationFill.references')}:</span> {references}
+                      </div>
+                    )}
+                    {/* Upload + Links */}
+                    {canEdit && (
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <label className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 cursor-pointer">
+                          <Upload className="w-3 h-3" /> {t('evaluationFill.attachFile')}
+                          <input type="file" multiple className="hidden" onChange={(e) => { handleFileUpload(row.critere.id, e.target.files || undefined); e.target.value = ''; }} />
+                        </label>
+                        <button type="button" onClick={() => handleAddLink(row.critere.id)} className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700">
+                          <Link className="w-3 h-3" /> {t('evaluationFill.addLink')}
+                        </button>
+                      </div>
+                    )}
+                    {/* Uploaded files */}
+                    {(reponse?.preuveFiles?.length || 0) > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {reponse?.preuveFiles?.map((fileUrl) => (
+                          <div key={fileUrl} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
+                            <button type="button" onClick={() => fileService.download(fileUrl)} className="flex-1 truncate text-left text-primary-700 hover:underline">{fileUrl.split('/').pop()}</button>
+                            {canEdit && <button type="button" onClick={() => handleRemoveFile(row.critere.id, fileUrl)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
                           </div>
-                        </div>
-                      )}
-
-                      {(preuves || references) && (
-                        <div className="grid gap-2 md:grid-cols-2 mb-3">
-                          {preuves && (
-                            <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-900">
-                              <div className="flex items-center gap-1 font-semibold mb-1">
-                                <FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}
-                              </div>
-                              <p className="leading-relaxed">{preuves}</p>
-                            </div>
-                          )}
-                          {references && (
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-xs text-gray-700">
-                              <div className="font-semibold mb-1">{t('evaluationFill.references')}</div>
-                              <p className="leading-relaxed">{references}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Niveau selection */}
-                      <div className="grid grid-cols-4 gap-2 mb-3">
-                        {niveaux.map((n) => (
-                          <button
-                            key={n.key}
-                            onClick={() => handleNiveauChange(critere.id, n.key)}
-                            disabled={!canEdit}
-                            className={`p-2 rounded-lg border text-sm font-medium transition-all ${
-                              reponse?.niveau === n.key ? n.color + ' ring-2 ring-offset-1' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                            } ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
-                          >
-                            {t(n.label)}
-                          </button>
                         ))}
                       </div>
-
-                      {/* Commentaire */}
-                      <textarea
-                        value={reponse?.commentaire || ''}
-                        onChange={(e) => handleCommentChange(critere.id, e.target.value)}
-                        placeholder={t('evaluationFill.commentairePlaceholder')}
-                        disabled={!canEdit}
-                        className={`input text-sm mb-2 ${!canEdit ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
-                        rows={2}
-                      />
-
-                      {/* Preuves */}
-                      {canEdit && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <label className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 cursor-pointer">
-                            <Upload className="w-3 h-3" /> {t('evaluationFill.attachFile')}
-                            <input
-                              type="file"
-                              multiple
-                              className="hidden"
-                              onChange={(e) => {
-                                handleFileUpload(critere.id, e.target.files || undefined);
-                                e.target.value = '';
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => handleAddLink(critere.id)}
-                            className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700"
-                          >
-                            <Link className="w-3 h-3" /> {t('evaluationFill.addLink')}
-                          </button>
-                        </div>
-                      )}
-
-                      {((reponse?.preuveFiles?.length || 0) > 0 || (reponse?.preuveLinks?.length || 0) > 0) && (
-                        <div className="mt-3 space-y-1">
-                          {reponse?.preuveFiles?.map((fileUrl) => (
-                            <div key={fileUrl} className="flex min-w-0 items-center gap-2 rounded-lg bg-gray-50 px-2 py-1.5 text-xs">
-                              <button
-                                type="button"
-                                onClick={() => handleDownloadFile(fileUrl)}
-                                className="min-w-0 flex-1 truncate text-left text-primary-700 hover:underline"
-                              >
-                                {t('evaluationFill.fileLabel')} {fileUrl.split('/').pop()}
-                              </button>
-                              {canEdit && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveFile(critere.id, fileUrl)}
-                                  className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100 hover:text-red-700"
-                                  title={t('evaluationFill.removeFileTitle')}
-                                  aria-label={t('evaluationFill.removeFileTitle')}
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                          {reponse?.preuveLinks?.map((preuveLink) => (
-                            <div key={preuveLink} className="flex min-w-0 items-center gap-2 rounded-lg bg-gray-50 px-2 py-1.5 text-xs">
-                              <a href={preuveLink} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-primary-700 hover:underline">
-                                {t('evaluationFill.linkLabel')} {preuveLink}
-                              </a>
-                              {canEdit && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveLink(critere.id, preuveLink)}
-                                  className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100 hover:text-red-700"
-                                  title={t('evaluationFill.removeFileTitle')}
-                                  aria-label={t('evaluationFill.removeFileTitle')}
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
+                    )}
+                    {/* Uploaded links */}
+                    {(reponse?.preuveLinks?.length || 0) > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {reponse?.preuveLinks?.map((link) => (
+                          <div key={link} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
+                            <a href={link} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary-700 hover:underline">{link}</a>
+                            {canEdit && <button type="button" onClick={() => handleRemoveLink(row.critere.id, link)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

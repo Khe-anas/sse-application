@@ -30,9 +30,9 @@ public class DemoDataService {
             .findFirst()
             .orElseGet(this::createDemoOrganisme);
 
-        createUserIfMissing("super@sse.tn", "Super", "Admin", Role.SUPER_ADMIN, null);
         createUserIfMissing("admin@sse.tn", "Admin", "SSE", Role.ADMIN, null);
-        createUserIfMissing("resp@sse.tn", "Responsable", "SSE", Role.RESPONSABLE, organisme);
+        createUserIfMissing("user@sse.tn", "User", "SSE", Role.USER, organisme);
+        createUserIfMissing("evaluateur@sse.tn", "Evaluateure", "SSE", Role.EVALUATEUR, null);
         createUserIfMissing("gouv@sse.tn", "Gouvernement", "SSE", Role.GOUVERNEMENT, null);
     }
 

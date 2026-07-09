@@ -7,9 +7,9 @@ export function useAuth() {
   return {
     user,
     isAuthenticated,
-    isSuperAdmin: user?.role === Role.SUPER_ADMIN,
-    isAdmin: user?.role === Role.ADMIN || user?.role === Role.SUPER_ADMIN,
-    isResponsable: user?.role === Role.RESPONSABLE,
+    isAdmin: user?.role === Role.ADMIN,
+    isUser: user?.role === Role.USER,
+    isEvaluateure: user?.role === Role.EVALUATEUR,
     isGouvernement: user?.role === Role.GOUVERNEMENT,
     hasRole: (role: Role) => user?.role === role,
     logout,

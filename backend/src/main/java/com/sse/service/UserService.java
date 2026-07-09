@@ -50,10 +50,10 @@ public class UserService {
 
     @Transactional
     public UserCreationResult createUserWithResult(CreateUserRequest request) {
-        if (request.getRole() == Role.ADMIN || request.getRole() == Role.SUPER_ADMIN) {
+        if (request.getRole() == Role.ADMIN) {
             User currentUser = currentUserService.getCurrentUser();
-            if (currentUser.getRole() != Role.SUPER_ADMIN) {
-                throw new RuntimeException("Only SUPER_ADMIN can create users with " + request.getRole() + " role");
+            if (currentUser.getRole() != Role.ADMIN) {
+                throw new RuntimeException("Only ADMIN can create users with ADMIN role");
             }
         }
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -67,8 +67,8 @@ public class UserService {
         user.setRole(request.getRole());
         user.setPhone(request.getPhone());
         
-        if (request.getRole() == Role.RESPONSABLE) {
-            user.setOrganisme(resolveResponsableOrganisme(request.getOrganismeId(), request.getEntrepriseName()));
+        if (request.getRole() == Role.USER) {
+            user.setOrganisme(resolveUserOrganisme(request.getOrganismeId(), request.getEntrepriseName()));
         }
 
         boolean hasPassword = request.getPassword() != null && !request.getPassword().isBlank();
@@ -120,18 +120,11 @@ public class UserService {
         User currentUser = currentUserService.getCurrentUser();
         
         if (request.getRole() != null) {
-            if (user.getRole() == Role.SUPER_ADMIN && currentUser.getRole() != Role.SUPER_ADMIN) {
-                throw new RuntimeException("Only SUPER_ADMIN can modify a SUPER_ADMIN user");
-            }
-            if ((request.getRole() == Role.ADMIN || request.getRole() == Role.SUPER_ADMIN)
-                && currentUser.getRole() != Role.SUPER_ADMIN) {
-                throw new RuntimeException("Only SUPER_ADMIN can assign " + request.getRole() + " role");
-            }
-            if (request.getRole() == Role.SUPER_ADMIN && currentUser.getRole() != Role.SUPER_ADMIN) {
-                throw new RuntimeException("Only SUPER_ADMIN can assign SUPER_ADMIN role");
+            if (request.getRole() == Role.ADMIN && currentUser.getRole() != Role.ADMIN) {
+                throw new RuntimeException("Only ADMIN can assign ADMIN role");
             }
             user.setRole(request.getRole());
-            if (request.getRole() != Role.RESPONSABLE) {
+            if (request.getRole() != Role.USER) {
                 user.setOrganisme(null);
             }
         }
@@ -142,10 +135,6 @@ public class UserService {
             user.setIsActive(true);
         }
         if (request.getIsActive() != null) {
-            if (!request.getIsActive() && user.getRole() == Role.SUPER_ADMIN) {
-                log.warn("Attempt to disable SUPER_ADMIN account: {}", user.getEmail());
-                throw new RuntimeException("Cannot disable a SUPER_ADMIN account");
-            }
             user.setIsActive(request.getIsActive());
             if (!request.getIsActive()) {
                 user.setStatus(UserStatus.DISABLED);
@@ -156,14 +145,14 @@ public class UserService {
             }
         }
         
-        if (user.getRole() == Role.RESPONSABLE && request.getOrganismeId() != null) {
+        if (user.getRole() == Role.USER && request.getOrganismeId() != null) {
             Organisme org = organismeRepository.findById(request.getOrganismeId())
                 .orElseThrow(() -> new RuntimeException("Organisme not found"));
             user.setOrganisme(org);
         }
 
-        if (user.getRole() == Role.RESPONSABLE && user.getOrganisme() == null) {
-            throw new RuntimeException("A responsable d'entreprise must be assigned to an organisme");
+        if (user.getRole() == Role.USER && user.getOrganisme() == null) {
+            throw new RuntimeException("A user must be assigned to an organisme");
         }
         
         User saved = userRepository.save(user);
@@ -175,9 +164,6 @@ public class UserService {
     public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
-        if (user.getRole() == Role.SUPER_ADMIN) {
-            throw new RuntimeException("Cannot delete a SUPER_ADMIN user");
-        }
         user.setIsActive(false);
         user.setStatus(UserStatus.DISABLED);
         userRepository.save(user);
@@ -211,7 +197,7 @@ public class UserService {
             return;
         }
 
-        List<User> admins = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN, Role.SUPER_ADMIN));
+        List<User> admins = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN));
         for (User admin : admins) {
             Notification notif = new Notification();
             notif.setUser(admin);
@@ -281,7 +267,7 @@ public class UserService {
         log.info("New password generated and email queued for user: {}", user.getEmail());
     }
 
-    private Organisme resolveResponsableOrganisme(UUID organismeId, String entrepriseName) {
+    private Organisme resolveUserOrganisme(UUID organismeId, String entrepriseName) {
         if (organismeId != null) {
             return organismeRepository.findById(organismeId)
                 .orElseThrow(() -> new RuntimeException("Organisme not found"));
@@ -289,7 +275,7 @@ public class UserService {
 
         String normalizedName = entrepriseName != null ? entrepriseName.trim() : "";
         if (normalizedName.isBlank()) {
-            throw new RuntimeException("A responsable d'entreprise must be assigned to an organisme or a new entreprise name");
+            throw new RuntimeException("A user must be assigned to an organisme or a new entreprise name");
         }
 
         return organismeRepository.findActiveByNameIgnoreCase(normalizedName)

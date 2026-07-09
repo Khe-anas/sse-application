@@ -12,7 +12,7 @@ export default function NotificationsPage() {
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('announcement');
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedRoles, setSelectedRoles] = useState<Role[]>([Role.ADMIN, Role.RESPONSABLE, Role.GOUVERNEMENT]);
+  const [selectedRoles, setSelectedRoles] = useState<Role[]>([Role.ADMIN, Role.USER, Role.GOUVERNEMENT]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [titleFr, setTitleFr] = useState('');
@@ -23,7 +23,7 @@ export default function NotificationsPage() {
 
   const roleOptions = useMemo(() => [
     { role: Role.ADMIN, label: t('notificationsPage.roleAdmins') },
-    { role: Role.RESPONSABLE, label: t('notificationsPage.roleResponsables') },
+    { role: Role.USER, label: t('notificationsPage.roleResponsables') },
     { role: Role.GOUVERNEMENT, label: t('notificationsPage.roleGouvernement') },
   ], [t]);
 
@@ -210,7 +210,7 @@ export default function NotificationsPage() {
               className="input"
               value={link}
               onChange={(event) => setLink(event.target.value)}
-              placeholder="/responsable/dashboard"
+              placeholder="/user/dashboard"
             />
           </div>
 

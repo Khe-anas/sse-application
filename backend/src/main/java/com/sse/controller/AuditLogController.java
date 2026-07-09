@@ -28,7 +28,6 @@ public class AuditLogController {
     private final AuditLogService auditLogService;
 
     @GetMapping("/export/pdf")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<byte[]> exportPdf(
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String entity,

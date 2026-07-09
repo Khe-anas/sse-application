@@ -27,6 +27,24 @@ export default function EvaluationValidatePage() {
     || reponse.status === StatusReponse.REJETEE
     || reponse.status === StatusReponse.A_CORRIGER;
 
+  const levelBadge = (niveau?: string) => {
+    if (!niveau) return null;
+    const colors: Record<string, string> = {
+      N0: 'bg-red-100 text-red-700', N1: 'bg-amber-100 text-amber-700',
+      N2: 'bg-blue-100 text-blue-700', N3: 'bg-green-100 text-green-700',
+    };
+    return <span className={`badge ${colors[niveau] || 'bg-gray-100 text-gray-600'}`}>{niveau}</span>;
+  };
+
+  const statusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      VALIDEE: 'bg-green-100 text-green-700', REJETEE: 'bg-red-100 text-red-700',
+      A_CORRIGER: 'bg-amber-100 text-amber-700', BROUILLON: 'bg-gray-100 text-gray-600',
+      SOUMISE: 'bg-blue-100 text-blue-700',
+    };
+    return <span className={`badge text-xs ${colors[status] || 'bg-gray-100 text-gray-600'}`}>{t(`reponseStatus.${status}`)}</span>;
+  };
+
   const loadData = useCallback(async () => {
     if (!id) return;
     try {
@@ -38,11 +56,8 @@ export default function EvaluationValidatePage() {
       setPrincipes(princData);
       setActivePrincipe((current) =>
         current && princData.some((principe) => principe.id === current)
-          ? current
-          : princData[0]?.id || ''
+          ? current : princData[0]?.id || ''
       );
-      
-      // Load reponses for each principe
       const repMap: Record<string, Reponse[]> = {};
       for (const p of princData) {
         const reps = await reponseService.getByEvaluation(id, p.id);
@@ -60,15 +75,10 @@ export default function EvaluationValidatePage() {
 
   useEffect(() => {
     if (!id) return undefined;
-
     const keepLockAlive = () => {
-      if (!document.hidden) {
-        void evaluationService.claimValidation(id).catch(() => undefined);
-      }
+      if (!document.hidden) { void evaluationService.claimValidation(id).catch(() => undefined); }
     };
-
     const interval = window.setInterval(keepLockAlive, 60000);
-
     return () => {
       window.clearInterval(interval);
       void evaluationService.releaseValidation(id).catch(() => undefined);
@@ -78,8 +88,8 @@ export default function EvaluationValidatePage() {
   const updateReponseInState = (updatedReponse: Reponse) => {
     setReponses((current) => ({
       ...current,
-      [updatedReponse.principeId]: (current[updatedReponse.principeId] || []).map((reponse) =>
-        reponse.id === updatedReponse.id ? updatedReponse : reponse
+      [updatedReponse.principeId]: (current[updatedReponse.principeId] || []).map((r) =>
+        r.id === updatedReponse.id ? updatedReponse : r
       ),
     }));
   };
@@ -114,21 +124,14 @@ export default function EvaluationValidatePage() {
   };
 
   const handleDownloadFile = async (fileUrl: string) => {
-    try {
-      await fileService.download(fileUrl);
-    } catch (error) {
-      toast.error(t('validation.downloadError'));
-    }
+    try { await fileService.download(fileUrl); }
+    catch (error) { toast.error(t('validation.downloadError')); }
   };
 
   const handleDownloadPdf = async () => {
     if (!id) return;
-
-    try {
-      await reportService.downloadPdf(id);
-    } catch (error) {
-      toast.error(t('evaluationRead.downloadError'));
-    }
+    try { await reportService.downloadPdf(id); }
+    catch (error) { toast.error(t('evaluationRead.downloadError')); }
   };
 
   const getPrincipeProgress = (principe: Principe) => {
@@ -138,7 +141,6 @@ export default function EvaluationValidatePage() {
       reponse.niveau != null && reponse.status !== StatusReponse.A_CORRIGER
     ).length;
     const hasCorrection = principeReponses.some((reponse) => reponse.status === StatusReponse.A_CORRIGER);
-
     return { completed, total, hasCorrection };
   };
 
@@ -148,33 +150,6 @@ export default function EvaluationValidatePage() {
     pendingDecisionReponses.length === 0
     && allReponses.length > 0
     && (evaluation?.status === StatusEvaluation.SOUMISE || evaluation?.status === StatusEvaluation.EN_VALIDATION);
-
-  const actionButtonClass = (
-    status: string,
-    selectedStatus: string,
-    color: 'green' | 'red' | 'amber',
-  ) => {
-    const selected = status === selectedStatus;
-    const hasDecision = status === 'VALIDEE' || status === 'REJETEE' || status === 'A_CORRIGER';
-
-    if (!selected && hasDecision) {
-      return 'p-2 rounded-lg transition-colors bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600';
-    }
-
-    const classes = {
-      green: selected
-        ? 'bg-green-600 text-white ring-2 ring-green-200 hover:bg-green-700'
-        : 'bg-green-100 text-green-700 hover:bg-green-200',
-      red: selected
-        ? 'bg-red-600 text-white ring-2 ring-red-200 hover:bg-red-700'
-        : 'bg-red-100 text-red-700 hover:bg-red-200',
-      amber: selected
-        ? 'bg-amber-500 text-white ring-2 ring-amber-200 hover:bg-amber-600'
-        : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-    };
-
-    return `p-2 rounded-lg transition-colors ${classes[color]}`;
-  };
 
   const handleValidateEvaluation = async () => {
     if (!id) return;
@@ -206,46 +181,46 @@ export default function EvaluationValidatePage() {
     } catch (error) { toast.error(getErrorMessage(error, t('validation.error'))); }
   };
 
+  const actionBtnClass = (reponse: Reponse, action: string, color: 'green' | 'red' | 'amber') => {
+    const selected = reponse.status === action;
+    const hasDecision = hasAdminDecision(reponse);
+    if (!selected && hasDecision) return 'p-1.5 rounded transition-colors bg-gray-100 text-gray-300 cursor-not-allowed';
+
+    const classes = {
+      green: selected ? 'bg-green-600 text-white ring-2 ring-green-200' : 'bg-green-100 text-green-700 hover:bg-green-200',
+      red: selected ? 'bg-red-600 text-white ring-2 ring-red-200' : 'bg-red-100 text-red-700 hover:bg-red-200',
+      amber: selected ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+    };
+    return `p-1.5 rounded transition-colors ${classes[color]}`;
+  };
+
   if (isLoading || !evaluation) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div></div>;
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700" /></div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/admin/evaluations')} className="p-2 rounded-lg hover:bg-gray-100">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('validation.title', { organisme: evaluation.organismeName })}</h1>
-            <p className="text-gray-500">{t('validation.year', { year: evaluation.year })}</p>
+            <h1 className="text-xl font-bold text-gray-900">{t('validation.title', { organisme: evaluation.organismeName })} - {evaluation.year}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              {pendingDecisionReponses.length > 0 && (
+                <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
+                  {t('validation.pendingActions', { count: pendingDecisionReponses.length })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {pendingDecisionReponses.length > 0 && (
-            <span className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-              {t('validation.pendingActions', { count: pendingDecisionReponses.length })}
-            </span>
-          )}
-          <button onClick={handleDownloadPdf} className="btn-outline gap-2">
-            <Download className="w-4 h-4" /> PDF
-          </button>
-          <button onClick={handleRejectEvaluation} className="btn-danger gap-2">
-            <X className="w-4 h-4" /> {t('validation.reject')}
-          </button>
-          <button
-            onClick={handleValidateEvaluation}
-            disabled={!canValidateEvaluation}
-            className="btn-success gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-            title={
-              pendingDecisionReponses.length > 0
-                ? t('validation.pendingActionsBlock', { count: pendingDecisionReponses.length })
-                : !canValidateEvaluation
-                  ? t('validation.evaluationNotReady')
-                  : undefined
-            }
-          >
+        <div className="flex items-center gap-2">
+          <button onClick={handleDownloadPdf} className="btn-outline gap-2 text-sm"><Download className="w-4 h-4" /> PDF</button>
+          <button onClick={handleRejectEvaluation} className="btn-danger gap-2 text-sm"><X className="w-4 h-4" /> {t('validation.reject')}</button>
+          <button onClick={handleValidateEvaluation} disabled={!canValidateEvaluation}
+            className="btn-success gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
             <Check className="w-4 h-4" /> {t('validation.validateEvaluation')}
           </button>
         </div>
@@ -254,20 +229,12 @@ export default function EvaluationValidatePage() {
       <div className="flex gap-2 overflow-x-auto pb-2">
         {principes.map((p) => {
           const { completed, total, hasCorrection } = getPrincipeProgress(p);
-
           return (
-            <button
-              key={p.id}
-              onClick={() => setActivePrincipe(p.id)}
-              className={`relative flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            <button key={p.id} onClick={() => setActivePrincipe(p.id)}
+              className={`relative flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activePrincipe === p.id ? 'bg-primary-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {hasCorrection && (
-                <span className={`absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ${
-                  activePrincipe === p.id ? 'ring-2 ring-white' : ''
-                }`} />
-              )}
+              }`}>
+              {hasCorrection && <span className={`absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500 ${activePrincipe === p.id ? 'ring-2 ring-white' : ''}`} />}
               {p.number}. {getLocalizedField(p, 'name', language)}
               <span className="ml-1 opacity-70">({completed}/{total})</span>
             </button>
@@ -275,104 +242,95 @@ export default function EvaluationValidatePage() {
         })}
       </div>
 
-      {principes.filter(p => p.id === activePrincipe).map((principe) => (
-        <div key={principe.id} className="space-y-4">
-          {principe.bonnesPratiques.map((bp) => (
-            <div key={bp.id} className="card">
-              <div className="p-4 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-semibold text-gray-900">{getLocalizedField(bp, 'label', language)}</h3>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {(reponses[principe.id] || [])
-                  .filter(r => r.bonnePratiqueId === bp.id)
-                  .map((reponse) => (
-                    <div key={reponse.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{reponse.critereLabel}</p>
-                          {reponse.commentaire && <p className="text-sm text-gray-500 mt-1">{reponse.commentaire}</p>}
-                          {((reponse.preuveFiles?.length || 0) > 0 || (reponse.preuveLinks?.length || 0) > 0) && (
-                            <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                {t('validation.evidence')}
-                              </p>
-                              <div className="space-y-1.5">
-                                {reponse.preuveFiles?.map((fileUrl) => (
-                                  <button
-                                    key={fileUrl}
-                                    type="button"
-                                    onClick={() => handleDownloadFile(fileUrl)}
-                                    className="flex max-w-full min-w-0 items-center gap-2 text-left text-xs text-primary-700 hover:underline"
-                                  >
-                                    <FileText className="h-3.5 w-3.5 flex-shrink-0" />
-                                    <span className="min-w-0 truncate">{t('validation.fileLabel')} {fileUrl.split('/').pop()}</span>
-                                  </button>
-                                ))}
-                                {reponse.preuveLinks?.map((preuveLink) => (
-                                  <a
-                                    key={preuveLink}
-                                    href={preuveLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex max-w-full min-w-0 items-center gap-2 text-xs text-primary-700 hover:underline"
-                                  >
-                                    <LinkIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                                    <span className="min-w-0 truncate">{t('validation.linkLabel')} {preuveLink}</span>
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className={`badge ${
-                              reponse.niveau === 'N0' ? 'bg-red-100 text-red-700' :
-                              reponse.niveau === 'N1' ? 'bg-amber-100 text-amber-700' :
-                              reponse.niveau === 'N2' ? 'bg-blue-100 text-blue-700' :
-                              'bg-green-100 text-green-700'
-                            }`}>
-                              {reponse.niveau}
-                            </span>
-                            <span className={`badge ${
-                              reponse.status === 'VALIDEE' ? 'bg-green-100 text-green-700' :
-                              reponse.status === 'REJETEE' ? 'bg-red-100 text-red-700' :
-                              reponse.status === 'A_CORRIGER' ? 'bg-amber-100 text-amber-700' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {t(`reponseStatus.${reponse.status}`)}
-                            </span>
-                          </div>
+      <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Principe</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
+              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-14">Niveau</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 min-w-[160px]">Commentaire & Preuves</th>
+              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-28">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {principes.filter(p => p.id === activePrincipe).map((principe) => {
+              const bpCriteres = principe.bonnesPratiques.flatMap(bp =>
+                bp.criteres.map(c => ({ principe, bp, critere: c }))
+              );
+              return bpCriteres.map((row, idx) => {
+                const reponse = (reponses[principe.id] || []).find(r => r.critereId === row.critere.id);
+                return (
+                  <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
+                    <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
+                    <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.principe, 'name', language)}</td>
+                    <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
+                    <td className="px-3 py-2 text-gray-900 align-top">
+                      <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
+                      {(reponse?.validatorComment || reponse?.rejectionReason) && (
+                        <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
+                          {reponse.validatorComment && <p>{reponse.validatorComment}</p>}
+                          {reponse.rejectionReason && <p className="text-red-600">{reponse.rejectionReason}</p>}
                         </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <button
-                            onClick={() => handleValidateReponse(reponse.id)}
-                            className={actionButtonClass(reponse.status, 'VALIDEE', 'green')}
-                            title={t('validation.tooltipValidate')}
-                          >
-                            <Check className="w-4 h-4" />
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center align-top">
+                      {reponse?.niveau ? levelBadge(reponse.niveau) : <span className="text-xs text-gray-400">-</span>}
+                      {reponse && <div className="mt-0.5">{statusBadge(reponse.status)}</div>}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      {reponse?.commentaire && <p className="text-xs text-gray-600 mb-1">{reponse.commentaire}</p>}
+                      {(reponse?.preuveFiles?.length || 0) > 0 && (
+                        <div className="space-y-0.5">
+                          {reponse?.preuveFiles?.map((fileUrl) => (
+                            <button key={fileUrl} type="button" onClick={() => handleDownloadFile(fileUrl)}
+                              className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
+                              <FileText className="w-3 h-3" /> {fileUrl.split('/').pop()}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {(reponse?.preuveLinks?.length || 0) > 0 && (
+                        <div className="space-y-0.5 mt-0.5">
+                          {reponse?.preuveLinks?.map((link) => (
+                            <a key={link} href={link} target="_blank" rel="noreferrer"
+                              className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
+                              <LinkIcon className="w-3 h-3" /> {link}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      {reponse && (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button onClick={() => handleValidateReponse(reponse.id)}
+                            className={actionBtnClass(reponse, StatusReponse.VALIDEE, 'green')}
+                            title={t('validation.tooltipValidate')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.VALIDEE}>
+                            <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => handleRejectReponse(reponse.id)}
-                            className={actionButtonClass(reponse.status, 'REJETEE', 'red')}
-                            title={t('validation.tooltipReject')}
-                          >
-                            <X className="w-4 h-4" />
+                          <button onClick={() => handleRejectReponse(reponse.id)}
+                            className={actionBtnClass(reponse, StatusReponse.REJETEE, 'red')}
+                            title={t('validation.tooltipReject')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.REJETEE}>
+                            <X className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => handleRequestCorrection(reponse.id)}
-                            className={actionButtonClass(reponse.status, 'A_CORRIGER', 'amber')}
-                            title={t('validation.tooltipCorrection')}
-                          >
-                            <RotateCcw className="w-4 h-4" />
+                          <button onClick={() => handleRequestCorrection(reponse.id)}
+                            className={actionBtnClass(reponse, StatusReponse.A_CORRIGER, 'amber')}
+                            title={t('validation.tooltipCorrection')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.A_CORRIGER}>
+                            <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
+                      )}
+                    </td>
+                  </tr>
+                );
+              });
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

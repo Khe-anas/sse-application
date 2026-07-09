@@ -142,7 +142,7 @@ public class ReponseService {
         reponse.setCorrectionAddressed(false);
         Reponse saved = reponseRepository.save(reponse);
 
-        List<User> responsables = userRepository.findActiveResponsablesByOrganisme(evaluation.getOrganisme().getId());
+        List<User> responsables = userRepository.findActiveUsersByOrganisme(evaluation.getOrganisme().getId());
         for (User responsable : responsables) {
             notificationService.sendCorrectionRequested(
                 responsable.getId(),

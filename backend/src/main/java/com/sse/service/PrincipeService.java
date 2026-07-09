@@ -126,6 +126,103 @@ public class PrincipeService {
     }
     
     @Transactional
+    public Principe updatePrincipe(UUID id, String nameFr, String nameAr, String nameEn,
+                                    String descriptionFr, String descriptionAr, String descriptionEn,
+                                    Float weight, Boolean isActive) {
+        Principe p = principeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Principe not found"));
+        if (nameFr != null) p.setNameFr(nameFr);
+        if (nameAr != null) p.setNameAr(nameAr);
+        if (nameEn != null) p.setNameEn(nameEn);
+        if (descriptionFr != null) p.setDescriptionFr(descriptionFr);
+        if (descriptionAr != null) p.setDescriptionAr(descriptionAr);
+        if (descriptionEn != null) p.setDescriptionEn(descriptionEn);
+        if (weight != null) p.setWeight(weight);
+        if (isActive != null) p.setIsActive(isActive);
+        return principeRepository.save(p);
+    }
+
+    @Transactional
+    public BonnePratique createBonnePratique(UUID principeId, String labelFr, String labelAr, String labelEn) {
+        Principe principe = principeRepository.findById(principeId)
+            .orElseThrow(() -> new RuntimeException("Principe not found"));
+        BonnePratique bp = new BonnePratique();
+        int maxNumber = bonnePratiqueRepository.findByPrincipeIdOrderByNumberAsc(principeId)
+            .stream().mapToInt(BonnePratique::getNumber).max().orElse(0);
+        bp.setNumber(maxNumber + 1);
+        bp.setLabelFr(labelFr);
+        bp.setLabelAr(labelAr);
+        bp.setLabelEn(labelEn);
+        bp.setPrincipe(principe);
+        return bonnePratiqueRepository.save(bp);
+    }
+
+    @Transactional
+    public BonnePratique updateBonnePratique(UUID id, String labelFr, String labelAr, String labelEn) {
+        BonnePratique bp = bonnePratiqueRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("BonnePratique not found"));
+        if (labelFr != null) bp.setLabelFr(labelFr);
+        if (labelAr != null) bp.setLabelAr(labelAr);
+        if (labelEn != null) bp.setLabelEn(labelEn);
+        return bonnePratiqueRepository.save(bp);
+    }
+
+    @Transactional
+    public void deleteBonnePratique(UUID id) {
+        BonnePratique bp = bonnePratiqueRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("BonnePratique not found"));
+        bonnePratiqueRepository.delete(bp);
+    }
+
+    @Transactional
+    public Critere createCritere(UUID bonnePratiqueId, String labelFr, String labelAr, String labelEn,
+                                  String preuvesFr, String preuvesAr, String preuvesEn,
+                                  String referencesFr, String referencesAr, String referencesEn) {
+        BonnePratique bp = bonnePratiqueRepository.findById(bonnePratiqueId)
+            .orElseThrow(() -> new RuntimeException("BonnePratique not found"));
+        Critere critere = new Critere();
+        int maxNumber = critereRepository.findByBonnePratiqueIdOrderByNumberAsc(bonnePratiqueId)
+            .stream().mapToInt(Critere::getNumber).max().orElse(0);
+        critere.setNumber(maxNumber + 1);
+        critere.setLabelFr(labelFr);
+        critere.setLabelAr(labelAr);
+        critere.setLabelEn(labelEn);
+        critere.setPreuvesFr(preuvesFr);
+        critere.setPreuvesAr(preuvesAr);
+        critere.setPreuvesEn(preuvesEn);
+        critere.setReferencesFr(referencesFr);
+        critere.setReferencesAr(referencesAr);
+        critere.setReferencesEn(referencesEn);
+        critere.setBonnePratique(bp);
+        return critereRepository.save(critere);
+    }
+
+    @Transactional
+    public Critere updateCritere(UUID id, String labelFr, String labelAr, String labelEn,
+                                  String preuvesFr, String preuvesAr, String preuvesEn,
+                                  String referencesFr, String referencesAr, String referencesEn) {
+        Critere critere = critereRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Critere not found"));
+        if (labelFr != null) critere.setLabelFr(labelFr);
+        if (labelAr != null) critere.setLabelAr(labelAr);
+        if (labelEn != null) critere.setLabelEn(labelEn);
+        if (preuvesFr != null) critere.setPreuvesFr(preuvesFr);
+        if (preuvesAr != null) critere.setPreuvesAr(preuvesAr);
+        if (preuvesEn != null) critere.setPreuvesEn(preuvesEn);
+        if (referencesFr != null) critere.setReferencesFr(referencesFr);
+        if (referencesAr != null) critere.setReferencesAr(referencesAr);
+        if (referencesEn != null) critere.setReferencesEn(referencesEn);
+        return critereRepository.save(critere);
+    }
+
+    @Transactional
+    public void deleteCritere(UUID id) {
+        Critere critere = critereRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Critere not found"));
+        critereRepository.delete(critere);
+    }
+
+    @Transactional
     public Principe createPrincipe(String nameFr, String nameAr, String nameEn, Float weight) {
         long count = principeRepository.count();
         Principe p = new Principe();

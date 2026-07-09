@@ -124,7 +124,7 @@ public class AccountRequestService {
         createUserRequest.setFirstName(accountRequest.getResponsibleFirstName());
         createUserRequest.setLastName(accountRequest.getResponsibleLastName());
         createUserRequest.setPhone(accountRequest.getPhone());
-        createUserRequest.setRole(Role.RESPONSABLE);
+        createUserRequest.setRole(Role.USER);
         createUserRequest.setOrganismeId(organisme.getId());
 
         UserCreationResult creationResult = userService.createUserWithResult(createUserRequest);

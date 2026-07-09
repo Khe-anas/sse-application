@@ -25,14 +25,14 @@ export default function ResponsableDashboard() {
       return;
     }
 
-    if (user.role === Role.RESPONSABLE && !user.organismeId) {
+    if (user.role === Role.USER && !user.organismeId) {
       setEvaluations([]);
       setIsLoading(false);
       return;
     }
 
     try {
-      const params = user.role === Role.RESPONSABLE ? { organismeId: user.organismeId } : undefined;
+      const params = user.role === Role.USER ? { organismeId: user.organismeId } : undefined;
       const data = await evaluationService.getAll(params);
       setEvaluations(data.content);
     } catch (error) { toast.error(t('responsable.loadError')); }
@@ -61,7 +61,7 @@ export default function ResponsableDashboard() {
         year: new Date().getFullYear(),
       });
       toast.success(t('responsable.created'));
-      navigate(`/responsable/evaluation/${evaluation.id}`);
+      navigate(`/user/evaluation/${evaluation.id}`);
     } catch (error) {
       const message = axios.isAxiosError(error)
         ? error.response?.data?.message || t('responsable.createError')
@@ -94,7 +94,7 @@ export default function ResponsableDashboard() {
         <h1 className="text-2xl font-bold text-gray-900">
           {user?.role === Role.ADMIN ? t('responsable.adminEvaluationsTitle') : t('navigation.myEvaluations')}
         </h1>
-        {user?.role === Role.RESPONSABLE && (
+        {user?.role === Role.USER && (
           <button
             onClick={handleCreateEvaluation}
             disabled={isCreating || !user.organismeId}
@@ -133,7 +133,7 @@ export default function ResponsableDashboard() {
               <div className="flex items-center gap-4">
                 <span className={`badge ${statusColors[ev.status]}`}>{t(`evaluation.status.${ev.status}`)}</span>
                 {ev.status === 'EN_COURS' && (
-                  <button onClick={() => navigate(`/responsable/evaluation/${ev.id}`)} className="btn-primary btn-sm">
+                  <button onClick={() => navigate(`/user/evaluation/${ev.id}`)} className="btn-primary btn-sm">
                     {t('responsable.fill')}
                   </button>
                 )}

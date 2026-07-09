@@ -1,0 +1,102 @@
+@startuml
+left to right direction
+
+actor Invite as I
+actor Responsable as R
+actor Gouvernement as G
+actor Admin as A
+actor "Super Admin" as SA
+
+SA --|> A
+
+rectangle "Cas d'Utilisation" {
+  (S'authentifier) as UC1
+  (Demander reinit.\nmot de passe) as UC2
+
+  (Gerer utilisateurs) as UC10
+  (Activer/Desactiver) as UC11
+  (Generer mot de passe) as UC12
+
+  (Creer evaluation) as UC20
+  (Soumettre evaluation) as UC21
+  (Valider evaluation) as UC22
+  (Rejeter evaluation) as UC23
+  (Repondre aux\ncriteres) as UC24
+  (Visualiser score) as UC25
+  (Demander correction) as UC26
+
+  (Gerer organismes) as UC30
+
+  (Soumettre\ndemande compte) as UC40
+  (Approuver/Rejeter) as UC41
+
+  (Soumettre\nreclamation) as UC50
+  (Traiter/Resoudre) as UC51
+
+  (Envoyer notification) as UC60
+  (Consulter\nnotifications) as UC61
+
+  (Consulter\njournal d'audit) as UC70
+  (Exporter\njournal PDF) as UC71
+
+  (Tableau de bord) as UC80
+  (Exporter rapports) as UC81
+
+  (Chatbot) as UC90
+}
+
+' --- Invite ---
+I --> UC1
+I --> UC2
+I --> UC40
+
+' --- Responsable ---
+R --> UC20
+R --> UC21
+R --> UC24
+R --> UC25
+R --> UC50
+R --> UC61
+R --> UC80
+R --> UC90
+
+' --- Gouvernement ---
+G --> UC80
+G --> UC81
+G --> UC90
+
+' --- Admin ---
+A --> UC10
+A --> UC11
+A --> UC20
+A --> UC22
+A --> UC23
+A --> UC25
+A --> UC26
+A --> UC30
+A --> UC41
+A --> UC51
+A --> UC60
+A --> UC70
+A --> UC80
+A --> UC81
+A --> UC90
+
+' --- Super Admin (only specific UCs not inherited from Admin) ---
+SA --> UC12
+SA --> UC21
+SA --> UC24
+SA --> UC71
+
+' --- Includes ---
+UC21 ..> UC24 : <<include>>
+UC22 ..> UC25 : <<include>>
+UC23 ..> UC25 : <<include>>
+
+' --- Extends ---
+UC26 ..> UC22 : <<extend>>
+UC71 ..> UC70 : <<extend>>
+UC12 ..> UC10 : <<extend>>
+UC11 ..> UC10 : <<extend>>
+
+@enduml
