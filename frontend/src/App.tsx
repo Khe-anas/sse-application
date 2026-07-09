@@ -104,7 +104,6 @@ function App() {
             <Route path="/evaluateur/dashboard" element={<AdminDashboard />} />
             <Route path="/evaluateur/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluateur/evaluations/:id/validate" element={<EvaluationValidatePage />} />
-            <Route path="/evaluateur/notifications" element={<NotificationsPage />} />
           </Route>
 
           {/* Gouvernement routes */}

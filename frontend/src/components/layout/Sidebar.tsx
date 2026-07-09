@@ -43,12 +43,11 @@ const navItems: NavItem[] = [
 
   { label: 'navigation.evaluateurDashboard', icon: LayoutDashboard, path: '/evaluateur/dashboard', roles: [Role.EVALUATEUR] },
   { label: 'navigation.evaluations', icon: ClipboardList, path: '/evaluateur/evaluations', roles: [Role.EVALUATEUR] },
-  { label: 'navigation.notifications', icon: Bell, path: '/evaluateur/notifications', roles: [Role.EVALUATEUR] },
   
   { label: 'navigation.governmentDashboard', icon: LayoutDashboard, path: '/gouvernement/dashboard', roles: [Role.ADMIN, Role.GOUVERNEMENT] },
   { label: 'navigation.evaluations', icon: ClipboardList, path: '/gouvernement/evaluations', roles: [Role.GOUVERNEMENT] },
   { label: 'navigation.ranking', icon: Trophy, path: '/gouvernement/ranking', roles: [Role.ADMIN, Role.GOUVERNEMENT] },
-  { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.USER, Role.EVALUATEUR, Role.GOUVERNEMENT] },
+  { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.USER, Role.GOUVERNEMENT] },
 ];
 
 export default function Sidebar() {
