@@ -297,6 +297,7 @@
     "subtitle": "Administrator messages and general announcements",
     "modeAnnouncement": "Announcement",
     "modeMessage": "Message",
+    "adminOnly": "Only administrators can send targeted messages.",
     "recipients": "Recipients",
     "recipientsSelected": "Selected recipients",
     "recipientsCount": "{{count}} user(s)",

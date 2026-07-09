@@ -27,17 +27,17 @@ export default function EvaluationsPage() {
 
   const loadData = useCallback(async (showError = true) => {
     try {
-      const [evalsData, orgsData] = await Promise.all([
-        evaluationService.getAll({ _ts: Date.now() }),
-        organismeService.getAll({ size: 100 }),
-      ]);
+      const evalsPromise = evaluationService.getAll({ _ts: Date.now() });
+      const [evalsData, orgsData] = isAdmin
+        ? await Promise.all([evalsPromise, organismeService.getAll({ size: 100 })])
+        : [await evalsPromise, null];
       setEvaluations(evalsData);
-      setOrganismes(orgsData.content);
+      if (orgsData) setOrganismes(orgsData.content);
     } catch (error) {
       if (showError) toast.error(t('evaluations.loadError'));
     }
     finally { setIsLoading(false); }
-  }, [t]);
+  }, [t, isAdmin]);
 
   useEffect(() => {
     loadData();

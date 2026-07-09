@@ -297,6 +297,7 @@
     "subtitle": "رسائل المدير والإعلانات العامة",
     "modeAnnouncement": "إعلان",
     "modeMessage": "رسالة",
+    "adminOnly": "يمكن للمسؤولين فقط إرسال رسائل موجهة.",
     "recipients": "المستلمون",
     "recipientsSelected": "المستلمون المحددون",
     "recipientsCount": "{{count}} مستخدم",

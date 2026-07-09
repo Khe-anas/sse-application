@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, Check, Mail, Megaphone, Search, Send } from 'lucide-react';
+import { Bell, Check, Mail, Megaphone, Search, Send, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { notificationService } from '@/services/notificationService';
 import { userService } from '@/services/userService';
+import { useAuthStore } from '@/stores/authStore';
 import { Role, type User } from '@/types';
 
 type Mode = 'announcement' | 'message';
 
 export default function NotificationsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === Role.ADMIN;
   const [mode, setMode] = useState<Mode>('announcement');
   const [users, setUsers] = useState<User[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<Role[]>([Role.ADMIN, Role.USER, Role.GOUVERNEMENT]);
@@ -19,7 +22,7 @@ export default function NotificationsPage() {
   const [messageFr, setMessageFr] = useState('');
   const [link, setLink] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(isAdmin);
 
   const roleOptions = useMemo(() => [
     { role: Role.ADMIN, label: t('notificationsPage.roleAdmins') },
@@ -28,6 +31,7 @@ export default function NotificationsPage() {
   ], [t]);
 
   useEffect(() => {
+    if (!isAdmin) { setIsLoadingUsers(false); return; }
     const loadUsers = async () => {
       try {
         const data = await userService.getAll({ size: 100 });
@@ -38,9 +42,8 @@ export default function NotificationsPage() {
         setIsLoadingUsers(false);
       }
     };
-
     loadUsers();
-  }, [t]);
+  }, [t, isAdmin]);
 
   const filteredUsers = useMemo(() => {
     const value = search.trim().toLowerCase();
@@ -135,16 +138,18 @@ export default function NotificationsPage() {
               <Megaphone className="w-4 h-4" />
               {t('notificationsPage.modeAnnouncement')}
             </button>
-            <button
-              type="button"
-              onClick={() => setMode('message')}
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
-                mode === 'message' ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Mail className="w-4 h-4" />
-              {t('notificationsPage.modeMessage')}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setMode('message')}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
+                  mode === 'message' ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Mail className="w-4 h-4" />
+                {t('notificationsPage.modeMessage')}
+              </button>
+            )}
           </div>
 
           {mode === 'announcement' ? (
@@ -222,54 +227,48 @@ export default function NotificationsPage() {
           </div>
         </form>
 
-        <aside className="card p-4 space-y-4">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900">{t('notificationsPage.usersTitle')}</h2>
-            <p className="text-xs text-gray-500">{t('notificationsPage.usersSubtitle')}</p>
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              className="input pl-10"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t('notificationsPage.searchPlaceholder')}
-            />
-          </div>
-
-          <div className="max-h-[520px] overflow-y-auto space-y-2 pr-1">
-            {isLoadingUsers ? (
-              <p className="text-sm text-gray-500 py-6 text-center">{t('common.loading')}</p>
-            ) : filteredUsers.length === 0 ? (
-              <p className="text-sm text-gray-500 py-6 text-center">{t('notificationsPage.empty')}</p>
-            ) : (
-              filteredUsers.map((user) => {
-                const selected = selectedUserIds.includes(user.id);
-                return (
-                  <button
-                    key={user.id}
-                    type="button"
-                    onClick={() => toggleUser(user.id)}
-                    className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2 text-left ${
-                      selected ? 'border-primary-600 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                      selected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300'
-                    }`}>
-                      {selected && <Check className="w-3 h-3" />}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-gray-900 truncate">{user.fullName}</span>
-                      <span className="block text-xs text-gray-500 truncate">{user.email}</span>
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </aside>
+        {isAdmin ? (
+          <aside className="card p-4 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">{t('notificationsPage.usersTitle')}</h2>
+              <p className="text-xs text-gray-500">{t('notificationsPage.usersSubtitle')}</p>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input className="input pl-10" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('notificationsPage.searchPlaceholder')} />
+            </div>
+            <div className="max-h-[520px] overflow-y-auto space-y-2 pr-1">
+              {isLoadingUsers ? (
+                <p className="text-sm text-gray-500 py-6 text-center">{t('common.loading')}</p>
+              ) : filteredUsers.length === 0 ? (
+                <p className="text-sm text-gray-500 py-6 text-center">{t('notificationsPage.empty')}</p>
+              ) : (
+                filteredUsers.map((u) => {
+                  const selected = selectedUserIds.includes(u.id);
+                  return (
+                    <button key={u.id} type="button" onClick={() => toggleUser(u.id)}
+                      className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2 text-left ${selected ? 'border-primary-600 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                      <span className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 ${selected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300'}`}>
+                        {selected && <Check className="w-3 h-3" />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-gray-900 truncate">{u.fullName}</span>
+                        <span className="block text-xs text-gray-500 truncate">{u.email}</span>
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </aside>
+        ) : (
+          <aside className="card p-4 flex items-center justify-center text-gray-500">
+            <div className="text-center">
+              <AlertCircle className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">{t('notificationsPage.adminOnly')}</p>
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

@@ -25,11 +25,11 @@ public class AccessControlService {
     private final RoleHierarchy roleHierarchy;
 
     public boolean canListOrganismes() {
-        return hasRole("ADMIN") || hasRole("GOUVERNEMENT");
+        return hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR");
     }
 
     public boolean canReadOrganisme(UUID organismeId) {
-        return hasRole("ADMIN") || hasRole("GOUVERNEMENT") || ownsOrganisme(organismeId);
+        return hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR") || ownsOrganisme(organismeId);
     }
 
     public boolean canUpdateOrganismeContact(UUID organismeId) {
