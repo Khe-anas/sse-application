@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ChevronLeft, Send, Upload, Link, FileText, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, Send, Upload, Link, FileText, X, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { evaluationService, reponseService } from '@/services/evaluationService';
 import { fileService } from '@/services/fileService';
@@ -25,11 +25,9 @@ export default function EvaluationFillPage() {
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [principes, setPrincipes] = useState<Principe[]>([]);
   const [reponses, setReponses] = useState<Record<string, Reponse>>({});
-  const [activePrincipe, setActivePrincipe] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [touchedCorrectionIds, setTouchedCorrectionIds] = useState<Set<string>>(new Set());
-  const commentSaveTimers = useRef<Record<string, number>>({});
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -45,18 +43,11 @@ export default function EvaluationFillPage() {
       repData.forEach(r => { repMap[r.critereId] = r; });
       setReponses(repMap);
       setTouchedCorrectionIds(new Set());
-      if (princData.length > 0) setActivePrincipe(princData[0].id);
     } catch (error) { toast.error(t('evaluationFill.loadError')); }
     finally { setIsLoading(false); }
   }, [id, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
-
-  useEffect(() => {
-    return () => {
-      Object.values(commentSaveTimers.current).forEach(window.clearTimeout);
-    };
-  }, []);
 
   const canEditReponse = (reponse: Reponse | undefined) =>
     evaluation?.status === StatusEvaluation.EN_COURS
@@ -89,13 +80,6 @@ export default function EvaluationFillPage() {
     } catch (error) { toast.error(t('evaluationFill.saveError')); }
   };
 
-  const scheduleReponseDraftSave = (reponse: Reponse) => {
-    window.clearTimeout(commentSaveTimers.current[reponse.critereId]);
-    commentSaveTimers.current[reponse.critereId] = window.setTimeout(() => {
-      void saveReponseDraft(reponse);
-    }, 600);
-  };
-
   const handleNiveauChange = (critereId: string, niveau: Niveau) => {
     if (!canEditCritere(critereId)) return;
     const existing = reponses[critereId];
@@ -109,18 +93,6 @@ export default function EvaluationFillPage() {
       setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
     }
     void saveReponseDraft(updated);
-  };
-
-  const handleCommentChange = (critereId: string, commentaire: string) => {
-    if (!canEditCritere(critereId)) return;
-    const existing = reponses[critereId];
-    const updated = {
-      ...existing, critereId, commentaire,
-      status: existing?.status || StatusReponse.BROUILLON,
-      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
-    } as Reponse;
-    setReponses(prev => ({ ...prev, [critereId]: updated }));
-    scheduleReponseDraftSave(updated);
   };
 
   const handleAddLink = (critereId: string) => {
@@ -227,27 +199,12 @@ export default function EvaluationFillPage() {
     return Math.round((answered / total) * 100);
   };
 
-  const getAllCriteres = () => {
-    const active = principes.find(p => p.id === activePrincipe);
-    if (!active) return [];
-    const rows: { principe: Principe; bp: any; critere: any }[] = [];
-    active.bonnesPratiques.forEach(bp => {
-      bp.criteres.forEach(critere => {
-        rows.push({ principe: active, bp, critere });
-      });
-    });
-    return rows;
-  };
-
   if (isLoading || !evaluation) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div></div>;
   }
 
-  const rows = getAllCriteres();
-
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/user/dashboard')} className="p-2 rounded-lg hover:bg-gray-100">
@@ -266,140 +223,131 @@ export default function EvaluationFillPage() {
         </button>
       </div>
 
-      {/* Principle tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {principes.map((p) => {
-          const principeReponses = p.bonnesPratiques.flatMap(bp => bp.criteres.map(c => reponses[c.id])).filter(Boolean);
-          const completed = principeReponses.filter(isReponseComplete).length;
-          const total = principeReponses.length;
-          const isComplete = total > 0 && completed === total;
-          return (
-            <button key={p.id} onClick={() => setActivePrincipe(p.id)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                activePrincipe === p.id ? 'bg-primary-700 text-white' : isComplete ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>
-              <span className="mr-1">{p.number}.</span>{getLocalizedField(p, 'name', language)}
-              <span className="ml-1 opacity-70">({completed}/{total})</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Principe sections */}
+      {principes.map((principe) => {
+        const rows: { bp: any; critere: any }[] = [];
+        principe.bonnesPratiques.forEach(bp => {
+          bp.criteres.forEach(critere => rows.push({ bp, critere }));
+        });
+        const principeReponses = rows.map(r => reponses[r.critere.id]).filter(Boolean);
+        const completed = principeReponses.filter(isReponseComplete).length;
+        const total = rows.length;
 
-      {/* Table */}
-      <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Principe</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N0</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N1</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N2</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N3</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 min-w-[160px]">Preuves & Commentaire</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {rows.map((row, idx) => {
-              const reponse = reponses[row.critere.id];
-              const canEdit = canEditReponse(reponse);
-              const preuvesAttendues = getLocalizedField(row.critere, 'preuves', language);
-              const references = getLocalizedField(row.critere, 'references', language);
+        return (
+          <div key={principe.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-900">{principe.number}. {getLocalizedField(principe, 'name', language)}</span>
+                {total > 0 && completed === total && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+              </div>
+              <span className="text-sm text-gray-500">{completed}/{total}</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700 w-10">N°</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">BP</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Critère</th>
+                    <th className="px-3 py-2 text-center font-semibold text-gray-700 w-12">N0</th>
+                    <th className="px-3 py-2 text-center font-semibold text-gray-700 w-12">N1</th>
+                    <th className="px-3 py-2 text-center font-semibold text-gray-700 w-12">N2</th>
+                    <th className="px-3 py-2 text-center font-semibold text-gray-700 w-12">N3</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700 min-w-[180px]">{t('evaluationFill.proofColumn')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {rows.map((row, idx) => {
+                    const reponse = reponses[row.critere.id];
+                    const canEdit = canEditReponse(reponse);
+                    const preuvesAttendues = getLocalizedField(row.critere, 'preuves', language);
+                    const references = getLocalizedField(row.critere, 'references', language);
 
-              return (
-                <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
-                  <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
-                  <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.principe, 'name', language)}</td>
-                  <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
-                  <td className="px-3 py-2 text-gray-900 align-top">
-                    <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
-                    {reponse?.status === StatusReponse.A_CORRIGER && (
-                      <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        {reponse.validatorComment || t('evaluationFill.correctionRequested')}
-                      </div>
-                    )}
-                  </td>
-                  {niveaux.map((n) => (
-                    <td key={n.key} className="px-1 py-2 text-center align-top">
-                      <div className="flex items-center justify-center min-h-[28px]">
-                        <input
-                          type="radio"
-                          name={`niveau-${row.critere.id}`}
-                          checked={reponse?.niveau === n.key}
-                          onChange={() => handleNiveauChange(row.critere.id, n.key)}
-                          disabled={!canEdit}
-                          className="w-4 h-4 text-primary-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                        />
-                      </div>
-                    </td>
-                  ))}
-                  <td className="px-3 py-2 align-top">
-                    {/* Commentaire */}
-                    <textarea
-                      value={reponse?.commentaire || ''}
-                      onChange={(e) => handleCommentChange(row.critere.id, e.target.value)}
-                      placeholder={t('evaluationFill.commentairePlaceholder')}
-                      disabled={!canEdit}
-                      rows={2}
-                      className="w-full text-xs border border-gray-200 rounded-lg p-1.5 resize-none disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                    />
-                    {/* Preuves attendues */}
-                    {preuvesAttendues && (
-                      <div className="mt-1 rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800">
-                        <div className="flex items-center gap-1 font-semibold"><FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}</div>
-                        <p className="mt-0.5">{preuvesAttendues}</p>
-                      </div>
-                    )}
-                    {/* References */}
-                    {references && (
-                      <div className="mt-1 rounded bg-gray-50 border border-gray-200 p-1.5 text-xs text-gray-600">
-                        <span className="font-semibold">{t('evaluationFill.references')}:</span> {references}
-                      </div>
-                    )}
-                    {/* Upload + Links */}
-                    {canEdit && (
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <label className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 cursor-pointer">
-                          <Upload className="w-3 h-3" /> {t('evaluationFill.attachFile')}
-                          <input type="file" multiple className="hidden" onChange={(e) => { handleFileUpload(row.critere.id, e.target.files || undefined); e.target.value = ''; }} />
-                        </label>
-                        <button type="button" onClick={() => handleAddLink(row.critere.id)} className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700">
-                          <Link className="w-3 h-3" /> {t('evaluationFill.addLink')}
-                        </button>
-                      </div>
-                    )}
-                    {/* Uploaded files */}
-                    {(reponse?.preuveFiles?.length || 0) > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {reponse?.preuveFiles?.map((fileUrl) => (
-                          <div key={fileUrl} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
-                            <button type="button" onClick={() => fileService.download(fileUrl)} className="flex-1 truncate text-left text-primary-700 hover:underline">{fileUrl.split('/').pop()}</button>
-                            {canEdit && <button type="button" onClick={() => handleRemoveFile(row.critere.id, fileUrl)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
-                          </div>
+                    return (
+                      <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
+                        <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
+                        <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
+                        <td className="px-3 py-2 text-gray-900 align-top">
+                          <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
+                          {reponse?.status === StatusReponse.A_CORRIGER && (
+                            <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              {reponse.validatorComment || t('evaluationFill.correctionRequested')}
+                            </div>
+                          )}
+                        </td>
+                        {niveaux.map((n) => (
+                          <td key={n.key} className="px-1 py-2 text-center align-top">
+                            <div className="flex items-center justify-center min-h-[28px]">
+                              <input
+                                type="radio"
+                                name={`niveau-${row.critere.id}`}
+                                checked={reponse?.niveau === n.key}
+                                onChange={() => handleNiveauChange(row.critere.id, n.key)}
+                                disabled={!canEdit}
+                                className="w-4 h-4 text-primary-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                              />
+                            </div>
+                          </td>
                         ))}
-                      </div>
-                    )}
-                    {/* Uploaded links */}
-                    {(reponse?.preuveLinks?.length || 0) > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {reponse?.preuveLinks?.map((link) => (
-                          <div key={link} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
-                            <a href={link} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary-700 hover:underline">{link}</a>
-                            {canEdit && <button type="button" onClick={() => handleRemoveLink(row.critere.id, link)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                        <td className="px-3 py-2 align-top">
+                          {/* Preuves attendues */}
+                          {preuvesAttendues && (
+                            <div className="rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800 mb-1">
+                              <div className="flex items-center gap-1 font-semibold"><FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}</div>
+                              <p className="mt-0.5">{preuvesAttendues}</p>
+                            </div>
+                          )}
+                          {/* References */}
+                          {references && (
+                            <div className="rounded bg-gray-50 border border-gray-200 p-1.5 text-xs text-gray-600 mb-1">
+                              <span className="font-semibold">{t('evaluationFill.references')}:</span> {references}
+                            </div>
+                          )}
+                          {/* Upload + Links */}
+                          {canEdit && (
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <label className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 cursor-pointer">
+                                <Upload className="w-3 h-3" /> {t('evaluationFill.attachFile')}
+                                <input type="file" multiple className="hidden" onChange={(e) => { handleFileUpload(row.critere.id, e.target.files || undefined); e.target.value = ''; }} />
+                              </label>
+                              <button type="button" onClick={() => handleAddLink(row.critere.id)} className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700">
+                                <Link className="w-3 h-3" /> {t('evaluationFill.addLink')}
+                              </button>
+                            </div>
+                          )}
+                          {/* Uploaded files */}
+                          {(reponse?.preuveFiles?.length || 0) > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {reponse?.preuveFiles?.map((fileUrl) => (
+                                <div key={fileUrl} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
+                                  <button type="button" onClick={() => fileService.download(fileUrl)} className="flex-1 truncate text-left text-primary-700 hover:underline">{fileUrl.split('/').pop()}</button>
+                                  {canEdit && <button type="button" onClick={() => handleRemoveFile(row.critere.id, fileUrl)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Uploaded links */}
+                          {(reponse?.preuveLinks?.length || 0) > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {reponse?.preuveLinks?.map((link) => (
+                                <div key={link} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
+                                  <a href={link} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary-700 hover:underline">{link}</a>
+                                  {canEdit && <button type="button" onClick={() => handleRemoveLink(row.critere.id, link)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
