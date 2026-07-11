@@ -335,15 +335,6 @@ export default function EvaluationFillPage() {
                     </td>
                   ))}
                   <td className="px-3 py-2 align-top">
-                    {/* Commentaire */}
-                    <textarea
-                      value={reponse?.commentaire || ''}
-                      onChange={(e) => handleCommentChange(row.critere.id, e.target.value)}
-                      placeholder={t('evaluationFill.commentairePlaceholder')}
-                      disabled={!canEdit}
-                      rows={2}
-                      className="w-full text-xs border border-gray-200 rounded-lg p-1.5 resize-none disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                    />
                     {/* Preuves attendues */}
                     {preuvesAttendues && (
                       <div className="mt-1 rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800">
