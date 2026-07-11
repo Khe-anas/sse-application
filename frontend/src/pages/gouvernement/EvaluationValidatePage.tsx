@@ -247,7 +247,6 @@ export default function EvaluationValidatePage() {
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Principe</th>
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
               <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-14">Niveau</th>
@@ -265,7 +264,6 @@ export default function EvaluationValidatePage() {
                 return (
                   <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
                     <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
-                    <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.principe, 'name', language)}</td>
                     <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
                     <td className="px-3 py-2 text-gray-900 align-top">
                       <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
