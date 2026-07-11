@@ -549,8 +549,7 @@
     "correctionRequested": "تم طلب تصحيح لهذا المعيار",
     "principeNeedsCorrection": "يحتوي هذا المبدأ على معايير يجب تصحيحها",
     "pendingCorrections": "يجب تعديل {{count}} معيار/معايير مطلوبة للتصحيح قبل الإرسال",
-    "noEditableResponses": "لا توجد معايير قابلة للتعديل",
-    "proofColumn": "ملفات الأدلة"
+    "noEditableResponses": "لا توجد معايير قابلة للتعديل"
   },
   "authPage": {
     "fillAllFields": "يرجى ملء جميع الحقول",

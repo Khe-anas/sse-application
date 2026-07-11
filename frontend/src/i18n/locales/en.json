@@ -549,8 +549,7 @@
     "correctionRequested": "Correction requested for this criterion",
     "principeNeedsCorrection": "This principle contains criteria to correct",
     "pendingCorrections": "{{count}} criterion/criteria requested for correction must be updated before submission",
-    "noEditableResponses": "No editable criteria",
-    "proofColumn": "Evidence files"
+    "noEditableResponses": "No editable criteria"
   },
   "authPage": {
     "fillAllFields": "Please fill in all fields",
