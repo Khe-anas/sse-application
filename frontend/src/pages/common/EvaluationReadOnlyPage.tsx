@@ -168,7 +168,7 @@ export default function EvaluationReadOnlyPage() {
                       {isFirstInGroup ? <td className="px-3 py-2 text-gray-500 align-top align-middle" rowSpan={group.criteres.length}>{gi + 1}</td> : null}
                       {isFirstInGroup ? <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.criteres.length}>{getLocalizedField(group.bp, 'label', language)}</td> : null}
                       <td className="px-3 py-2 text-gray-900 align-top">
-                        <span className="font-medium">{item.critere.number}.</span> {getLocalizedField(item.critere, 'label', language)}
+                        <span className="font-medium">{ci + 1}.</span> {getLocalizedField(item.critere, 'label', language)}
                         {(reponse?.validatorComment || reponse?.rejectionReason) && (
                           <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
                             {reponse.validatorComment && <p>{reponse.validatorComment}</p>}

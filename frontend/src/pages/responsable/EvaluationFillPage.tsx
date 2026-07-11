@@ -327,7 +327,7 @@ export default function EvaluationFillPage() {
                         <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.criteres.length}>{getLocalizedField(group.bp, 'label', language)}</td>
                       ) : null}
                       <td className="px-3 py-2 text-gray-900 align-top">
-                        <span className="font-medium">{item.critere.number}.</span> {getLocalizedField(item.critere, 'label', language)}
+                        <span className="font-medium">{ci + 1}.</span> {getLocalizedField(item.critere, 'label', language)}
                         {reponse?.status === StatusReponse.A_CORRIGER && (
                           <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" />

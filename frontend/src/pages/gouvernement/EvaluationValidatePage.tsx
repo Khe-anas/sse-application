@@ -274,7 +274,7 @@ export default function EvaluationValidatePage() {
                       {isFirstInGroup ? <td className="px-3 py-2 text-gray-500 align-top align-middle" rowSpan={group.rows.length}>{gi + 1}</td> : null}
                       {isFirstInGroup ? <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.rows.length}>{getLocalizedField(row.bp, 'label', language)}</td> : null}
                       <td className="px-3 py-2 text-gray-900 align-top">
-                        <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
+                        <span className="font-medium">{ci + 1}.</span> {getLocalizedField(row.critere, 'label', language)}
                         {(reponse?.validatorComment || reponse?.rejectionReason) && (
                           <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
                             {reponse.validatorComment && <p>{reponse.validatorComment}</p>}
