@@ -259,72 +259,83 @@ export default function EvaluationValidatePage() {
               const bpCriteres = principe.bonnesPratiques.flatMap(bp =>
                 bp.criteres.map(c => ({ principe, bp, critere: c }))
               );
-              return bpCriteres.map((row, idx) => {
-                const reponse = (reponses[principe.id] || []).find(r => r.critereId === row.critere.id);
-                return (
-                  <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
-                    <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
-                    <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
-                    <td className="px-3 py-2 text-gray-900 align-top">
-                      <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
-                      {(reponse?.validatorComment || reponse?.rejectionReason) && (
-                        <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
-                          {reponse.validatorComment && <p>{reponse.validatorComment}</p>}
-                          {reponse.rejectionReason && <p className="text-red-600">{reponse.rejectionReason}</p>}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center align-top">
-                      {reponse?.niveau ? levelBadge(reponse.niveau) : <span className="text-xs text-gray-400">-</span>}
-                      {reponse && <div className="mt-0.5">{statusBadge(reponse.status)}</div>}
-                    </td>
-                    <td className="px-3 py-2 align-top">
-                      {reponse?.commentaire && <p className="text-xs text-gray-600 mb-1">{reponse.commentaire}</p>}
-                      {(reponse?.preuveFiles?.length || 0) > 0 && (
-                        <div className="space-y-0.5">
-                          {reponse?.preuveFiles?.map((fileUrl) => (
-                            <button key={fileUrl} type="button" onClick={() => handleDownloadFile(fileUrl)}
-                              className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
-                              <FileText className="w-3 h-3" /> {fileUrl.split('/').pop()}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {(reponse?.preuveLinks?.length || 0) > 0 && (
-                        <div className="space-y-0.5 mt-0.5">
-                          {reponse?.preuveLinks?.map((link) => (
-                            <a key={link} href={link} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
-                              <LinkIcon className="w-3 h-3" /> {link}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 align-top">
-                      {reponse && (
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button onClick={() => handleValidateReponse(reponse.id)}
-                            className={actionBtnClass(reponse, StatusReponse.VALIDEE, 'green')}
-                            title={t('validation.tooltipValidate')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.VALIDEE}>
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleRejectReponse(reponse.id)}
-                            className={actionBtnClass(reponse, StatusReponse.REJETEE, 'red')}
-                            title={t('validation.tooltipReject')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.REJETEE}>
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleRequestCorrection(reponse.id)}
-                            className={actionBtnClass(reponse, StatusReponse.A_CORRIGER, 'amber')}
-                            title={t('validation.tooltipCorrection')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.A_CORRIGER}>
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
+              const groups: { bp: any; rows: { principe: any; bp: any; critere: any }[] }[] = [];
+              bpCriteres.forEach((row) => {
+                let g = groups.find(x => x.bp.id === row.bp.id);
+                if (!g) { g = { bp: row.bp, rows: [] }; groups.push(g); }
+                g.rows.push(row);
               });
+              let globalIdx = 0;
+              return groups.flatMap((group) =>
+                group.rows.map((row, ci) => {
+                  const idx = ++globalIdx;
+                  const reponse = (reponses[principe.id] || []).find(r => r.critereId === row.critere.id);
+                  const isFirstInGroup = ci === 0;
+                  return (
+                    <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
+                      <td className="px-3 py-2 text-gray-500 align-top">{idx}</td>
+                      {isFirstInGroup ? <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.rows.length}>{getLocalizedField(row.bp, 'label', language)}</td> : null}
+                      <td className="px-3 py-2 text-gray-900 align-top">
+                        <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
+                        {(reponse?.validatorComment || reponse?.rejectionReason) && (
+                          <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
+                            {reponse.validatorComment && <p>{reponse.validatorComment}</p>}
+                            {reponse.rejectionReason && <p className="text-red-600">{reponse.rejectionReason}</p>}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-center align-top">
+                        {reponse?.niveau ? levelBadge(reponse.niveau) : <span className="text-xs text-gray-400">-</span>}
+                        {reponse && <div className="mt-0.5">{statusBadge(reponse.status)}</div>}
+                      </td>
+                      <td className="px-3 py-2 align-top">
+                        {reponse?.commentaire && <p className="text-xs text-gray-600 mb-1">{reponse.commentaire}</p>}
+                        {(reponse?.preuveFiles?.length || 0) > 0 && (
+                          <div className="space-y-0.5">
+                            {reponse?.preuveFiles?.map((fileUrl) => (
+                              <button key={fileUrl} type="button" onClick={() => handleDownloadFile(fileUrl)}
+                                className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
+                                <FileText className="w-3 h-3" /> {fileUrl.split('/').pop()}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {(reponse?.preuveLinks?.length || 0) > 0 && (
+                          <div className="space-y-0.5 mt-0.5">
+                            {reponse?.preuveLinks?.map((link) => (
+                              <a key={link} href={link} target="_blank" rel="noreferrer"
+                                className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
+                                <LinkIcon className="w-3 h-3" /> {link}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 align-top">
+                        {reponse && (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button onClick={() => handleValidateReponse(reponse.id)}
+                              className={actionBtnClass(reponse, StatusReponse.VALIDEE, 'green')}
+                              title={t('validation.tooltipValidate')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.VALIDEE}>
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleRejectReponse(reponse.id)}
+                              className={actionBtnClass(reponse, StatusReponse.REJETEE, 'red')}
+                              title={t('validation.tooltipReject')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.REJETEE}>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleRequestCorrection(reponse.id)}
+                              className={actionBtnClass(reponse, StatusReponse.A_CORRIGER, 'amber')}
+                              title={t('validation.tooltipCorrection')} disabled={hasAdminDecision(reponse) && reponse.status !== StatusReponse.A_CORRIGER}>
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              );
             })}
           </tbody>
         </table>

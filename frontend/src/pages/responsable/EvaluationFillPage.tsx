@@ -301,91 +301,102 @@ export default function EvaluationFillPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {rows.map((row, idx) => {
-              const reponse = reponses[row.critere.id];
-              const canEdit = canEditReponse(reponse);
-              const preuvesAttendues = getLocalizedField(row.critere, 'preuves', language);
-              const references = getLocalizedField(row.critere, 'references', language);
+            {(() => {
+              const groups: { bp: any; criteres: { critere: any; idx: number }[] }[] = [];
+              rows.forEach((row, idx) => {
+                const bpKey = row.bp.id || getLocalizedField(row.bp, 'label', language);
+                let group = groups.find(g => g.bp.id === bpKey);
+                if (!group) { group = { bp: row.bp, criteres: [] }; groups.push(group); }
+                group.criteres.push({ critere: row.critere, idx });
+              });
 
-              return (
-                <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
-                  <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
-                  <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
-                  <td className="px-3 py-2 text-gray-900 align-top">
-                    <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
-                    {reponse?.status === StatusReponse.A_CORRIGER && (
-                      <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        {reponse.validatorComment || t('evaluationFill.correctionRequested')}
-                      </div>
-                    )}
-                  </td>
-                  {niveaux.map((n) => (
-                    <td key={n.key} className="px-1 py-2 text-center align-top">
-                      <div className="flex items-center justify-center min-h-[28px]">
-                        <input
-                          type="radio"
-                          name={`niveau-${row.critere.id}`}
-                          checked={reponse?.niveau === n.key}
-                          onChange={() => handleNiveauChange(row.critere.id, n.key)}
-                          disabled={!canEdit}
-                          className="w-4 h-4 text-primary-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                        />
-                      </div>
-                    </td>
-                  ))}
-                  <td className="px-3 py-2 align-top">
-                    {/* Preuves attendues */}
-                    {preuvesAttendues && (
-                      <div className="mt-1 rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800">
-                        <div className="flex items-center gap-1 font-semibold"><FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}</div>
-                        <p className="mt-0.5">{preuvesAttendues}</p>
-                      </div>
-                    )}
-                    {/* References */}
-                    {references && (
-                      <div className="mt-1 rounded bg-gray-50 border border-gray-200 p-1.5 text-xs text-gray-600">
-                        <span className="font-semibold">{t('evaluationFill.references')}:</span> {references}
-                      </div>
-                    )}
-                    {/* Upload + Links */}
-                    {canEdit && (
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <label className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 cursor-pointer">
-                          <Upload className="w-3 h-3" /> {t('evaluationFill.attachFile')}
-                          <input type="file" multiple className="hidden" onChange={(e) => { handleFileUpload(row.critere.id, e.target.files || undefined); e.target.value = ''; }} />
-                        </label>
-                        <button type="button" onClick={() => handleAddLink(row.critere.id)} className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700">
-                          <Link className="w-3 h-3" /> {t('evaluationFill.addLink')}
-                        </button>
-                      </div>
-                    )}
-                    {/* Uploaded files */}
-                    {(reponse?.preuveFiles?.length || 0) > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {reponse?.preuveFiles?.map((fileUrl) => (
-                          <div key={fileUrl} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
-                            <button type="button" onClick={() => fileService.download(fileUrl)} className="flex-1 truncate text-left text-primary-700 hover:underline">{fileUrl.split('/').pop()}</button>
-                            {canEdit && <button type="button" onClick={() => handleRemoveFile(row.critere.id, fileUrl)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+              return groups.flatMap((group, gi) =>
+                group.criteres.map((item, ci) => {
+                  const rowIdx = item.idx;
+                  const reponse = reponses[item.critere.id];
+                  const canEdit = canEditReponse(reponse);
+                  const preuvesAttendues = getLocalizedField(item.critere, 'preuves', language);
+                  const references = getLocalizedField(item.critere, 'references', language);
+                  const isFirstInGroup = ci === 0;
+
+                  return (
+                    <tr key={item.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
+                      <td className="px-3 py-2 text-gray-500 align-top">{rowIdx + 1}</td>
+                      {isFirstInGroup ? (
+                        <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.criteres.length}>{getLocalizedField(group.bp, 'label', language)}</td>
+                      ) : null}
+                      <td className="px-3 py-2 text-gray-900 align-top">
+                        <span className="font-medium">{item.critere.number}.</span> {getLocalizedField(item.critere, 'label', language)}
+                        {reponse?.status === StatusReponse.A_CORRIGER && (
+                          <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {reponse.validatorComment || t('evaluationFill.correctionRequested')}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    {/* Uploaded links */}
-                    {(reponse?.preuveLinks?.length || 0) > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {reponse?.preuveLinks?.map((link) => (
-                          <div key={link} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
-                            <a href={link} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary-700 hover:underline">{link}</a>
-                            {canEdit && <button type="button" onClick={() => handleRemoveLink(row.critere.id, link)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+                        )}
+                      </td>
+                      {niveaux.map((n) => (
+                        <td key={n.key} className="px-1 py-2 text-center align-top">
+                          <div className="flex items-center justify-center min-h-[28px]">
+                            <input
+                              type="radio"
+                              name={`niveau-${item.critere.id}`}
+                              checked={reponse?.niveau === n.key}
+                              onChange={() => handleNiveauChange(item.critere.id, n.key)}
+                              disabled={!canEdit}
+                              className="w-4 h-4 text-primary-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                            />
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                </tr>
+                        </td>
+                      ))}
+                      <td className="px-3 py-2 align-top">
+                        {preuvesAttendues && (
+                          <div className="mt-1 rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800">
+                            <div className="flex items-center gap-1 font-semibold"><FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}</div>
+                            <p className="mt-0.5">{preuvesAttendues}</p>
+                          </div>
+                        )}
+                        {references && (
+                          <div className="mt-1 rounded bg-gray-50 border border-gray-200 p-1.5 text-xs text-gray-600">
+                            <span className="font-semibold">{t('evaluationFill.references')}:</span> {references}
+                          </div>
+                        )}
+                        {canEdit && (
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <label className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 cursor-pointer">
+                              <Upload className="w-3 h-3" /> {t('evaluationFill.attachFile')}
+                              <input type="file" multiple className="hidden" onChange={(e) => { handleFileUpload(item.critere.id, e.target.files || undefined); e.target.value = ''; }} />
+                            </label>
+                            <button type="button" onClick={() => handleAddLink(item.critere.id)} className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700">
+                              <Link className="w-3 h-3" /> {t('evaluationFill.addLink')}
+                            </button>
+                          </div>
+                        )}
+                        {(reponse?.preuveFiles?.length || 0) > 0 && (
+                          <div className="mt-1 space-y-0.5">
+                            {reponse?.preuveFiles?.map((fileUrl) => (
+                              <div key={fileUrl} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
+                                <button type="button" onClick={() => fileService.download(fileUrl)} className="flex-1 truncate text-left text-primary-700 hover:underline">{fileUrl.split('/').pop()}</button>
+                                {canEdit && <button type="button" onClick={() => handleRemoveFile(item.critere.id, fileUrl)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {(reponse?.preuveLinks?.length || 0) > 0 && (
+                          <div className="mt-1 space-y-0.5">
+                            {reponse?.preuveLinks?.map((link) => (
+                              <div key={link} className="flex items-center gap-1 rounded bg-gray-50 px-1.5 py-0.5 text-xs">
+                                <a href={link} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary-700 hover:underline">{link}</a>
+                                {canEdit && <button type="button" onClick={() => handleRemoveLink(item.critere.id, link)} className="text-red-500 hover:text-red-700"><X className="w-3 h-3" /></button>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               );
-            })}
+            })()}
           </tbody>
         </table>
       </div>

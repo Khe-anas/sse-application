@@ -152,54 +152,67 @@ export default function EvaluationReadOnlyPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {rows.map((row, idx) => {
-              const reponse = reponses[row.critere.id];
-              return (
-                <tr key={row.critere.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 text-gray-500 align-top">{idx + 1}</td>
-                  <td className="px-3 py-2 text-gray-700 align-top text-xs">{getLocalizedField(row.bp, 'label', language)}</td>
-                  <td className="px-3 py-2 text-gray-900 align-top">
-                    <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}
-                    {(reponse?.validatorComment || reponse?.rejectionReason) && (
-                      <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
-                        {reponse.validatorComment && <p>{reponse.validatorComment}</p>}
-                        {reponse.rejectionReason && <p className="text-red-600">{reponse.rejectionReason}</p>}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-center align-top">
-                    {reponse?.niveau && (
-                      <span className={`badge ${levelColors[reponse.niveau]}`}>{reponse.niveau}</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {reponse?.commentaire && (
-                      <p className="text-xs text-gray-600 mb-1">{reponse.commentaire}</p>
-                    )}
-                    {(reponse?.preuveFiles?.length || 0) > 0 && (
-                      <div className="space-y-0.5">
-                        {reponse?.preuveFiles?.map((fileUrl) => (
-                          <button key={fileUrl} type="button" onClick={() => handleDownloadFile(fileUrl)}
-                            className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
-                            <FileText className="w-3 h-3" /> {fileUrl.split('/').pop()}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {(reponse?.preuveLinks?.length || 0) > 0 && (
-                      <div className="space-y-0.5 mt-0.5">
-                        {reponse?.preuveLinks?.map((link) => (
-                          <a key={link} href={link} target="_blank" rel="noreferrer"
-                            className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
-                            <LinkIcon className="w-3 h-3" /> {link}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                </tr>
+            {(() => {
+              const groups: { bp: any; criteres: { critere: any }[] }[] = [];
+              rows.forEach((row) => {
+                let g = groups.find(x => x.bp.id === row.bp.id);
+                if (!g) { g = { bp: row.bp, criteres: [] }; groups.push(g); }
+                g.criteres.push({ critere: row.critere });
+              });
+              let globalIdx = 0;
+              return groups.flatMap((group) =>
+                group.criteres.map((item, ci) => {
+                  const idx = ++globalIdx;
+                  const reponse = reponses[item.critere.id];
+                  const isFirstInGroup = ci === 0;
+                  return (
+                    <tr key={item.critere.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-gray-500 align-top">{idx}</td>
+                      {isFirstInGroup ? <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.criteres.length}>{getLocalizedField(group.bp, 'label', language)}</td> : null}
+                      <td className="px-3 py-2 text-gray-900 align-top">
+                        <span className="font-medium">{item.critere.number}.</span> {getLocalizedField(item.critere, 'label', language)}
+                        {(reponse?.validatorComment || reponse?.rejectionReason) && (
+                          <div className="mt-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5">
+                            {reponse.validatorComment && <p>{reponse.validatorComment}</p>}
+                            {reponse.rejectionReason && <p className="text-red-600">{reponse.rejectionReason}</p>}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-center align-top">
+                        {reponse?.niveau && (
+                          <span className={`badge ${levelColors[reponse.niveau]}`}>{reponse.niveau}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 align-top">
+                        {reponse?.commentaire && (
+                          <p className="text-xs text-gray-600 mb-1">{reponse.commentaire}</p>
+                        )}
+                        {(reponse?.preuveFiles?.length || 0) > 0 && (
+                          <div className="space-y-0.5">
+                            {reponse?.preuveFiles?.map((fileUrl) => (
+                              <button key={fileUrl} type="button" onClick={() => handleDownloadFile(fileUrl)}
+                                className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
+                                <FileText className="w-3 h-3" /> {fileUrl.split('/').pop()}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {(reponse?.preuveLinks?.length || 0) > 0 && (
+                          <div className="space-y-0.5 mt-0.5">
+                            {reponse?.preuveLinks?.map((link) => (
+                              <a key={link} href={link} target="_blank" rel="noreferrer"
+                                className="flex items-center gap-1 text-xs text-primary-700 hover:underline">
+                                <LinkIcon className="w-3 h-3" /> {link}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               );
-            })}
+            })()}
           </tbody>
         </table>
       </div>
