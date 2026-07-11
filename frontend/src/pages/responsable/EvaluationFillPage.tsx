@@ -312,7 +312,6 @@ export default function EvaluationFillPage() {
 
               return groups.flatMap((group, gi) =>
                 group.criteres.map((item, ci) => {
-                  const rowIdx = item.idx;
                   const reponse = reponses[item.critere.id];
                   const canEdit = canEditReponse(reponse);
                   const preuvesAttendues = getLocalizedField(item.critere, 'preuves', language);
@@ -321,7 +320,9 @@ export default function EvaluationFillPage() {
 
                   return (
                     <tr key={item.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
-                      <td className="px-3 py-2 text-gray-500 align-top">{rowIdx + 1}</td>
+                      {isFirstInGroup ? (
+                        <td className="px-3 py-2 text-gray-500 align-top align-middle" rowSpan={group.criteres.length}>{gi + 1}</td>
+                      ) : null}
                       {isFirstInGroup ? (
                         <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.criteres.length}>{getLocalizedField(group.bp, 'label', language)}</td>
                       ) : null}

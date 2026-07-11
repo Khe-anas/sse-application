@@ -265,15 +265,13 @@ export default function EvaluationValidatePage() {
                 if (!g) { g = { bp: row.bp, rows: [] }; groups.push(g); }
                 g.rows.push(row);
               });
-              let globalIdx = 0;
-              return groups.flatMap((group) =>
+              return groups.flatMap((group, gi) =>
                 group.rows.map((row, ci) => {
-                  const idx = ++globalIdx;
                   const reponse = (reponses[principe.id] || []).find(r => r.critereId === row.critere.id);
                   const isFirstInGroup = ci === 0;
                   return (
                     <tr key={row.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
-                      <td className="px-3 py-2 text-gray-500 align-top">{idx}</td>
+                      {isFirstInGroup ? <td className="px-3 py-2 text-gray-500 align-top align-middle" rowSpan={group.rows.length}>{gi + 1}</td> : null}
                       {isFirstInGroup ? <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.rows.length}>{getLocalizedField(row.bp, 'label', language)}</td> : null}
                       <td className="px-3 py-2 text-gray-900 align-top">
                         <span className="font-medium">{row.critere.number}.</span> {getLocalizedField(row.critere, 'label', language)}

@@ -159,15 +159,13 @@ export default function EvaluationReadOnlyPage() {
                 if (!g) { g = { bp: row.bp, criteres: [] }; groups.push(g); }
                 g.criteres.push({ critere: row.critere });
               });
-              let globalIdx = 0;
-              return groups.flatMap((group) =>
+              return groups.flatMap((group, gi) =>
                 group.criteres.map((item, ci) => {
-                  const idx = ++globalIdx;
                   const reponse = reponses[item.critere.id];
                   const isFirstInGroup = ci === 0;
                   return (
                     <tr key={item.critere.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-500 align-top">{idx}</td>
+                      {isFirstInGroup ? <td className="px-3 py-2 text-gray-500 align-top align-middle" rowSpan={group.criteres.length}>{gi + 1}</td> : null}
                       {isFirstInGroup ? <td className="px-3 py-2 text-gray-700 align-top text-xs align-middle" rowSpan={group.criteres.length}>{getLocalizedField(group.bp, 'label', language)}</td> : null}
                       <td className="px-3 py-2 text-gray-900 align-top">
                         <span className="font-medium">{item.critere.number}.</span> {getLocalizedField(item.critere, 'label', language)}
