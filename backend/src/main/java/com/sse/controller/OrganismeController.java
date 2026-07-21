@@ -20,7 +20,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/organismes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class OrganismeController {
     
     private final OrganismeService organismeService;

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useUIStore } from '@/stores/uiStore';
 import Sidebar from './Sidebar';
@@ -7,8 +8,14 @@ import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
 export default function AppLayout() {
   const { sidebarOpen } = useUIStore();
 
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      useUIStore.setState({ sidebarOpen: false });
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-[#0f1613] dark:text-[#e0e7e3]">
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 z-30 h-full bg-sidebar transition-transform duration-300 ${

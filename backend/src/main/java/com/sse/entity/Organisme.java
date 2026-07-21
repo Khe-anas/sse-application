@@ -38,8 +38,12 @@ public class Organisme {
     private String email;
     
     private String phone;
-    
+
+    private String fax;
+
     private String website;
+
+    private String logoUrl;
     
     @CreationTimestamp
     private LocalDateTime createdAt;

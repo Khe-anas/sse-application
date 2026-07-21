@@ -30,7 +30,6 @@ import java.util.UUID;
 @RequestMapping("/admin/account-requests")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "*")
 public class AdminAccountRequestController {
 
     private final AccountRequestService accountRequestService;

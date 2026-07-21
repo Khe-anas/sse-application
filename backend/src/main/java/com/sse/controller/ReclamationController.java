@@ -28,7 +28,6 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ReclamationController {
 
     private final ReclamationService reclamationService;

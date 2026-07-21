@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/account-requests")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AccountRequestController {
 
     private final AccountRequestService accountRequestService;

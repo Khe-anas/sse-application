@@ -2,9 +2,7 @@ package com.sse.entity;
 
 import com.sse.enums.AccountRequestStatus;
 import com.sse.enums.TypeOrganisme;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -22,8 +20,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -54,18 +50,18 @@ public class AccountRequest {
 
     private String phone;
 
+    private String fax;
+
     @Column(length = 1000)
     private String address;
 
     private String sector;
 
-    @Column(length = 2000)
-    private String message;
+    private String companyRole;
 
-    @ElementCollection
-    @CollectionTable(name = "account_request_files", joinColumns = @JoinColumn(name = "account_request_id"))
-    @Column(name = "file_url")
-    private List<String> verificationFiles = new ArrayList<>();
+    private String position;
+
+    private String logoUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

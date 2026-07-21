@@ -104,7 +104,9 @@ public class OrganismeService {
         response.setAddress(org.getAddress());
         response.setEmail(org.getEmail());
         response.setPhone(org.getPhone());
+        response.setFax(org.getFax());
         response.setWebsite(org.getWebsite());
+        response.setLogoUrl(org.getLogoUrl());
         response.setIsActive(org.getIsActive());
         response.setCreatedAt(org.getCreatedAt());
         response.setUsersCount((long) org.getUsers().size());

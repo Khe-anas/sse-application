@@ -25,18 +25,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountRequestService {
-
-    private static final int MAX_VERIFICATION_FILES = 5;
 
     private final AccountRequestRepository accountRequestRepository;
     private final UserRepository userRepository;
@@ -50,8 +46,8 @@ public class AccountRequestService {
 
     @Transactional
     public AccountRequestResponse submit(AccountRequestSubmitRequest request) {
-        String email = normalize(request.getCompanyEmail()).toLowerCase();
-        if (userRepository.existsByEmail(email)) {
+        String email = normalize(request.getCompanyEmail()).toLowerCase(java.util.Locale.ROOT);
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new RuntimeException("An active account already exists for this email");
         }
         if (accountRequestRepository.existsByCompanyEmailIgnoreCaseAndStatus(email, AccountRequestStatus.PENDING)) {
@@ -65,10 +61,12 @@ public class AccountRequestService {
         accountRequest.setResponsibleLastName(normalize(request.getResponsibleLastName()));
         accountRequest.setCompanyEmail(email);
         accountRequest.setPhone(normalizeNullable(request.getPhone()));
+        accountRequest.setFax(normalizeNullable(request.getFax()));
         accountRequest.setAddress(normalizeNullable(request.getAddress()));
-        accountRequest.setSector(normalizeNullable(request.getSector()));
-        accountRequest.setMessage(normalizeNullable(request.getMessage()));
-        accountRequest.setVerificationFiles(storeFiles(request.getVerificationFiles()));
+        accountRequest.setSector(resolveSector(request.getSector(), request.getOtherSector()));
+        accountRequest.setCompanyRole(normalize(request.getCompanyRole()));
+        accountRequest.setPosition(normalize(request.getPosition()));
+        accountRequest.setLogoUrl(fileStorageService.storeImage(request.getLogo()));
         accountRequest.setStatus(AccountRequestStatus.PENDING);
 
         AccountRequest saved = accountRequestRepository.save(accountRequest);
@@ -114,7 +112,7 @@ public class AccountRequestService {
             throw new RuntimeException("Only pending account requests can be approved");
         }
         claimForAdmin(accountRequest, admin);
-        if (userRepository.existsByEmail(accountRequest.getCompanyEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(accountRequest.getCompanyEmail())) {
             throw new RuntimeException("A user already exists for this email");
         }
 
@@ -124,6 +122,7 @@ public class AccountRequestService {
         createUserRequest.setFirstName(accountRequest.getResponsibleFirstName());
         createUserRequest.setLastName(accountRequest.getResponsibleLastName());
         createUserRequest.setPhone(accountRequest.getPhone());
+        createUserRequest.setPosition(accountRequest.getPosition());
         createUserRequest.setRole(Role.USER);
         createUserRequest.setOrganismeId(organisme.getId());
 
@@ -185,6 +184,8 @@ public class AccountRequestService {
         organisme.setAddress(accountRequest.getAddress());
         organisme.setEmail(accountRequest.getCompanyEmail());
         organisme.setPhone(accountRequest.getPhone());
+        organisme.setFax(accountRequest.getFax());
+        organisme.setLogoUrl(accountRequest.getLogoUrl());
         organisme.setIsActive(true);
         return organismeRepository.save(organisme);
     }
@@ -195,6 +196,8 @@ public class AccountRequestService {
         organisme.setAddress(accountRequest.getAddress() != null ? accountRequest.getAddress() : organisme.getAddress());
         organisme.setEmail(accountRequest.getCompanyEmail());
         organisme.setPhone(accountRequest.getPhone() != null ? accountRequest.getPhone() : organisme.getPhone());
+        organisme.setFax(accountRequest.getFax() != null ? accountRequest.getFax() : organisme.getFax());
+        organisme.setLogoUrl(accountRequest.getLogoUrl() != null ? accountRequest.getLogoUrl() : organisme.getLogoUrl());
         return organismeRepository.save(organisme);
     }
 
@@ -220,28 +223,6 @@ public class AccountRequestService {
         }
     }
 
-    private List<String> storeFiles(List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) {
-            throw new RuntimeException("Ajoutez au moins un fichier PDF de vérification");
-        }
-
-        List<MultipartFile> usableFiles = files.stream()
-            .filter(file -> file != null && !file.isEmpty())
-            .toList();
-
-        if (usableFiles.isEmpty()) {
-            throw new RuntimeException("Ajoutez au moins un fichier PDF de vérification");
-        }
-
-        if (usableFiles.size() > MAX_VERIFICATION_FILES) {
-            throw new RuntimeException("Vous pouvez joindre au maximum " + MAX_VERIFICATION_FILES + " fichiers PDF");
-        }
-
-        return usableFiles.stream()
-            .map(fileStorageService::storePdf)
-            .toList();
-    }
-
     private AccountRequestResponse mapToResponse(AccountRequest accountRequest) {
         AccountRequestResponse response = new AccountRequestResponse();
         response.setId(accountRequest.getId());
@@ -252,10 +233,12 @@ public class AccountRequestService {
         response.setResponsibleFullName(accountRequest.getResponsibleFullName());
         response.setCompanyEmail(accountRequest.getCompanyEmail());
         response.setPhone(accountRequest.getPhone());
+        response.setFax(accountRequest.getFax());
         response.setAddress(accountRequest.getAddress());
         response.setSector(accountRequest.getSector());
-        response.setMessage(accountRequest.getMessage());
-        response.setVerificationFiles(accountRequest.getVerificationFiles());
+        response.setCompanyRole(accountRequest.getCompanyRole());
+        response.setPosition(accountRequest.getPosition());
+        response.setLogoUrl(accountRequest.getLogoUrl());
         response.setStatus(accountRequest.getStatus());
         response.setAdminComment(accountRequest.getAdminComment());
         response.setProcessedAt(accountRequest.getProcessedAt());
@@ -285,6 +268,13 @@ public class AccountRequestService {
     private String normalizeNullable(String value) {
         String normalized = normalize(value);
         return normalized.isBlank() ? null : normalized;
+    }
+
+    private String resolveSector(String sector, String otherSector) {
+        if ("OTHER".equalsIgnoreCase(sector)) {
+            return normalizeNullable(otherSector);
+        }
+        return normalizeNullable(sector);
     }
 
 }

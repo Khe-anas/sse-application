@@ -92,12 +92,21 @@ export interface User {
   fullName: string;
   role: Role;
   phone?: string;
+  position?: string;
   isActive: boolean;
   status?: UserStatus;
   createdAt: string;
   lastLoginAt?: string;
   organismeId?: string;
   organismeName?: string;
+  organismeType?: TypeOrganisme;
+  organismeSector?: string;
+  organismeAddress?: string;
+  organismeEmail?: string;
+  organismePhone?: string;
+  organismeFax?: string;
+  organismeWebsite?: string;
+  organismeLogoUrl?: string;
 }
 
 export interface Organisme {
@@ -108,7 +117,9 @@ export interface Organisme {
   address?: string;
   email?: string;
   phone?: string;
+  fax?: string;
   website?: string;
+  logoUrl?: string;
   isActive: boolean;
   createdAt: string;
   usersCount?: number;
@@ -233,10 +244,12 @@ export interface AccountRequest {
   responsibleFullName: string;
   companyEmail: string;
   phone?: string;
+  fax?: string;
   address?: string;
   sector?: string;
-  message?: string;
-  verificationFiles: string[];
+  companyRole?: string;
+  position?: string;
+  logoUrl?: string;
   status: AccountRequestStatus;
   adminComment?: string;
   processedAt?: string;
@@ -293,6 +306,7 @@ export interface AuditLog {
   userId: string;
   userEmail: string;
   userFullName: string;
+  userRole?: Role;
   evaluationId?: string;
   action: string;
   entity: string;

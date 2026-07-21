@@ -31,7 +31,10 @@ public interface ReponseRepository extends JpaRepository<Reponse, UUID> {
         WHERE r.evaluation.id = :evaluationId
           AND r.niveau IS NOT NULL
           AND (
-            r.status <> com.sse.enums.StatusReponse.A_CORRIGER
+            r.status NOT IN (
+              com.sse.enums.StatusReponse.A_CORRIGER,
+              com.sse.enums.StatusReponse.REJETEE
+            )
             OR r.correctionAddressed = true
           )
         """)
@@ -46,4 +49,8 @@ public interface ReponseRepository extends JpaRepository<Reponse, UUID> {
 
     @Query("SELECT r.evaluation.organisme.id FROM Reponse r WHERE r.id = :id")
     Optional<UUID> findOrganismeIdByReponseId(@Param("id") UUID id);
+
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Reponse r WHERE r.evaluation.id = :evaluationId AND r.critere.id = :critereId")
+    boolean existsByEvaluationIdAndCritereId(@Param("evaluationId") UUID evaluationId,
+                                              @Param("critereId") UUID critereId);
 }

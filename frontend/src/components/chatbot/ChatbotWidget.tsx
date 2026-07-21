@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { X, Send, Bot, User } from 'lucide-react';
 import { chatbotService } from '@/services/chatbotService';
 import type { ChatMessage } from '@/types';
+import { useUIStore } from '@/stores/uiStore';
 
 export default function ChatbotWidget() {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
+  const { assistantOpen, closeAssistant } = useUIStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -91,33 +92,28 @@ export default function ChatbotWidget() {
 
   return (
     <>
-      {/* Floating button */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-primary-700 hover:bg-primary-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105"
-          title={t('chatbot.title')}
-        >
-          <MessageCircle className="w-6 h-6" />
-        </button>
-      )}
-
-      {/* Chat window */}
-      {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 animate-fade-in">
+      {assistantOpen && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 top-16 z-30 bg-black/30"
+            onClick={closeAssistant}
+            aria-label={t('common.close')}
+          />
+          <section className="fixed inset-y-16 right-0 z-40 flex w-full max-w-[420px] flex-col overflow-hidden border-l border-gray-200 bg-white shadow-2xl animate-fade-in dark:border-[#2b3b35] dark:bg-[#17201d]">
           {/* Header */}
           <div className="bg-primary-700 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5" />
               <span className="font-semibold">{t('chatbot.title')}</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="p-1 rounded-lg hover:bg-white/20 transition-colors">
+            <button onClick={closeAssistant} className="p-1 rounded-lg hover:bg-white/20 transition-colors" title={t('common.close')}>
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 dark:text-slate-100">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -129,7 +125,7 @@ export default function ChatbotWidget() {
                   <div className={`rounded-xl px-3 py-2 text-sm ${
                     msg.role === 'user' 
                       ? 'bg-primary-700 text-white rounded-tr-sm' 
-                      : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                      : 'bg-gray-100 text-gray-800 rounded-tl-sm dark:bg-[#22302b] dark:text-slate-100'
                   }`}>
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   </div>
@@ -156,7 +152,7 @@ export default function ChatbotWidget() {
                 <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-primary-700" />
                 </div>
-                <div className="bg-gray-100 rounded-xl rounded-tl-sm px-4 py-3">
+                <div className="bg-gray-100 rounded-xl rounded-tl-sm px-4 py-3 dark:bg-[#22302b]">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -169,7 +165,7 @@ export default function ChatbotWidget() {
           </div>
 
           {/* Input */}
-          <div className="border-t border-gray-100 p-3">
+          <div className="border-t border-gray-100 p-3 dark:border-[#2b3b35]">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -188,7 +184,8 @@ export default function ChatbotWidget() {
               </button>
             </div>
           </div>
-        </div>
+          </section>
+        </>
       )}
     </>
   );

@@ -5,8 +5,6 @@ import com.sse.enums.TypeOrganisme;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -19,10 +17,12 @@ public class AccountRequestResponse {
     private String responsibleFullName;
     private String companyEmail;
     private String phone;
+    private String fax;
     private String address;
     private String sector;
-    private String message;
-    private List<String> verificationFiles = new ArrayList<>();
+    private String companyRole;
+    private String position;
+    private String logoUrl;
     private AccountRequestStatus status;
     private String adminComment;
     private LocalDateTime processedAt;

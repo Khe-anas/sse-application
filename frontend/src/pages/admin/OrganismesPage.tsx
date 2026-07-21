@@ -22,7 +22,7 @@ export default function OrganismesPage() {
       setOrganismes(data);
     } catch (error) { toast.error(t('organismesPage.loadError')); }
     finally { setIsLoading(false); }
-  }, [search]);
+  }, [search, t]);
 
   useEffect(() => { loadOrganismes(); }, [loadOrganismes]);
 

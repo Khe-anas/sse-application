@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download, Search, Filter, History } from 'lucide-react';
+import { Download, Filter, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { auditLogService } from '@/services/auditLogService';
 import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
 import type { AuditLog, PageResponse } from '@/types';
 import { formatBackendDateTime } from '@/utils/date';
+import { downloadBlob } from '@/utils/download';
 import KPICard from '@/components/dashboard/KPICard';
 
 const ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'SUBMIT', 'VALIDATE', 'SEND', 'RESET_PASSWORD', 'RESOLVE'];
@@ -14,7 +15,7 @@ const ENTITIES = ['USER', 'EVALUATION', 'ACCOUNT_REQUEST', 'RECLAMATION', 'MESSA
 
 export default function AuditLogsPage() {
   const { t } = useTranslation();
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [logs, setLogs] = useState<PageResponse<AuditLog> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [action, setAction] = useState('');
@@ -55,12 +56,7 @@ export default function AuditLogsPage() {
         entity: entity || undefined,
         role: role || undefined,
       });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'audit-logs.pdf';
-      a.click();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(blob, 'audit-logs.pdf');
       toast.success(t('auditLogs.exportSuccess'));
     } catch (error) {
       toast.error(t('auditLogs.exportError'));
@@ -77,7 +73,7 @@ export default function AuditLogsPage() {
 
       {/* Filters */}
       {/* Export */}
-      {isSuperAdmin && (
+      {isAdmin && (
         <div className="flex justify-end">
           <button onClick={handleExportPdf} className="btn-outline gap-2">
             <Download className="w-4 h-4" />

@@ -16,7 +16,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/reponses")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ReponseController {
     
     private final ReponseService reponseService;
@@ -41,7 +40,7 @@ public class ReponseController {
     }
     
     @PutMapping("/{id}/validate")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<ReponseResponse> validateReponse(
             @PathVariable UUID id,
             @RequestBody Map<String, String> request) {
@@ -49,7 +48,7 @@ public class ReponseController {
     }
     
     @PutMapping("/{id}/reject")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<ReponseResponse> rejectReponse(
             @PathVariable UUID id,
             @RequestBody Map<String, String> request) {
@@ -57,7 +56,7 @@ public class ReponseController {
     }
     
     @PutMapping("/{id}/request-correction")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<ReponseResponse> requestCorrectionReponse(
             @PathVariable UUID id,
             @RequestBody Map<String, String> request) {

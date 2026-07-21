@@ -21,7 +21,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/evaluations")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class EvaluationController {
     
     private final EvaluationService evaluationService;
@@ -77,20 +76,20 @@ public class EvaluationController {
     }
 
     @PutMapping("/{id}/claim-validation")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<EvaluationResponse> claimValidation(@PathVariable UUID id) {
         return ResponseEntity.ok(evaluationService.claimValidation(id));
     }
 
     @PutMapping("/{id}/release-validation")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<Void> releaseValidation(@PathVariable UUID id) {
         evaluationService.releaseValidation(id);
         return ResponseEntity.ok().build();
     }
     
     @PutMapping("/{id}/validate")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<EvaluationResponse> validateEvaluation(
             @PathVariable UUID id,
             @RequestBody(required = false) ValidateEvaluationRequest request) {
@@ -98,7 +97,7 @@ public class EvaluationController {
     }
     
     @PutMapping("/{id}/reject")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<EvaluationResponse> rejectEvaluation(
             @PathVariable UUID id,
             @Valid @RequestBody RejectEvaluationRequest request) {
@@ -106,7 +105,7 @@ public class EvaluationController {
     }
     
     @PutMapping("/{id}/request-correction")
-    @PreAuthorize("@accessControl.isAdmin()")
+    @PreAuthorize("@accessControl.canValidate()")
     public ResponseEntity<EvaluationResponse> requestCorrection(
             @PathVariable UUID id,
             @RequestBody Map<String, String> request) {

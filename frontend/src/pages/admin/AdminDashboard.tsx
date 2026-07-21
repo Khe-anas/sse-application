@@ -111,36 +111,42 @@ export default function AdminDashboard() {
           value={kpis?.totalOrganismes || 0}
           icon={Building2}
           color="primary"
+          to="/admin/organismes"
         />
         <KPICard
           title={t('dashboard.totalUsers')}
           value={kpis?.totalUsers || 0}
           icon={Users}
           color="secondary"
+          to="/admin/users"
         />
         <KPICard
           title={t('dashboard.evaluationsEnCours')}
           value={kpis?.evaluationsEnCours || 0}
           icon={ClipboardList}
           color="warning"
+          to="/admin/evaluations"
         />
         <KPICard
           title={t('dashboard.evaluationsSoumises')}
           value={kpis?.evaluationsSoumises || 0}
           icon={AlertCircle}
           color="info"
+          to="/admin/evaluations"
         />
         <KPICard
           title={t('dashboard.evaluationsValidees')}
           value={kpis?.evaluationsValidees || 0}
           icon={CheckCircle}
           color="success"
+          to="/admin/evaluations"
         />
         <KPICard
           title={t('dashboard.pendingValidations')}
           value={kpis?.pendingValidations || 0}
           icon={ClipboardList}
           color="danger"
+          to="/admin/evaluations"
         />
       </div>
 

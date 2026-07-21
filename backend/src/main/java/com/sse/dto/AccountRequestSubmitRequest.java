@@ -7,9 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 public class AccountRequestSubmitRequest {
 
@@ -30,8 +27,16 @@ public class AccountRequestSubmitRequest {
     private String companyEmail;
 
     private String phone;
+    private String fax;
     private String address;
     private String sector;
-    private String message;
-    private List<MultipartFile> verificationFiles = new ArrayList<>();
+    private String otherSector;
+
+    @NotBlank(message = "Company role is required")
+    private String companyRole;
+
+    @NotBlank(message = "Position is required")
+    private String position;
+
+    private MultipartFile logo;
 }

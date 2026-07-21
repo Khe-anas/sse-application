@@ -13,12 +13,26 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.sse.dto.EvaluationResponse;
 import com.sse.dto.ReponseResponse;
+import com.sse.dto.ScorePrincipeResponse;
 import com.sse.service.EvaluationService;
 import com.sse.service.ReponseService;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,7 +42,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +54,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/reports")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ReportController {
     
     private final EvaluationService evaluationService;
@@ -64,7 +80,7 @@ public class ReportController {
         byte[] report = buildExcelReport(evaluation, reponses);
 
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=evaluation-" + evaluationId + ".xlsx")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + buildExcelFilename(evaluation))
             .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
             .body(report);
     }
@@ -115,50 +131,370 @@ public class ReportController {
         }
     }
 
-    private byte[] buildExcelReport(EvaluationResponse evaluation, List<ReponseResponse> reponses) {
-        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet summary = workbook.createSheet("Evaluation");
-            int summaryRow = 0;
-            writeKeyValue(summary, summaryRow++, "Organisme", evaluation.getOrganismeName());
-            writeKeyValue(summary, summaryRow++, "Annee", evaluation.getYear());
-            writeKeyValue(summary, summaryRow++, "Statut", evaluation.getStatus());
-            writeKeyValue(summary, summaryRow++, "Score", formatScore(evaluation.getGlobalScore()));
-            writeKeyValue(summary, summaryRow++, "Maturite", formatNullable(evaluation.getMaturityLevel()));
+    byte[] buildExcelReport(EvaluationResponse evaluation, List<ReponseResponse> reponses) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Map<String, CellStyle> styles = createExcelStyles(workbook);
+            buildExcelSummarySheet(workbook, evaluation, reponses, styles);
+            buildExcelDetailsSheet(workbook, reponses, styles);
 
-            Sheet details = workbook.createSheet("Reponses");
-            Row header = details.createRow(0);
-            String[] headers = {
-                "Principe", "Bonne pratique", "Critere", "Etat", "Statut",
-                "Commentaire", "Commentaire admin", "Motif rejet", "Fichiers", "Liens"
-            };
-            for (int i = 0; i < headers.length; i++) {
-                header.createCell(i).setCellValue(headers[i]);
-            }
-
-            int rowIndex = 1;
-            for (ReponseResponse reponse : reponses) {
-                Row row = details.createRow(rowIndex++);
-                row.createCell(0).setCellValue(formatNullable(reponse.getPrincipeName()));
-                row.createCell(1).setCellValue(formatNullable(reponse.getBonnePratiqueLabel()));
-                row.createCell(2).setCellValue(formatNullable(reponse.getCritereLabel()));
-                row.createCell(3).setCellValue(formatNiveauLabel(reponse.getNiveau()));
-                row.createCell(4).setCellValue(formatNullable(reponse.getStatus()));
-                row.createCell(5).setCellValue(formatNullable(reponse.getCommentaire()));
-                row.createCell(6).setCellValue(formatNullable(reponse.getValidatorComment()));
-                row.createCell(7).setCellValue(formatNullable(reponse.getRejectionReason()));
-                row.createCell(8).setCellValue(String.join(", ", reponse.getPreuveFiles()));
-                row.createCell(9).setCellValue(String.join(", ", reponse.getPreuveLinks()));
-            }
-
-            for (int i = 0; i < headers.length; i++) {
-                details.setColumnWidth(i, 24 * 256);
-            }
+            workbook.setActiveSheet(0);
+            workbook.setSelectedTab(0);
+            workbook.getProperties().getCoreProperties().setTitle("Rapport d'evaluation SSE");
+            workbook.getProperties().getCoreProperties().setSubjectProperty(
+                evaluation.getOrganismeName() + " - " + evaluation.getYear()
+            );
+            workbook.getProperties().getCoreProperties().setCreator("SSE - CNI");
 
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception ex) {
             throw new RuntimeException("Unable to generate Excel report", ex);
         }
+    }
+
+    private void buildExcelSummarySheet(
+        XSSFWorkbook workbook,
+        EvaluationResponse evaluation,
+        List<ReponseResponse> reponses,
+        Map<String, CellStyle> styles
+    ) {
+        Sheet sheet = workbook.createSheet("Synthese");
+        sheet.setDisplayGridlines(false);
+        sheet.setAutobreaks(true);
+        sheet.setFitToPage(true);
+        sheet.setMargin(Sheet.LeftMargin, 0.35);
+        sheet.setMargin(Sheet.RightMargin, 0.35);
+        sheet.setMargin(Sheet.TopMargin, 0.45);
+        sheet.setMargin(Sheet.BottomMargin, 0.45);
+
+        PrintSetup printSetup = sheet.getPrintSetup();
+        printSetup.setPaperSize(PrintSetup.A4_PAPERSIZE);
+        printSetup.setFitWidth((short) 1);
+        printSetup.setFitHeight((short) 1);
+
+        int[] widths = { 16, 32, 16, 22, 16, 22 };
+        for (int i = 0; i < widths.length; i++) {
+            sheet.setColumnWidth(i, widths[i] * 256);
+        }
+
+        Row titleRow = sheet.createRow(0);
+        titleRow.setHeightInPoints(34);
+        sheet.addMergedRegion(new CellRangeAddress(0, 1, 0, 5));
+        writeCell(titleRow, 0, "RAPPORT D'EVALUATION SSE", styles.get("title"));
+
+        Row subtitleRow = sheet.createRow(2);
+        subtitleRow.setHeightInPoints(24);
+        sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 5));
+        writeCell(
+            subtitleRow,
+            0,
+            "Synthese officielle de l'evaluation de la bonne gouvernance",
+            styles.get("subtitle")
+        );
+
+        Row overviewHeader = sheet.createRow(4);
+        overviewHeader.setHeightInPoints(24);
+        sheet.addMergedRegion(new CellRangeAddress(4, 4, 0, 5));
+        writeCell(overviewHeader, 0, "VUE D'ENSEMBLE", styles.get("section"));
+
+        Row organisationRow = sheet.createRow(5);
+        organisationRow.setHeightInPoints(28);
+        writeCell(organisationRow, 0, "Organisme", styles.get("label"));
+        sheet.addMergedRegion(new CellRangeAddress(5, 5, 1, 5));
+        writeCell(organisationRow, 1, evaluation.getOrganismeName(), styles.get("valueStrong"));
+
+        Row infoRow = sheet.createRow(6);
+        infoRow.setHeightInPoints(26);
+        writeLabelValuePair(infoRow, 0, "Annee", evaluation.getYear(), styles);
+        writeLabelValuePair(infoRow, 2, "Statut", formatEvaluationStatus(evaluation.getStatus()), styles);
+        writeCell(infoRow, 4, "Progression", styles.get("label"));
+        writePercentCell(infoRow, 5, evaluation.getProgressPercentage(), styles.get("score"));
+
+        Row scoreRow = sheet.createRow(7);
+        scoreRow.setHeightInPoints(26);
+        writeCell(scoreRow, 0, "Score global", styles.get("label"));
+        writePercentCell(scoreRow, 1, evaluation.getGlobalScore(), styles.get("score"));
+        writeLabelValuePair(scoreRow, 2, "Maturite", formatMaturity(evaluation.getMaturityLevel()), styles);
+        writeLabelValuePair(scoreRow, 4, "Criteres", reponses.size(), styles);
+
+        Row dateRow = sheet.createRow(8);
+        dateRow.setHeightInPoints(24);
+        writeCell(dateRow, 0, "Genere le", styles.get("label"));
+        sheet.addMergedRegion(new CellRangeAddress(8, 8, 1, 5));
+        writeCell(
+            dateRow,
+            1,
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'a' HH:mm")),
+            styles.get("value")
+        );
+
+        Row scoresHeader = sheet.createRow(10);
+        scoresHeader.setHeightInPoints(24);
+        sheet.addMergedRegion(new CellRangeAddress(10, 10, 0, 5));
+        writeCell(scoresHeader, 0, "SCORES PAR PRINCIPE", styles.get("section"));
+
+        Row tableHeader = sheet.createRow(11);
+        tableHeader.setHeightInPoints(26);
+        String[] scoreHeaders = { "N°", "Principe", "Score", "Maximum", "Poids", "Niveau" };
+        for (int i = 0; i < scoreHeaders.length; i++) {
+            writeCell(tableHeader, i, scoreHeaders[i], styles.get("header"));
+        }
+
+        List<ScorePrincipeResponse> principleScores = new ArrayList<>(evaluation.getScores());
+        principleScores.sort(Comparator.comparing(
+            ScorePrincipeResponse::getPrincipeNumber,
+            Comparator.nullsLast(Integer::compareTo)
+        ));
+
+        int rowIndex = 12;
+        if (principleScores.isEmpty()) {
+            Row emptyRow = sheet.createRow(rowIndex);
+            emptyRow.setHeightInPoints(28);
+            sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, 5));
+            writeCell(emptyRow, 0, "Les scores seront disponibles apres validation.", styles.get("empty"));
+        } else {
+            for (ScorePrincipeResponse score : principleScores) {
+                Row row = sheet.createRow(rowIndex++);
+                row.setHeightInPoints(28);
+                CellStyle bodyStyle = rowIndex % 2 == 0 ? styles.get("bodyAlt") : styles.get("body");
+                writeCell(row, 0, score.getPrincipeNumber(), bodyStyle);
+                writeCell(row, 1, score.getPrincipeName(), bodyStyle);
+                writePercentCell(row, 2, score.getScore(), styles.get("score"));
+                writeNumericCell(row, 3, score.getMaxPossible(), styles.get("number"));
+                writeNumericCell(row, 4, score.getWeight(), styles.get("number"));
+                writeCell(row, 5, formatMaturityForScore(score.getScore()), maturityStyle(score.getScore(), styles));
+            }
+        }
+
+        sheet.createFreezePane(0, 4);
+        sheet.setRepeatingRows(new CellRangeAddress(0, 3, -1, -1));
+        workbook.setPrintArea(workbook.getSheetIndex(sheet), 0, 5, 0, Math.max(rowIndex, 12));
+    }
+
+    private void buildExcelDetailsSheet(
+        XSSFWorkbook workbook,
+        List<ReponseResponse> reponses,
+        Map<String, CellStyle> styles
+    ) {
+        Sheet sheet = workbook.createSheet("Detail des reponses");
+        sheet.setDisplayGridlines(false);
+        sheet.setAutobreaks(true);
+        sheet.setFitToPage(true);
+        sheet.setMargin(Sheet.LeftMargin, 0.25);
+        sheet.setMargin(Sheet.RightMargin, 0.25);
+        sheet.setMargin(Sheet.TopMargin, 0.4);
+        sheet.setMargin(Sheet.BottomMargin, 0.4);
+
+        PrintSetup printSetup = sheet.getPrintSetup();
+        printSetup.setLandscape(true);
+        printSetup.setPaperSize(PrintSetup.A4_PAPERSIZE);
+        printSetup.setFitWidth((short) 1);
+        printSetup.setFitHeight((short) 0);
+
+        String[] headers = {
+            "Principe", "Bonne pratique", "Critere", "Niveau", "Decision",
+            "Commentaire responsable", "Commentaire evaluateur", "Motif de rejet", "Fichiers", "Liens"
+        };
+        int[] widths = { 28, 34, 58, 16, 18, 38, 38, 36, 32, 40 };
+
+        Row header = sheet.createRow(0);
+        header.setHeightInPoints(34);
+        for (int i = 0; i < headers.length; i++) {
+            writeCell(header, i, headers[i], styles.get("header"));
+            sheet.setColumnWidth(i, widths[i] * 256);
+        }
+
+        int rowIndex = 1;
+        for (ReponseResponse reponse : reponses) {
+            Row row = sheet.createRow(rowIndex);
+            row.setHeightInPoints(54);
+            CellStyle bodyStyle = rowIndex % 2 == 0 ? styles.get("bodyAlt") : styles.get("body");
+
+            writeCell(row, 0, formatNullable(reponse.getPrincipeName()), bodyStyle);
+            writeCell(row, 1, formatNullable(reponse.getBonnePratiqueLabel()), bodyStyle);
+            writeCell(
+                row,
+                2,
+                formatNullable(reponse.getCritereNumber()) + ". " + formatNullable(reponse.getCritereLabel()),
+                bodyStyle
+            );
+            writeCell(row, 3, formatNiveauLabel(reponse.getNiveau()), niveauStyle(reponse.getNiveau(), styles));
+            writeCell(row, 4, formatReponseStatus(reponse.getStatus()), responseStatusStyle(reponse.getStatus(), styles));
+            writeCell(row, 5, formatNullable(reponse.getCommentaire()), bodyStyle);
+            writeCell(row, 6, formatNullable(reponse.getValidatorComment()), bodyStyle);
+            writeCell(row, 7, formatNullable(reponse.getRejectionReason()), bodyStyle);
+            writeCell(row, 8, joinLines(reponse.getPreuveFiles()), bodyStyle);
+            writeCell(row, 9, joinLines(reponse.getPreuveLinks()), bodyStyle);
+            rowIndex++;
+        }
+
+        sheet.createFreezePane(0, 1);
+        sheet.setAutoFilter(new CellRangeAddress(0, Math.max(0, rowIndex - 1), 0, headers.length - 1));
+        sheet.setRepeatingRows(new CellRangeAddress(0, 0, -1, -1));
+        workbook.setPrintArea(workbook.getSheetIndex(sheet), 0, headers.length - 1, 0, Math.max(1, rowIndex - 1));
+    }
+
+    private Map<String, CellStyle> createExcelStyles(XSSFWorkbook workbook) {
+        Map<String, CellStyle> styles = new LinkedHashMap<>();
+        styles.put("title", createExcelStyle(workbook, "183B4E", "FFFFFF", 20, true, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, false, false));
+        styles.put("subtitle", createExcelStyle(workbook, "183B4E", "DCE8E3", 10, false, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, false, false));
+        styles.put("section", createExcelStyle(workbook, "315C58", "FFFFFF", 11, true, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, false, false));
+        styles.put("label", createExcelStyle(workbook, "E8EFEC", "315C58", 10, true, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, true, true));
+        styles.put("value", createExcelStyle(workbook, "FFFFFF", "24332E", 10, false, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, true, true));
+        styles.put("valueStrong", createExcelStyle(workbook, "FFFFFF", "183B4E", 11, true, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, true, true));
+        styles.put("header", createExcelStyle(workbook, "244F5A", "FFFFFF", 10, true, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+        styles.put("body", createExcelStyle(workbook, "FFFFFF", "27342F", 9, false, HorizontalAlignment.LEFT, VerticalAlignment.TOP, true, true));
+        styles.put("bodyAlt", createExcelStyle(workbook, "F4F7F6", "27342F", 9, false, HorizontalAlignment.LEFT, VerticalAlignment.TOP, true, true));
+        styles.put("empty", createExcelStyle(workbook, "F4F7F6", "68756F", 10, false, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+        styles.put("n0", createExcelStyle(workbook, "F8E5E2", "8C3D36", 9, true, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+        styles.put("n1", createExcelStyle(workbook, "F7EDCF", "795E21", 9, true, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+        styles.put("n2", createExcelStyle(workbook, "E2EEF2", "315E6D", 9, true, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+        styles.put("n3", createExcelStyle(workbook, "E1EFE7", "356A4C", 9, true, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+        styles.put("neutral", createExcelStyle(workbook, "EEF1F0", "596660", 9, true, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true, true));
+
+        CellStyle scoreStyle = workbook.createCellStyle();
+        scoreStyle.cloneStyleFrom(styles.get("body"));
+        scoreStyle.setAlignment(HorizontalAlignment.CENTER);
+        scoreStyle.setDataFormat(workbook.createDataFormat().getFormat("0.0%"));
+        styles.put("score", scoreStyle);
+
+        CellStyle numberStyle = workbook.createCellStyle();
+        numberStyle.cloneStyleFrom(styles.get("body"));
+        numberStyle.setAlignment(HorizontalAlignment.CENTER);
+        numberStyle.setDataFormat(workbook.createDataFormat().getFormat("0.0"));
+        styles.put("number", numberStyle);
+        return styles;
+    }
+
+    private CellStyle createExcelStyle(
+        XSSFWorkbook workbook,
+        String fillHex,
+        String fontHex,
+        int fontSize,
+        boolean bold,
+        HorizontalAlignment horizontalAlignment,
+        VerticalAlignment verticalAlignment,
+        boolean wrapText,
+        boolean borders
+    ) {
+        XSSFCellStyle style = workbook.createCellStyle();
+        style.setFillForegroundColor(excelColor(fillHex));
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(horizontalAlignment);
+        style.setVerticalAlignment(verticalAlignment);
+        style.setWrapText(wrapText);
+
+        XSSFFont font = workbook.createFont();
+        font.setFontName("Aptos");
+        font.setFontHeightInPoints((short) fontSize);
+        font.setBold(bold);
+        font.setColor(excelColor(fontHex));
+        style.setFont(font);
+
+        if (borders) {
+            style.setBorderTop(BorderStyle.THIN);
+            style.setBorderRight(BorderStyle.THIN);
+            style.setBorderBottom(BorderStyle.THIN);
+            style.setBorderLeft(BorderStyle.THIN);
+            short borderColor = IndexedColors.GREY_25_PERCENT.getIndex();
+            style.setTopBorderColor(borderColor);
+            style.setRightBorderColor(borderColor);
+            style.setBottomBorderColor(borderColor);
+            style.setLeftBorderColor(borderColor);
+        }
+        return style;
+    }
+
+    private XSSFColor excelColor(String hex) {
+        return new XSSFColor(Color.decode("#" + hex), new DefaultIndexedColorMap());
+    }
+
+    private void writeLabelValuePair(Row row, int startColumn, String label, Object value, Map<String, CellStyle> styles) {
+        writeCell(row, startColumn, label, styles.get("label"));
+        writeCell(row, startColumn + 1, value, styles.get("value"));
+    }
+
+    private void writeCell(Row row, int column, Object value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        if (value instanceof Number number) {
+            cell.setCellValue(number.doubleValue());
+        } else {
+            cell.setCellValue(formatNullable(value));
+        }
+        cell.setCellStyle(style);
+    }
+
+    private void writeNumericCell(Row row, int column, Number value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        if (value != null) {
+            cell.setCellValue(value.doubleValue());
+        } else {
+            cell.setCellValue("-");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private void writePercentCell(Row row, int column, Number value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        if (value != null) {
+            cell.setCellValue(value.doubleValue() / 100d);
+        } else {
+            cell.setCellValue("-");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private CellStyle niveauStyle(Object niveau, Map<String, CellStyle> styles) {
+        if (niveau == null) return styles.get("neutral");
+        return switch (niveau.toString()) {
+            case "N0" -> styles.get("n0");
+            case "N1" -> styles.get("n1");
+            case "N2" -> styles.get("n2");
+            case "N3" -> styles.get("n3");
+            default -> styles.get("neutral");
+        };
+    }
+
+    private CellStyle responseStatusStyle(Object status, Map<String, CellStyle> styles) {
+        if (status == null) return styles.get("neutral");
+        return switch (status.toString()) {
+            case "VALIDEE" -> styles.get("n3");
+            case "REJETEE" -> styles.get("n0");
+            case "A_CORRIGER" -> styles.get("n1");
+            case "SOUMISE" -> styles.get("n2");
+            default -> styles.get("neutral");
+        };
+    }
+
+    private CellStyle maturityStyle(Float score, Map<String, CellStyle> styles) {
+        if (score == null) return styles.get("neutral");
+        if (score < 25) return styles.get("n0");
+        if (score < 50) return styles.get("n1");
+        if (score < 75) return styles.get("n2");
+        return styles.get("n3");
+    }
+
+    private String formatMaturityForScore(Float score) {
+        if (score == null) return "-";
+        if (score < 25) return "Initial";
+        if (score < 50) return "En progression";
+        if (score < 75) return "Avance";
+        return "Excellent";
+    }
+
+    private String joinLines(List<String> values) {
+        return values == null || values.isEmpty() ? "-" : String.join("\n", values);
+    }
+
+    private String buildExcelFilename(EvaluationResponse evaluation) {
+        String organisation = formatNullable(evaluation.getOrganismeName())
+            .toLowerCase()
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("(^-|-$)", "");
+        if (organisation.isBlank()) {
+            organisation = "organisme";
+        }
+        return "evaluation-" + organisation + "-" + evaluation.getYear() + ".xlsx";
     }
 
     private PdfPTable buildReportHeader(EvaluationResponse evaluation, Font titleFont, Font subtitleFont) throws Exception {

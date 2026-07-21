@@ -25,7 +25,6 @@ import java.util.UUID;
 @RequestMapping("/admin/email-jobs")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "*")
 public class AdminEmailJobController {
 
     private final EmailJobService emailJobService;

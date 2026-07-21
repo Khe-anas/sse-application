@@ -37,6 +37,7 @@ public class EvaluationService {
     private final NotificationService notificationService;
     private final CurrentUserService currentUserService;
     private final AuditLogService auditLogService;
+    private final ScoringCalculator scoringCalculator;
 
     @Transactional
     public void ensureReponsesForExistingEvaluations() {
@@ -47,7 +48,7 @@ public class EvaluationService {
         }
 
         int createdCount = 0;
-        for (Evaluation evaluation : evaluationRepository.findAll()) {
+        for (Evaluation evaluation : evaluationRepository.findAllByStatus(StatusEvaluation.EN_COURS)) {
             Set<UUID> existingCritereIds = reponseRepository.findByEvaluationId(evaluation.getId()).stream()
                 .map(reponse -> reponse.getCritere().getId())
                 .collect(Collectors.toSet());
@@ -136,22 +137,22 @@ public class EvaluationService {
 
     @Transactional
     public EvaluationResponse claimValidation(UUID id) {
-        User admin = currentUserService.getCurrentUser();
+        User validator = currentUserService.getCurrentUser();
         Evaluation eval = evaluationRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RuntimeException("Evaluation not found"));
 
-        claimValidationForAdmin(eval, admin);
+        claimValidationForValidator(eval, validator);
         return mapToResponse(evaluationRepository.save(eval));
     }
 
     @Transactional
     public void releaseValidation(UUID id) {
-        User admin = currentUserService.getCurrentUser();
+        User validator = currentUserService.getCurrentUser();
         Evaluation eval = evaluationRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RuntimeException("Evaluation not found"));
 
         User openedBy = eval.getValidationOpenedBy();
-        if (openedBy != null && openedBy.getId().equals(admin.getId())) {
+        if (openedBy != null && openedBy.getId().equals(validator.getId())) {
             clearValidationLock(eval);
             if (eval.getStatus() == StatusEvaluation.EN_VALIDATION) {
                 eval.setStatus(StatusEvaluation.SOUMISE);
@@ -182,7 +183,7 @@ public class EvaluationService {
         }
 
         boolean hasUnaddressedCorrections = reponses.stream().anyMatch(r ->
-            r.getStatus() == StatusReponse.A_CORRIGER && !Boolean.TRUE.equals(r.getCorrectionAddressed())
+            isCorrectionStatus(r.getStatus()) && !Boolean.TRUE.equals(r.getCorrectionAddressed())
         );
         if (hasUnaddressedCorrections) {
             throw new RuntimeException("All requested corrections must be updated before submission");
@@ -194,7 +195,7 @@ public class EvaluationService {
         
         // Move only editable responses back to validation. Already reviewed responses keep their decision.
         for (Reponse r : reponses) {
-            if (r.getStatus() == StatusReponse.BROUILLON || r.getStatus() == StatusReponse.A_CORRIGER) {
+            if (r.getStatus() == StatusReponse.BROUILLON || isCorrectionStatus(r.getStatus())) {
                 r.setStatus(StatusReponse.SOUMISE);
                 r.setCorrectionAddressed(false);
             }
@@ -204,9 +205,9 @@ public class EvaluationService {
         log.info("Evaluation {} submitted", id);
         auditLogService.log("SUBMIT", "EVALUATION", "Evaluation " + id + " submitted for " + eval.getOrganisme().getName(), null, saved);
         
-        List<User> admins = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN));
-        for (User admin : admins) {
-            notificationService.sendEvaluationSubmitted(admin.getId(), eval.getOrganisme().getName(), eval.getYear());
+        List<User> validators = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN, Role.EVALUATEUR));
+        for (User validator : validators) {
+            notificationService.sendEvaluationSubmitted(validator.getId(), eval.getOrganisme().getName(), eval.getYear(), saved.getId());
         }
         
         return mapToResponse(saved);
@@ -214,19 +215,24 @@ public class EvaluationService {
     
     @Transactional
     public EvaluationResponse validateEvaluation(UUID id, ValidateEvaluationRequest request) {
-        User admin = currentUserService.getCurrentUser();
+        User validator = currentUserService.getCurrentUser();
         Evaluation eval = evaluationRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new RuntimeException("Evaluation not found"));
         
         if (eval.getStatus() != StatusEvaluation.SOUMISE && eval.getStatus() != StatusEvaluation.EN_VALIDATION) {
             throw new RuntimeException("Evaluation must be SOUMISE or EN_VALIDATION to validate");
         }
-        ensureValidationOwner(eval, admin);
+        ensureValidationOwner(eval, validator);
 
         List<Reponse> reponses = reponseRepository.findByEvaluationId(id);
         boolean allReviewed = reponses.stream().allMatch(this::hasAdminDecision);
         if (!allReviewed) {
-            throw new RuntimeException("All criteria must have an admin action before validating the evaluation");
+            throw new RuntimeException("All criteria must have a validation action before validating the evaluation");
+        }
+        boolean hasRequestedCorrections = reponses.stream()
+            .anyMatch(r -> r.getStatus() == StatusReponse.A_CORRIGER);
+        if (hasRequestedCorrections) {
+            throw new RuntimeException("Criteria marked for correction must be returned to the responsible user");
         }
         
         // Calculate scores
@@ -273,14 +279,14 @@ public class EvaluationService {
     
     @Transactional
     public EvaluationResponse rejectEvaluation(UUID id, String reason) {
-        User admin = currentUserService.getCurrentUser();
+        User validator = currentUserService.getCurrentUser();
         Evaluation eval = evaluationRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RuntimeException("Evaluation not found"));
 
         if (eval.getStatus() != StatusEvaluation.SOUMISE && eval.getStatus() != StatusEvaluation.EN_VALIDATION) {
             throw new RuntimeException("Evaluation must be SOUMISE or EN_VALIDATION to reject");
         }
-        ensureValidationOwner(eval, admin);
+        ensureValidationOwner(eval, validator);
         
         eval.setStatus(StatusEvaluation.REJETEE);
         clearValidationLock(eval);
@@ -301,23 +307,43 @@ public class EvaluationService {
     
     @Transactional
     public EvaluationResponse requestCorrection(UUID id, String reason) {
-        User admin = currentUserService.getCurrentUser();
+        User validator = currentUserService.getCurrentUser();
         Evaluation eval = evaluationRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RuntimeException("Evaluation not found"));
 
         if (eval.getStatus() != StatusEvaluation.SOUMISE && eval.getStatus() != StatusEvaluation.EN_VALIDATION) {
             throw new RuntimeException("Evaluation must be SOUMISE or EN_VALIDATION to request correction");
         }
-        ensureValidationOwner(eval, admin);
+        ensureValidationOwner(eval, validator);
         
         eval.setStatus(StatusEvaluation.EN_COURS);
         clearValidationLock(eval);
         evaluationRepository.save(eval);
         
-        // Set all SOUMISE reponses to A_CORRIGER
-        List<Reponse> reponses = reponseRepository.findByEvaluationAndStatus(id, StatusReponse.SOUMISE);
-        for (Reponse r : reponses) {
+        String correctionReason = reason != null && !reason.isBlank() ? reason : "Correction demandee";
+        List<Reponse> reponses = reponseRepository.findByEvaluationId(id);
+        List<Reponse> flaggedReponses = reponses.stream()
+            .filter(r -> isCorrectionStatus(r.getStatus()))
+            .toList();
+
+        // Reopen only criteria explicitly flagged by the validator. When no criterion
+        // was flagged, the global reason applies to every still-pending response.
+        List<Reponse> reponsesToCorrect = flaggedReponses.isEmpty()
+            ? reponses.stream().filter(r -> r.getStatus() == StatusReponse.SOUMISE).toList()
+            : flaggedReponses;
+
+        for (Reponse r : reponsesToCorrect) {
+            String criterionReason = r.getRejectionReason();
+            if (criterionReason == null || criterionReason.isBlank()) {
+                criterionReason = r.getValidatorComment();
+            }
             r.setStatus(StatusReponse.A_CORRIGER);
+            r.setNiveau(null);
+            r.setValidatorComment(criterionReason != null && !criterionReason.isBlank()
+                ? criterionReason
+                : correctionReason);
+            r.setRejectionReason(null);
+            r.setValidatedAt(null);
             r.setCorrectionAddressed(false);
         }
         
@@ -345,21 +371,27 @@ public class EvaluationService {
         
         for (Principe principe : principes) {
             List<Reponse> reponses = reponseRepository.findByEvaluationAndPrincipe(eval.getId(), principe.getId());
-            
-            int totalPoints = reponses.stream().mapToInt(r -> r.getNiveau() != null ? r.getNiveau().ordinal() : 0).sum();
-            int maxPoints = reponses.size() * 3;
-            float score = maxPoints > 0 ? ((float) totalPoints / maxPoints) * 100 : 0;
+
+            // Empty principles and good practices do not change the denominator.
+            if (reponses.isEmpty()) {
+                continue;
+            }
+
+            float score = scoringCalculator.percentage(reponses);
+            float effectiveWeight = principe.getWeight() != null && principe.getWeight() > 0
+                ? principe.getWeight()
+                : 1f;
             
             ScorePrincipe sp = new ScorePrincipe();
             sp.setEvaluation(eval);
             sp.setPrincipe(principe);
             sp.setScore(score);
             sp.setMaxPossible(100f);
-            sp.setWeight(principe.getWeight());
+            sp.setWeight(effectiveWeight);
             scorePrincipeRepository.save(sp);
             
-            totalWeightedScore += score * principe.getWeight();
-            totalWeight += principe.getWeight();
+            totalWeightedScore += score * effectiveWeight;
+            totalWeight += effectiveWeight;
         }
         
         float globalScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
@@ -379,7 +411,11 @@ public class EvaluationService {
             || reponse.getStatus() == StatusReponse.A_CORRIGER;
     }
 
-    private void claimValidationForAdmin(Evaluation eval, User admin) {
+    private boolean isCorrectionStatus(StatusReponse status) {
+        return status == StatusReponse.A_CORRIGER || status == StatusReponse.REJETEE;
+    }
+
+    private void claimValidationForValidator(Evaluation eval, User validator) {
         releaseExpiredValidationLock(eval);
 
         if (eval.getStatus() != StatusEvaluation.SOUMISE && eval.getStatus() != StatusEvaluation.EN_VALIDATION) {
@@ -388,13 +424,13 @@ public class EvaluationService {
 
         User openedBy = eval.getValidationOpenedBy();
         if (openedBy == null) {
-            eval.setValidationOpenedBy(admin);
+            eval.setValidationOpenedBy(validator);
             eval.setValidationOpenedAt(LocalDateTime.now());
             eval.setStatus(StatusEvaluation.EN_VALIDATION);
             return;
         }
 
-        if (!openedBy.getId().equals(admin.getId())) {
+        if (!openedBy.getId().equals(validator.getId())) {
             throw new ResourceLockedException("Cette validation est deja ouverte par " + openedBy.getFullName());
         }
 
@@ -404,8 +440,8 @@ public class EvaluationService {
         }
     }
 
-    private void ensureValidationOwner(Evaluation eval, User admin) {
-        claimValidationForAdmin(eval, admin);
+    private void ensureValidationOwner(Evaluation eval, User validator) {
+        claimValidationForValidator(eval, validator);
     }
 
     private void clearValidationLock(Evaluation eval) {

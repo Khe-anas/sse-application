@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,11 +50,21 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, UUID> {
     
     @Query("SELECT COUNT(e) FROM Evaluation e WHERE e.status = :status")
     long countByStatus(@Param("status") StatusEvaluation status);
+
+    long countByStatusIn(Collection<StatusEvaluation> statuses);
+
+    Optional<Evaluation> findFirstByOrganismeIdAndYearAndStatusOrderByValidatedAtDesc(
+        UUID organismeId,
+        Integer year,
+        StatusEvaluation status
+    );
     
     @Query("SELECT AVG(e.globalScore) FROM Evaluation e WHERE e.status = 'VALIDEE' AND e.year = :year")
     Double findAverageScoreByYear(@Param("year") Integer year);
     
     List<Evaluation> findByOrganismeIdOrderByYearDesc(UUID organismeId);
+
+    List<Evaluation> findAllByStatus(StatusEvaluation status);
     
     @Query("SELECT e FROM Evaluation e WHERE e.status IN ('SOUMISE', 'EN_VALIDATION')")
     List<Evaluation> findPendingValidations();

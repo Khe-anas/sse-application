@@ -1,8 +1,8 @@
 import api from './api';
-import type { User, PageResponse, Role } from '@/types';
+import type { User, PageResponse, Role, UserStatus } from '@/types';
 
 export const userService = {
-  getAll: async (params?: { role?: Role; search?: string; page?: number; size?: number }): Promise<PageResponse<User>> => {
+  getAll: async (params?: { role?: Role; status?: UserStatus; search?: string; page?: number; size?: number }): Promise<PageResponse<User>> => {
     const response = await api.get<PageResponse<User>>('/admin/users', { params });
     return response.data;
   },
@@ -12,7 +12,7 @@ export const userService = {
     return response.data;
   },
 
-  update: async (id: string, data: Partial<CreateUserRequest>): Promise<User> => {
+  update: async (id: string, data: UpdateUserRequest): Promise<User> => {
     const response = await api.put<User>(`/admin/users/${id}`, data);
     return response.data;
   },
@@ -26,14 +26,24 @@ export const userService = {
   },
 };
 
+export interface UpdateUserRequest {
+  firstName?: string;
+  lastName?: string;
+  role?: Role;
+  password?: string;
+  phone?: string;
+  position?: string;
+  organismeId?: string;
+  isActive?: boolean;
+}
+
 export interface CreateUserRequest {
   email: string;
   firstName: string;
   lastName: string;
-  role: Role;
+  role?: Role;
   password?: string;
   phone?: string;
+  position?: string;
   organismeId?: string;
-  entrepriseName?: string;
-  isActive?: boolean;
 }

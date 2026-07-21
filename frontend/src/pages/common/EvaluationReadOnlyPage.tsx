@@ -7,9 +7,17 @@ import { evaluationService, reponseService } from '@/services/evaluationService'
 import { fileService } from '@/services/fileService';
 import { reportService } from '@/services/reportService';
 import api from '@/services/api';
-import { Role, type Evaluation, type Principe, type Reponse } from '@/types';
+import {
+  Role,
+  type BonnePratique,
+  type Critere,
+  type Evaluation,
+  type Principe,
+  type Reponse,
+} from '@/types';
 import { getLocalizedField } from '@/utils/localization';
 import { useAuthStore } from '@/stores/authStore';
+import { getNiveauTranslationKey } from '@/utils/niveau';
 
 export default function EvaluationReadOnlyPage() {
   const { t, i18n } = useTranslation();
@@ -81,7 +89,7 @@ export default function EvaluationReadOnlyPage() {
   const getAllCriteres = () => {
     const active = principes.find(p => p.id === activePrincipe);
     if (!active) return [];
-    const rows: { principe: Principe; bp: any; critere: any }[] = [];
+    const rows: { principe: Principe; bp: BonnePratique; critere: Critere }[] = [];
     active.bonnesPratiques.forEach(bp => {
       bp.criteres.forEach(critere => rows.push({ principe: active, bp, critere }));
     });
@@ -153,7 +161,7 @@ export default function EvaluationReadOnlyPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {(() => {
-              const groups: { bp: any; criteres: { critere: any }[] }[] = [];
+              const groups: { bp: BonnePratique; criteres: { critere: Critere }[] }[] = [];
               rows.forEach((row) => {
                 let g = groups.find(x => x.bp.id === row.bp.id);
                 if (!g) { g = { bp: row.bp, criteres: [] }; groups.push(g); }
@@ -178,7 +186,9 @@ export default function EvaluationReadOnlyPage() {
                       </td>
                       <td className="px-3 py-2 text-center align-top">
                         {reponse?.niveau && (
-                          <span className={`badge ${levelColors[reponse.niveau]}`}>{reponse.niveau}</span>
+                          <span className={`badge ${levelColors[reponse.niveau]}`}>
+                            {t(getNiveauTranslationKey(reponse.niveau))}
+                          </span>
                         )}
                       </td>
                       <td className="px-3 py-2 align-top">

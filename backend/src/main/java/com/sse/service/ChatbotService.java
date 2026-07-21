@@ -2,7 +2,10 @@ package com.sse.service;
 
 import com.sse.dto.ChatRequest;
 import com.sse.dto.ChatResponse;
+import com.sse.entity.Principe;
+import com.sse.repository.PrincipeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -11,8 +14,10 @@ public class ChatbotService {
     
     private final Map<String, String> keywordResponses = new LinkedHashMap<>();
     private final Map<String, List<String>> suggestions = new LinkedHashMap<>();
+    private final PrincipeRepository principeRepository;
     
-    public ChatbotService() {
+    public ChatbotService(PrincipeRepository principeRepository) {
+        this.principeRepository = principeRepository;
         initResponses();
     }
     
@@ -21,13 +26,13 @@ public class ChatbotService {
         keywordResponses.put("bonjour|salut|hello|hi|bonsoir", 
             "Bonjour ! Je suis l'assistant virtuel du SSE (Système de Suivi et d'Évaluation). Je peux vous aider avec :\n\n" +
             "- Les évaluations de gouvernance\n" +
-            "- Les 12 principes de bonne gouvernance\n" +
+            "- Les principes actifs de bonne gouvernance\n" +
             "- Le calcul des scores et niveaux de maturité\n" +
             "- Le processus de validation\n" +
             "- La labellisation\n\n" +
             "Comment puis-je vous aider aujourd'hui ?");
         suggestions.put("bonjour|salut|hello|hi|bonsoir", 
-            List.of("Comment remplir une évaluation ?", "Quels sont les 12 principes ?", "Comment sont calculés les scores ?"));
+            List.of("Comment remplir une évaluation ?", "Quels sont les principes actifs ?", "Comment sont calculés les scores ?"));
         
         // Evaluation
         keywordResponses.put("évaluation|eval|remplir|evaluation|formulaire",
@@ -35,22 +40,22 @@ public class ChatbotService {
             "1. Connectez-vous avec votre compte Responsable\n" +
             "2. Accédez à votre tableau de bord\n" +
             "3. Cliquez sur l'évaluation assignée\n" +
-            "4. Remplissez les critères principe par principe (12 au total)\n" +
-            "5. Pour chaque critère, sélectionnez un niveau :\n" +
-            "   - 0 : N'existe pas\n" +
-            "   - 1 : En cours\n" +
-            "   - 2 : Réalisé\n" +
-            "   - 3 : Validé\n" +
+            "4. Remplissez les critères principe par principe\n" +
+            "5. Pour chaque critère, sélectionnez le libellé adapté :\n" +
+            "   - N'existe pas\n" +
+            "   - En cours\n" +
+            "   - Réalisé\n" +
+            "   - Validé\n" +
             "6. Ajoutez des commentaires et des preuves\n" +
             "7. Sauvegardez régulièrement\n" +
             "8. Soumettez quand tout est rempli\n\n" +
             "Vous pouvez sauvegarder en brouillon à tout moment.");
         suggestions.put("évaluation|eval|remplir|evaluation|formulaire",
-            List.of("Quels sont les 12 principes ?", "Quelles preuves sont acceptées ?", "Comment sont calculés les scores ?"));
+            List.of("Quels sont les principes actifs ?", "Quelles preuves sont acceptées ?", "Comment sont calculés les scores ?"));
         
         // 12 Principes
         keywordResponses.put("principe|principes|12|douze",
-            "Les 12 principes de bonne gouvernance sont :\n\n" +
+            "La liste des principes actifs est chargée directement depuis le référentiel.\n\n" +
             "1. **Finalité** - Mission et valeurs de l'organisme\n" +
             "2. **Création de valeur** - Performance et optimisation\n" +
             "3. **Stratégie** - Planification et objectifs\n" +
@@ -75,7 +80,7 @@ public class ChatbotService {
             "- Exemple : 5 critères avec niveaux [2, 3, 1, 2, 3]\n" +
             "  Score = (2+3+1+2+3) ÷ (5×3) × 100 = 11 ÷ 15 × 100 = **73.3%**\n\n" +
             "**Score global :**\n" +
-            "- Moyenne pondérée des 12 principes\n" +
+            "- Moyenne pondérée des principes qui contiennent des critères\n" +
             "- Par défaut, tous les principes ont un poids égal (1.0)\n\n" +
             "**Niveaux de maturité :**\n" +
             "- 0-25% : Initial\n" +
@@ -83,7 +88,7 @@ public class ChatbotService {
             "- 50-75% : Avancé\n" +
             "- 75-100% : Excellent");
         suggestions.put("score|calcul|calculer|note|point",
-            List.of("Qu'est-ce que la maturité ?", "Quels sont les 12 principes ?", "Comment remplir une évaluation ?"));
+            List.of("Qu'est-ce que la maturité ?", "Quels sont les principes actifs ?", "Comment remplir une évaluation ?"));
         
         // Maturity
         keywordResponses.put("maturité|maturite|niveau|level",
@@ -105,7 +110,7 @@ public class ChatbotService {
             "- Pratiques optimisées et validées\n" +
             "- Labellisation possible");
         suggestions.put("maturité|maturite|niveau|level",
-            List.of("Comment sont calculés les scores ?", "Qu'est-ce que la labellisation ?", "Quels sont les 12 principes ?"));
+            List.of("Comment sont calculés les scores ?", "Qu'est-ce que la labellisation ?", "Quels sont les principes actifs ?"));
         
         // Proofs
         keywordResponses.put("preuve|preuves|document|fichier|upload|justificatif",
@@ -120,7 +125,7 @@ public class ChatbotService {
             "Taille maximale : 10 Mo par fichier\n\n" +
             "Vous pouvez aussi ajouter des liens URL vers des documents en ligne.");
         suggestions.put("preuve|preuves|document|fichier|upload|justificatif",
-            List.of("Comment remplir une évaluation ?", "Quels sont les 12 principes ?", "Comment sont calculés les scores ?"));
+            List.of("Comment remplir une évaluation ?", "Quels sont les principes actifs ?", "Comment sont calculés les scores ?"));
         
         // Validation
         keywordResponses.put("validation|valider|validate|correcteur|gouvernement",
@@ -141,7 +146,7 @@ public class ChatbotService {
         keywordResponses.put("labellisation|label|certification|reconnaissance",
             "La labellisation en bonne gouvernance :\n\n" +
             "- Attribuée aux organismes atteignant le niveau **Excellent (75%+)**\n" +
-            "- Basée sur l'évaluation complète des 12 principes\n" +
+            "- Basée sur l'ensemble des principes actifs du référentiel\n" +
             "- Validée par le Gouvernement\n" +
             "- Renouvelable annuellement\n\n" +
             "**Avantages :**\n" +
@@ -151,7 +156,7 @@ public class ChatbotService {
             "- Référence pour les bonnes pratiques\n\n" +
             "Le classement public permet de comparer les organismes.");
         suggestions.put("labellisation|label|certification|reconnaissance",
-            List.of("Qu'est-ce que la maturité ?", "Comment sont calculés les scores ?", "Quels sont les 12 principes ?"));
+            List.of("Qu'est-ce que la maturité ?", "Comment sont calculés les scores ?", "Quels sont les principes actifs ?"));
         
         // Ranking
         keywordResponses.put("classement|ranking|rang|position|comparer",
@@ -164,7 +169,7 @@ public class ChatbotService {
             "Accessible dans le tableau de bord Gouvernement.\n" +
             "Le Responsable peut voir le classement de son organisme.");
         suggestions.put("classement|ranking|rang|position|comparer",
-            List.of("Comment sont calculés les scores ?", "Qu'est-ce que la labellisation ?", "Quels sont les 12 principes ?"));
+            List.of("Comment sont calculés les scores ?", "Qu'est-ce que la labellisation ?", "Quels sont les principes actifs ?"));
         
         // Correction
         keywordResponses.put("correction|corriger|modifier|changer|rectifier",
@@ -192,18 +197,47 @@ public class ChatbotService {
             "- Tutoriels vidéo\n\n" +
             "Pour une question technique, précisez votre rôle et le problème rencontré.");
         suggestions.put("aide|help|support|assistance|contact|problème|problem|erreur|error",
-            List.of("Comment remplir une évaluation ?", "Quels sont les 12 principes ?", "Quelles preuves sont acceptées ?"));
+            List.of("Comment remplir une évaluation ?", "Quels sont les principes actifs ?", "Quelles preuves sont acceptées ?"));
     }
     
+    @Transactional(readOnly = true)
     public ChatResponse processMessage(ChatRequest request) {
         String message = request.getMessage().toLowerCase();
         String sessionId = request.getSessionId() != null ? request.getSessionId() : UUID.randomUUID().toString();
         
         // Find matching response
-        String response = findResponse(message);
+        String response = isPrincipleQuestion(message) ? buildPrinciplesResponse() : findResponse(message);
         List<String> suggested = findSuggestions(message);
         
         return new ChatResponse(response, suggested, sessionId);
+    }
+
+    private boolean isPrincipleQuestion(String message) {
+        return message.contains("principe")
+            || message.contains("principle")
+            || message.contains("douze")
+            || message.contains("12")
+            || message.contains("مبادئ")
+            || message.contains("مبدأ");
+    }
+
+    private String buildPrinciplesResponse() {
+        List<Principe> principes = principeRepository.findAllActiveWithBonnesPratiques();
+        StringBuilder response = new StringBuilder("Le référentiel actif contient ")
+            .append(principes.size())
+            .append(" principe(s) :\n\n");
+        for (Principe principe : principes) {
+            int criteriaCount = principe.getBonnesPratiques().stream()
+                .mapToInt(bp -> bp.getCriteres().size())
+                .sum();
+            response.append(principe.getNumber())
+                .append(". **")
+                .append(principe.getNameFr())
+                .append("** - ")
+                .append(criteriaCount)
+                .append(" critère(s)\n");
+        }
+        return response.toString().trim();
     }
     
     private String findResponse(String message) {
@@ -217,7 +251,7 @@ public class ChatbotService {
         }
         
         return "Je n'ai pas compris votre question. Voici ce que je peux vous aider à faire :\n\n" +
-               "- Comprendre les 12 principes de gouvernance\n" +
+               "- Comprendre les principes de gouvernance\n" +
                "- Remplir votre évaluation\n" +
                "- Comprendre le calcul des scores\n" +
                "- Savoir quelles preuves sont acceptées\n" +
@@ -234,6 +268,6 @@ public class ChatbotService {
                 }
             }
         }
-        return List.of("Comment remplir une évaluation ?", "Quels sont les 12 principes ?", "Comment sont calculés les scores ?", "Aide");
+        return List.of("Comment remplir une évaluation ?", "Quels sont les principes actifs ?", "Comment sont calculés les scores ?", "Aide");
     }
 }

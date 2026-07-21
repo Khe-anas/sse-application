@@ -31,6 +31,8 @@ public class PrincipeService {
     private final BonnePratiqueRepository bonnePratiqueRepository;
     private final CritereRepository critereRepository;
     private final ObjectMapper objectMapper;
+    private final ReferenceTranslationService referenceTranslationService;
+    private final ReferenceEvaluationSyncService referenceEvaluationSyncService;
     
     @Transactional
     public void seedPrincipes() {
@@ -131,12 +133,24 @@ public class PrincipeService {
                                     Float weight, Boolean isActive) {
         Principe p = principeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Principe not found"));
-        if (nameFr != null) p.setNameFr(nameFr);
-        if (nameAr != null) p.setNameAr(nameAr);
-        if (nameEn != null) p.setNameEn(nameEn);
-        if (descriptionFr != null) p.setDescriptionFr(descriptionFr);
-        if (descriptionAr != null) p.setDescriptionAr(descriptionAr);
-        if (descriptionEn != null) p.setDescriptionEn(descriptionEn);
+        if (nameFr != null) {
+            var translated = referenceTranslationService.complete(nameFr, nameEn, nameAr);
+            p.setNameFr(nameFr);
+            p.setNameEn(translated.en());
+            p.setNameAr(translated.ar());
+        } else {
+            if (nameAr != null) p.setNameAr(nameAr);
+            if (nameEn != null) p.setNameEn(nameEn);
+        }
+        if (descriptionFr != null) {
+            var translated = referenceTranslationService.complete(descriptionFr, descriptionEn, descriptionAr);
+            p.setDescriptionFr(descriptionFr);
+            p.setDescriptionEn(translated.en());
+            p.setDescriptionAr(translated.ar());
+        } else {
+            if (descriptionAr != null) p.setDescriptionAr(descriptionAr);
+            if (descriptionEn != null) p.setDescriptionEn(descriptionEn);
+        }
         if (weight != null) p.setWeight(weight);
         if (isActive != null) p.setIsActive(isActive);
         return principeRepository.save(p);
@@ -150,9 +164,10 @@ public class PrincipeService {
         int maxNumber = bonnePratiqueRepository.findByPrincipeIdOrderByNumberAsc(principeId)
             .stream().mapToInt(BonnePratique::getNumber).max().orElse(0);
         bp.setNumber(maxNumber + 1);
+        var translated = referenceTranslationService.complete(labelFr, labelEn, labelAr);
         bp.setLabelFr(labelFr);
-        bp.setLabelAr(labelAr);
-        bp.setLabelEn(labelEn);
+        bp.setLabelAr(translated.ar());
+        bp.setLabelEn(translated.en());
         bp.setPrincipe(principe);
         return bonnePratiqueRepository.save(bp);
     }
@@ -161,9 +176,15 @@ public class PrincipeService {
     public BonnePratique updateBonnePratique(UUID id, String labelFr, String labelAr, String labelEn) {
         BonnePratique bp = bonnePratiqueRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("BonnePratique not found"));
-        if (labelFr != null) bp.setLabelFr(labelFr);
-        if (labelAr != null) bp.setLabelAr(labelAr);
-        if (labelEn != null) bp.setLabelEn(labelEn);
+        if (labelFr != null) {
+            var translated = referenceTranslationService.complete(labelFr, labelEn, labelAr);
+            bp.setLabelFr(labelFr);
+            bp.setLabelAr(translated.ar());
+            bp.setLabelEn(translated.en());
+        } else {
+            if (labelAr != null) bp.setLabelAr(labelAr);
+            if (labelEn != null) bp.setLabelEn(labelEn);
+        }
         return bonnePratiqueRepository.save(bp);
     }
 
@@ -184,17 +205,22 @@ public class PrincipeService {
         int maxNumber = critereRepository.findByBonnePratiqueIdOrderByNumberAsc(bonnePratiqueId)
             .stream().mapToInt(Critere::getNumber).max().orElse(0);
         critere.setNumber(maxNumber + 1);
+        var translatedLabel = referenceTranslationService.complete(labelFr, labelEn, labelAr);
+        var translatedEvidence = referenceTranslationService.complete(preuvesFr, preuvesEn, preuvesAr);
+        var translatedReferences = referenceTranslationService.complete(referencesFr, referencesEn, referencesAr);
         critere.setLabelFr(labelFr);
-        critere.setLabelAr(labelAr);
-        critere.setLabelEn(labelEn);
+        critere.setLabelAr(translatedLabel.ar());
+        critere.setLabelEn(translatedLabel.en());
         critere.setPreuvesFr(preuvesFr);
-        critere.setPreuvesAr(preuvesAr);
-        critere.setPreuvesEn(preuvesEn);
+        critere.setPreuvesAr(translatedEvidence.ar());
+        critere.setPreuvesEn(translatedEvidence.en());
         critere.setReferencesFr(referencesFr);
-        critere.setReferencesAr(referencesAr);
-        critere.setReferencesEn(referencesEn);
+        critere.setReferencesAr(translatedReferences.ar());
+        critere.setReferencesEn(translatedReferences.en());
         critere.setBonnePratique(bp);
-        return critereRepository.save(critere);
+        Critere saved = critereRepository.save(critere);
+        referenceEvaluationSyncService.addCriterionToEvaluationsBeingFilled(saved);
+        return saved;
     }
 
     @Transactional
@@ -203,15 +229,33 @@ public class PrincipeService {
                                   String referencesFr, String referencesAr, String referencesEn) {
         Critere critere = critereRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Critere not found"));
-        if (labelFr != null) critere.setLabelFr(labelFr);
-        if (labelAr != null) critere.setLabelAr(labelAr);
-        if (labelEn != null) critere.setLabelEn(labelEn);
-        if (preuvesFr != null) critere.setPreuvesFr(preuvesFr);
-        if (preuvesAr != null) critere.setPreuvesAr(preuvesAr);
-        if (preuvesEn != null) critere.setPreuvesEn(preuvesEn);
-        if (referencesFr != null) critere.setReferencesFr(referencesFr);
-        if (referencesAr != null) critere.setReferencesAr(referencesAr);
-        if (referencesEn != null) critere.setReferencesEn(referencesEn);
+        if (labelFr != null) {
+            var translated = referenceTranslationService.complete(labelFr, labelEn, labelAr);
+            critere.setLabelFr(labelFr);
+            critere.setLabelAr(translated.ar());
+            critere.setLabelEn(translated.en());
+        } else {
+            if (labelAr != null) critere.setLabelAr(labelAr);
+            if (labelEn != null) critere.setLabelEn(labelEn);
+        }
+        if (preuvesFr != null) {
+            var translated = referenceTranslationService.complete(preuvesFr, preuvesEn, preuvesAr);
+            critere.setPreuvesFr(preuvesFr);
+            critere.setPreuvesAr(translated.ar());
+            critere.setPreuvesEn(translated.en());
+        } else {
+            if (preuvesAr != null) critere.setPreuvesAr(preuvesAr);
+            if (preuvesEn != null) critere.setPreuvesEn(preuvesEn);
+        }
+        if (referencesFr != null) {
+            var translated = referenceTranslationService.complete(referencesFr, referencesEn, referencesAr);
+            critere.setReferencesFr(referencesFr);
+            critere.setReferencesAr(translated.ar());
+            critere.setReferencesEn(translated.en());
+        } else {
+            if (referencesAr != null) critere.setReferencesAr(referencesAr);
+            if (referencesEn != null) critere.setReferencesEn(referencesEn);
+        }
         return critereRepository.save(critere);
     }
 
@@ -223,17 +267,26 @@ public class PrincipeService {
     }
 
     @Transactional
-    public Principe createPrincipe(String nameFr, String nameAr, String nameEn, Float weight) {
-        long count = principeRepository.count();
+    public Principe createPrincipe(String nameFr, String nameAr, String nameEn,
+                                    String descriptionFr, String descriptionAr, String descriptionEn,
+                                    Float weight) {
+        List<Principe> existingPrincipes = principeRepository.findAll();
+        int maxNumber = existingPrincipes.stream().mapToInt(Principe::getNumber).max().orElse(0);
+        int maxOrder = existingPrincipes.stream().mapToInt(Principe::getOrder).max().orElse(-1);
         Principe p = new Principe();
-        p.setNumber((int) (count + 1));
+        var translatedName = referenceTranslationService.complete(nameFr, nameEn, nameAr);
+        var translatedDescription = referenceTranslationService.complete(descriptionFr, descriptionEn, descriptionAr);
+        p.setNumber(maxNumber + 1);
         p.setNameFr(nameFr);
-        p.setNameAr(nameAr);
-        p.setNameEn(nameEn);
+        p.setNameAr(translatedName.ar());
+        p.setNameEn(translatedName.en());
+        p.setDescriptionFr(descriptionFr);
+        p.setDescriptionAr(translatedDescription.ar());
+        p.setDescriptionEn(translatedDescription.en());
         p.setWeight(weight != null ? weight : 1.0f);
         p.setIsFixed(false);
         p.setIsActive(true);
-        p.setOrder((int) count);
+        p.setOrder(maxOrder + 1);
         return principeRepository.save(p);
     }
     
