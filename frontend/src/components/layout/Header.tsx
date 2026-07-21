@@ -13,6 +13,7 @@ import {
   Inbox,
   Trash2,
   X,
+  ArrowLeft,
   ArrowRight,
   Bot,
 } from 'lucide-react';
@@ -24,7 +25,7 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { API_BASE_URL } from '@/services/api';
 import { authService } from '@/services/authService';
 import { formatBackendShortDateTime } from '@/utils/date';
-import type { Notification } from '@/types';
+import { Role, type Notification } from '@/types';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -67,6 +68,23 @@ export default function Header() {
     ['/gouvernement/ranking', 'navigation.ranking'],
     ['/settings', 'navigation.settings'],
   ].find(([path]) => location.pathname.startsWith(path))?.[1] || 'navigation.dashboard';
+
+  const dashboardPath = user?.role === Role.ADMIN
+    ? '/admin/dashboard'
+    : user?.role === Role.USER
+      ? '/user/dashboard'
+      : user?.role === Role.EVALUATEUR
+        ? '/evaluateur/dashboard'
+        : '/gouvernement/dashboard';
+  const showBackButton = location.pathname !== dashboardPath;
+
+  const handleGoBack = () => {
+    if (location.key !== 'default' && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(dashboardPath, { replace: true });
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -348,6 +366,17 @@ export default function Header() {
         >
           <Menu className="w-5 h-5" />
         </button>
+        {showBackButton && (
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="icon-button"
+            title={t('common.back')}
+            aria-label={t('common.back')}
+          >
+            <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+          </button>
+        )}
         <div className="hidden sm:block">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">SSE · CNI</p>
           <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t(pageTitleKey)}</h2>
