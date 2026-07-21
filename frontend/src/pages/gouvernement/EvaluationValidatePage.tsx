@@ -40,6 +40,7 @@ import { useAuthStore } from '@/stores/authStore';
 import api from '@/services/api';
 import { getLocalizedField } from '@/utils/localization';
 import { getNiveauTranslationKey } from '@/utils/niveau';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 type ReviewFilter = 'ALL' | 'PENDING' | StatusReponse.VALIDEE | StatusReponse.A_CORRIGER | StatusReponse.REJETEE;
 
@@ -71,6 +72,8 @@ export default function EvaluationValidatePage() {
   const [globalCorrectionOpen, setGlobalCorrectionOpen] = useState(false);
   const [globalCorrectionReason, setGlobalCorrectionReason] = useState('');
   const [isReturningEvaluation, setIsReturningEvaluation] = useState(false);
+  const [validateDialogOpen, setValidateDialogOpen] = useState(false);
+  const [isValidatingEvaluation, setIsValidatingEvaluation] = useState(false);
   const pendingScrollPositionRef = useRef<{ left: number; top: number } | null>(null);
 
   const updateNavigationKeepingPosition = useCallback((update: () => void) => {
@@ -267,14 +270,21 @@ export default function EvaluationValidatePage() {
       toast.error(t('validation.evaluationNotReady'));
       return;
     }
-    if (!confirm(t('validation.evaluationValidateConfirm'))) return;
+    setValidateDialogOpen(true);
+  };
 
+  const confirmValidateEvaluation = async () => {
+    if (!id) return;
+    setIsValidatingEvaluation(true);
     try {
       await evaluationService.validate(id);
       toast.success(t('validation.evaluationValidated'));
+      setValidateDialogOpen(false);
       navigate(basePath);
     } catch (error) {
       toast.error(getErrorMessage(error, t('validation.evaluationValidatedError')));
+    } finally {
+      setIsValidatingEvaluation(false);
     }
   };
 
@@ -527,7 +537,7 @@ export default function EvaluationValidatePage() {
                   key={principe.id}
                   type="button"
                   onClick={() => selectPrinciple(principe)}
-                  className={`min-w-[240px] rounded-md border px-3 py-2.5 text-left transition-colors lg:w-full lg:min-w-0 ${
+                  className={`min-w-[240px] rounded-lg border px-3 py-2.5 text-start transition-colors lg:w-full lg:min-w-0 ${
                     isActive
                       ? 'border-primary-300 bg-primary-50 text-primary-800'
                       : 'border-transparent text-gray-600 hover:border-gray-200 hover:bg-gray-50'
@@ -570,13 +580,13 @@ export default function EvaluationValidatePage() {
                 </h2>
               </div>
               <label className="relative block w-full min-[1400px]:w-72">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder={t('validation.searchPlaceholder')}
-                  className="input h-10 pl-9"
+                  className="input h-10 ps-9"
                 />
               </label>
             </div>
@@ -626,7 +636,7 @@ export default function EvaluationValidatePage() {
                         key={bonnePratique.id}
                         type="button"
                         onClick={() => selectGoodPractice(bonnePratique.id)}
-                        className={`flex h-10 min-w-[170px] max-w-[240px] flex-shrink-0 items-center gap-2 rounded-md border px-2.5 text-left text-xs transition-colors ${
+                        className={`flex h-10 min-w-[170px] max-w-[240px] flex-shrink-0 items-center gap-2 rounded-lg border px-2.5 text-start text-xs transition-colors ${
                           selected
                             ? 'border-primary-600 bg-primary-700 text-white ring-2 ring-primary-200'
                             : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100'
@@ -785,6 +795,17 @@ export default function EvaluationValidatePage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={validateDialogOpen}
+        title={t('validation.validateDialogTitle')}
+        description={t('validation.evaluationValidateConfirm')}
+        confirmLabel={t('validation.validateEvaluation')}
+        cancelLabel={t('common.cancel')}
+        busy={isValidatingEvaluation}
+        onConfirm={() => void confirmValidateEvaluation()}
+        onClose={() => setValidateDialogOpen(false)}
+      />
     </div>
   );
 }
@@ -929,7 +950,7 @@ function FocusedCriterionReview({
             <BookOpenCheck className="h-4 w-4 text-secondary-600" />
             {t('validation.references')}
           </h4>
-          <p className="mt-3 whitespace-pre-wrap border-l-2 border-secondary-300 pl-4 text-sm leading-7 text-gray-700">
+          <p className="mt-3 whitespace-pre-wrap border-s-2 border-secondary-300 ps-4 text-sm leading-7 text-gray-700">
             {references}
           </p>
         </section>

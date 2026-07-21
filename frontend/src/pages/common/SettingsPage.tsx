@@ -129,10 +129,10 @@ export default function SettingsPage() {
               <div>
                 <label className="label">{t('common.address')}</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <MapPin className="absolute start-3 top-3 h-4 w-4 text-gray-400" />
                   <textarea
                     rows={3}
-                    className="input pl-10"
+                    className="input ps-10"
                     value={contactForm.address}
                     onChange={(event) => setContactForm({ ...contactForm, address: event.target.value })}
                   />
@@ -143,10 +143,10 @@ export default function SettingsPage() {
                 <div>
                   <label className="label">{t('common.phone')}</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="tel"
-                      className="input pl-10"
+                      className="input ps-10"
                       value={contactForm.phone}
                       onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })}
                     />
@@ -155,10 +155,10 @@ export default function SettingsPage() {
                 <div>
                   <label className="label">{t('common.email')}</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="email"
-                      className="input pl-10"
+                      className="input ps-10"
                       value={contactForm.email}
                       onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })}
                     />
@@ -169,10 +169,10 @@ export default function SettingsPage() {
               <div>
                 <label className="label">{t('settingsPage.website')}</label>
                 <div className="relative">
-                  <Globe2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Globe2 className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     type="url"
-                    className="input pl-10"
+                    className="input ps-10"
                     value={contactForm.website}
                     onChange={(event) => setContactForm({ ...contactForm, website: event.target.value })}
                   />

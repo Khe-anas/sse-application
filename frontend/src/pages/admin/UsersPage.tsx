@@ -11,6 +11,7 @@ import { formatBackendDateTime } from '@/utils/date';
 import type { User, PageResponse, Organisme } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
 import { Users } from 'lucide-react';
+import useConfirmDialog from '@/components/ui/useConfirmDialog';
 
 export default function UsersPage() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ export default function UsersPage() {
   });
   const userRequestId = useRef(0);
   const organisationRequestId = useRef(0);
+  const { confirm: confirmAction, confirmationDialog } = useConfirmDialog();
 
   const emptyForm: CreateUserRequest = {
     email: '',
@@ -193,7 +195,14 @@ export default function UsersPage() {
 
     const newActive = status === UserStatus.DISABLED;
     const msg = newActive ? t('users.enableConfirm') : t('users.disableConfirm');
-    if (!confirm(msg)) return;
+    const confirmed = await confirmAction({
+      title: t('common.confirm'),
+      description: msg,
+      confirmLabel: t('common.confirm'),
+      cancelLabel: t('common.cancel'),
+      tone: newActive ? 'primary' : 'danger',
+    });
+    if (!confirmed) return;
     try {
       await userService.update(user.id, { isActive: newActive });
       toast.success(t('users.toggled'));
@@ -207,7 +216,14 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('users.deleteConfirm'))) return;
+    const confirmed = await confirmAction({
+      title: t('common.confirm'),
+      description: t('users.deleteConfirm'),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await userService.delete(id);
       toast.success(t('users.deleted'));
@@ -218,7 +234,13 @@ export default function UsersPage() {
   };
 
   const handleGeneratePassword = async (id: string) => {
-    if (!confirm(t('users.generatePasswordConfirm'))) return;
+    const confirmed = await confirmAction({
+      title: t('common.confirm'),
+      description: t('users.generatePasswordConfirm'),
+      confirmLabel: t('common.confirm'),
+      cancelLabel: t('common.cancel'),
+    });
+    if (!confirmed) return;
     setIsGeneratingPassword(true);
     try {
       await userService.generatePassword(id);
@@ -256,9 +278,9 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.users')}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.users')}</h1>
         <button
           onClick={openCreateModal}
           className="btn-primary gap-2"
@@ -271,7 +293,7 @@ export default function UsersPage() {
       <KPICard title={t('users.total')} value={users?.totalElements || 0} icon={Users} color="primary" />
 
       {/* Search */}
-      <div className="card p-4">
+      <div className="filter-panel">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -523,6 +545,7 @@ export default function UsersPage() {
           t={t}
         />
       )}
+      {confirmationDialog}
     </div>
   );
 }

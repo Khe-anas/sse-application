@@ -89,6 +89,12 @@
     "profile": "الملف الشخصي",
     "auditLogs": "سجلات التدقيق"
   },
+  "navigationGroups": {
+    "overview": "نظرة عامة",
+    "work": "مساحة العمل",
+    "administration": "الإدارة",
+    "system": "النظام"
+  },
   "auditLogs": {
     "total": "إجمالي الأحداث",
     "actionLabel": "الإجراء",
@@ -158,6 +164,7 @@
     }
   },
   "dashboard": {
+    "adminSubtitle": "متابعة العمليات وعمليات التحقق وصحة المنصة.",
     "totalOrganismes": "الهيئات",
     "totalUsers": "المستخدمون",
     "evaluationsEnCours": "تقييمات قيد التنفيذ",
@@ -526,6 +533,10 @@
     "loadError": "خطأ في التحميل"
   },
   "responsable": {
+    "dashboardSubtitle": "تابع تقدمك واستأنف الإجراء المفيد التالي بسرعة.",
+    "nextAction": "الإجراء المطلوب الآن",
+    "continueEvaluation": "متابعة التقييم الجاري",
+    "progressHint": "يتم الاحتفاظ بإجاباتك كمسودة أثناء تقدمك.",
     "adminEvaluationsTitle": "تقييمات الهيئات",
     "kpiMyEvaluations": "تقييماتي",
     "kpiEvaluations": "التقييمات",
@@ -562,6 +573,7 @@
     "correctionReasonPrompt": "سبب طلب التصحيح:",
     "evaluationRejectReasonPrompt": "سبب التصحيح العام:",
     "evaluationValidateConfirm": "مصادقة هذا التقييم؟ سيتم حساب النتيجة تلقائياً.",
+    "validateDialogTitle": "تأكيد المصادقة النهائية",
     "tooltipValidate": "مصادقة",
     "tooltipReject": "رفض",
     "tooltipCorrection": "طلب تصحيح",
@@ -681,7 +693,30 @@
     "rejectionReason": "سبب الرفض: {{reason}}",
     "principeNeedsCorrection": "يحتوي هذا المبدأ على معايير يجب تصحيحها",
     "pendingCorrections": "يجب تعديل {{count}} معيار/معايير مطلوبة للتصحيح قبل الإرسال",
-    "noEditableResponses": "لا توجد معايير قابلة للتعديل"
+    "noEditableResponses": "لا توجد معايير قابلة للتعديل",
+    "workspaceEyebrow": "مساحة تقييم موجهة",
+    "reviewAndSubmit": "المراجعة والإرسال",
+    "overallProgress": "التقدم العام",
+    "completedCount": "تم إكمال {{completed}} معياراً من أصل {{total}}",
+    "savedState": "تم حفظ المسودة",
+    "saveFailed": "فشل الحفظ — أعد المحاولة",
+    "draftReady": "المسودة جاهزة",
+    "principlesNavigation": "التنقل بين المبادئ",
+    "principles": "المبادئ",
+    "choosePrinciple": "اختر قسماً",
+    "correctionsCount": "{{count}} تصحيحاً",
+    "criteriaNavigation": "التنقل بين المعايير",
+    "criterionPosition": "المعيار {{current}} من {{total}}",
+    "complete": "مكتمل",
+    "chooseLevel": "اختر مستوى النضج",
+    "chooseLevelHint": "اختر المستوى الذي يصف الوضع الحالي للهيئة بأفضل شكل.",
+    "commentGuidance": "اشرح اختيارك بإيجاز وأضف السياق المفيد.",
+    "context": "مساعدة سياقية",
+    "evidenceAndReferences": "الأدلة والمراجع",
+    "notSpecified": "لا توجد إرشادات لهذا المعيار.",
+    "attachedEvidence": "العناصر المرفقة",
+    "noEvidence": "لم تتم إضافة أي دليل بعد.",
+    "submitReview": "لا يزال {{count}} معياراً غير مكتمل. راجع الإجابات قبل قفل التقييم."
   },
   "authPage": {
     "fillAllFields": "يرجى ملء جميع الحقول",

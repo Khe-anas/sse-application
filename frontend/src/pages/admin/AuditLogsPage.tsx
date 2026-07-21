@@ -64,9 +64,9 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.auditLogs')}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.auditLogs')}</h1>
       </div>
 
       <KPICard title={t('auditLogs.total')} value={logs?.totalElements || 0} icon={History} color="primary" />
@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
         </div>
       )}
 
-      <div className="card p-4">
+      <div className="filter-panel">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="label">{t('auditLogs.actionLabel')}</label>

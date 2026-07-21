@@ -100,7 +100,7 @@ export default function ChatbotWidget() {
             onClick={closeAssistant}
             aria-label={t('common.close')}
           />
-          <section className="fixed inset-y-16 right-0 z-40 flex w-full max-w-[420px] flex-col overflow-hidden border-l border-gray-200 bg-white shadow-2xl animate-fade-in dark:border-[#2b3b35] dark:bg-[#17201d]">
+          <section className="fixed inset-y-16 end-0 z-40 flex w-full max-w-[420px] flex-col overflow-hidden border-s border-gray-200 bg-white shadow-2xl animate-fade-in dark:border-[#2b3b35] dark:bg-[#17201d]">
           {/* Header */}
           <div className="bg-primary-700 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Award, Building2, CheckCircle, ClipboardList, Trophy } from 'lucide-react';
+import { Award, Building2, CheckCircle, ClipboardList, Trophy, Landmark } from 'lucide-react';
 import { toast } from 'sonner';
 import { dashboardService } from '@/services/dashboardService';
 import type { DashboardKPIs, RankingItem } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
+import PageHeader from '@/components/ui/PageHeader';
 
 export default function GouvernementDashboard() {
   const { t } = useTranslation();
@@ -50,19 +51,19 @@ export default function GouvernementDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('navigation.governmentDashboard')}</h1>
-          <p className="text-sm text-gray-500">{t('gouvernement.dashboardSubtitle')}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="page-shell">
+      <PageHeader
+        eyebrow={t('gouvernement.year', { year: currentYear })}
+        title={t('navigation.governmentDashboard')}
+        description={t('gouvernement.dashboardSubtitle')}
+        icon={Landmark}
+        actions={<div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-500">{t('gouvernement.year', { year: currentYear })}</span>
-          <button onClick={() => navigate('/gouvernement/evaluations')} className="btn-outline btn-sm gap-2">
+          <button onClick={() => navigate('/gouvernement/evaluations')} className="btn-outline gap-2">
             <ClipboardList className="h-4 w-4" /> {t('navigation.evaluations')}
           </button>
-        </div>
-      </div>
+        </div>}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title={t('gouvernement.kpiCompanies')} value={kpis?.totalOrganismes || 0} icon={Building2} color="primary" to="/gouvernement/evaluations" />
@@ -71,11 +72,11 @@ export default function GouvernementDashboard() {
         <KPICard title={t('dashboard.averageScore')} value={kpis?.averageScore ? `${kpis.averageScore.toFixed(1)}%` : '-'} icon={Award} color="secondary" to="/gouvernement/ranking" />
       </div>
 
-      <div className="card">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+      <section className="card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-gray-100 p-5 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-secondary-500" />
-            <h2 className="text-lg font-semibold">{t('gouvernement.rankingTitle')}</h2>
+            <h2 className="section-heading">{t('gouvernement.rankingTitle')}</h2>
           </div>
           <button onClick={() => navigate('/gouvernement/ranking')} className="btn-outline btn-sm">
             {t('gouvernement.seeRanking')}
@@ -118,7 +119,7 @@ export default function GouvernementDashboard() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

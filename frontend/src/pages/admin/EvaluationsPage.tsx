@@ -107,9 +107,9 @@ export default function EvaluationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.evaluations')}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.evaluations')}</h1>
         {isAdmin && (
           <button onClick={() => setShowModal(true)} className="btn-primary gap-2">
             <Plus className="w-4 h-4" /> {t('evaluations.new')}

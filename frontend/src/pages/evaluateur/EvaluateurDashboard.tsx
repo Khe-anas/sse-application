@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle, ClipboardCheck, Clock3, Eye, Lock, RefreshCcw } from 'lucide-react';
+import { CheckCircle, ClipboardCheck, Clock3, Eye, Lock, RefreshCcw, Gauge } from 'lucide-react';
 import { toast } from 'sonner';
 import KPICard from '@/components/dashboard/KPICard';
 import { evaluationService } from '@/services/evaluationService';
 import { useAuthStore } from '@/stores/authStore';
 import { StatusEvaluation, type Evaluation } from '@/types';
 import { formatBackendShortDateTime } from '@/utils/date';
+import PageHeader from '@/components/ui/PageHeader';
+import ProgressMeter from '@/components/ui/ProgressMeter';
 
 const REVIEW_STATUSES = new Set<StatusEvaluation>([
   StatusEvaluation.SOUMISE,
@@ -121,22 +123,22 @@ export default function EvaluateurDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('evaluatorDashboard.title')}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t('evaluatorDashboard.subtitle')}</p>
-        </div>
-        <button
+    <div className="page-shell">
+      <PageHeader
+        eyebrow={t('navigationGroups.work')}
+        title={t('evaluatorDashboard.title')}
+        description={t('evaluatorDashboard.subtitle')}
+        icon={Gauge}
+        actions={<button
           type="button"
           onClick={() => loadQueue(false)}
-          className="btn-outline btn-sm gap-2"
+          className="btn-outline gap-2"
           disabled={isRefreshing}
         >
           <RefreshCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           {t('common.refresh')}
-        </button>
-      </div>
+        </button>}
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KPICard title={t('evaluatorDashboard.kpiAvailable')} value={availableQueue.length} icon={ClipboardCheck} color="primary" to="/evaluateur/evaluations" />
@@ -145,10 +147,13 @@ export default function EvaluateurDashboard() {
         <KPICard title={t('evaluatorDashboard.kpiValidated')} value={validatedCount} icon={CheckCircle} color="success" to="/evaluateur/evaluations" />
       </div>
 
-      <div className="table-container">
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <h2 className="text-lg font-semibold text-gray-900">{t('evaluatorDashboard.queueTitle')}</h2>
-          <span className="text-sm text-gray-500">{t('evaluatorDashboard.queueCount', { count: reviewQueue.length })}</span>
+      <section className="table-container">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-slate-700">
+          <div>
+            <p className="page-eyebrow">{t('navigation.evaluations')}</p>
+            <h2 className="mt-1 section-heading">{t('evaluatorDashboard.queueTitle')}</h2>
+          </div>
+          <span className="badge bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200">{t('evaluatorDashboard.queueCount', { count: reviewQueue.length })}</span>
         </div>
         <table className="table">
           <thead className="table-head">
@@ -182,10 +187,8 @@ export default function EvaluateurDashboard() {
                   </td>
                   <td className="table-td">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-24 rounded-full bg-gray-200">
-                        <div className="h-full rounded-full bg-primary-600" style={{ width: `${evaluation.progressPercentage || 0}%` }} />
-                      </div>
-                      <span className="text-xs text-gray-500">{evaluation.progressPercentage || 0}%</span>
+                      <div className="w-28"><ProgressMeter value={evaluation.progressPercentage || 0} compact /></div>
+                      <span className="text-xs tabular-nums text-gray-500">{evaluation.progressPercentage || 0}%</span>
                     </div>
                   </td>
                   <td className="table-td">
@@ -211,7 +214,7 @@ export default function EvaluateurDashboard() {
             })}
           </tbody>
         </table>
-      </div>
+      </section>
     </div>
   );
 }

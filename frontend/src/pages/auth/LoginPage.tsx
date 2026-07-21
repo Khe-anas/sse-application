@@ -61,9 +61,9 @@ export default function LoginPage() {
   return (
     <main className="min-h-[100svh] bg-[#f5f7f6] text-gray-900 transition-colors duration-300 dark:bg-[#101714] dark:text-[#e0e7e3] lg:grid lg:h-[100svh] lg:min-h-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(460px,0.95fr)] lg:overflow-hidden">
       <section className="relative hidden h-full min-h-0 overflow-hidden bg-primary-950 px-12 py-8 text-white dark:bg-[#121b18] lg:flex lg:flex-col xl:px-16 xl:py-10">
-        <div className="absolute inset-y-0 right-0 w-px bg-secondary-300/60" />
-        <div className="absolute bottom-0 right-0 h-48 w-48 border-l border-t border-white/10" />
-        <div className="absolute bottom-12 right-12 h-24 w-24 border border-secondary-300/30" />
+        <div className="absolute inset-y-0 end-0 w-px bg-secondary-300/60" />
+        <div className="absolute bottom-0 end-0 h-48 w-48 border-s border-t border-white/10" />
+        <div className="absolute bottom-12 end-12 h-24 w-24 border border-secondary-300/30" />
 
         <div className="relative flex items-center gap-4">
           <BrandLogo className="h-16 w-16 flex-shrink-0 rounded-md border border-white/20 shadow-lg shadow-black/20" />
@@ -85,12 +85,12 @@ export default function LoginPage() {
 
         <div className="relative flex items-end justify-between gap-8 border-t border-white/10 pt-4">
           <p className="text-sm text-primary-300">{t('authPage.footer')}</p>
-          <p className="text-right text-xs uppercase text-primary-300">Plateforme institutionnelle</p>
+          <p className="text-end text-xs uppercase text-primary-300">Plateforme institutionnelle</p>
         </div>
       </section>
 
       <section className="relative flex min-h-[100svh] flex-col px-5 py-3 sm:px-8 lg:h-full lg:min-h-0 lg:px-10 lg:py-4 xl:px-14">
-        <div className="flex items-center justify-between lg:absolute lg:right-6 lg:top-4 lg:z-10">
+        <div className="flex items-center justify-between lg:absolute lg:end-6 lg:top-4 lg:z-10">
           <div className="flex items-center gap-3 lg:hidden">
             <BrandLogo className="h-12 w-12 flex-shrink-0 rounded-md border border-gray-200 shadow-sm dark:border-[#2b3b35]" />
             <div>
@@ -127,13 +127,13 @@ export default function LoginPage() {
             <div>
               <label htmlFor="login-email" className="label">{t('auth.email')}</label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-[#718079]" />
+                <Mail className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-[#718079]" />
                 <input
                   id="login-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="input h-11 pl-10"
+                  className="input h-11 ps-10"
                   placeholder="nom@organisation.tn"
                   autoComplete="email"
                   required
@@ -144,7 +144,7 @@ export default function LoginPage() {
             <div>
               <label htmlFor="login-password" className="label">{t('auth.password')}</label>
               <div className="relative">
-                <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-[#718079]" />
+                <LockKeyhole className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-[#718079]" />
                 <input
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
@@ -158,7 +158,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-[#8e9d96] dark:hover:bg-[#222f2a] dark:hover:text-[#d7e0dc]"
+                  className="absolute end-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-[#8e9d96] dark:hover:bg-[#222f2a] dark:hover:text-[#d7e0dc]"
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -239,7 +239,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="absolute bottom-2 left-0 right-0 text-center text-xs text-gray-400 dark:text-[#718079] lg:hidden">
+        <p className="absolute inset-x-0 bottom-2 text-center text-xs text-gray-400 dark:text-[#718079] lg:hidden">
           {t('authPage.footer')}
         </p>
       </section>

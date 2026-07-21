@@ -15,13 +15,15 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-[#0f1613] dark:text-[#e0e7e3]">
+    <div className="min-h-screen bg-[rgb(var(--sse-canvas))] text-gray-900 transition-colors duration-200 dark:text-slate-100">
+      <a href="#main-content" className="skip-link">Aller au contenu</a>
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-30 h-full bg-sidebar transition-transform duration-300 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 start-0 z-40 h-full bg-sidebar shadow-2xl shadow-primary-950/15 transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'
         }`}
-        style={{ width: '280px' }}
+        style={{ width: '264px' }}
+        aria-label="Navigation principale"
       >
         <Sidebar />
       </aside>
@@ -31,16 +33,19 @@ export default function AppLayout() {
         <div
           className="fixed inset-0 z-20 bg-black/50 lg:hidden"
           onClick={() => useUIStore.getState().toggleSidebar()}
+          aria-hidden="true"
         />
       )}
 
       {/* Main content */}
       <div
-        className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-sidebar' : ''}`}
+        className={`transition-[margin] duration-200 ${sidebarOpen ? 'lg:ms-sidebar' : ''}`}
       >
         <Header />
-        <main className="min-h-screen p-4 pt-20 sm:p-6 sm:pt-20">
-          <Outlet />
+        <main id="main-content" tabIndex={-1} className="min-h-screen px-4 pb-10 pt-20 sm:px-6 sm:pt-24 xl:px-8">
+          <div className="mx-auto w-full max-w-[1600px]">
+            <Outlet />
+          </div>
         </main>
       </div>
 

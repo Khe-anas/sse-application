@@ -89,6 +89,12 @@
     "profile": "Profile",
     "auditLogs": "Audit Logs"
   },
+  "navigationGroups": {
+    "overview": "Overview",
+    "work": "Workspace",
+    "administration": "Administration",
+    "system": "System"
+  },
   "auditLogs": {
     "total": "Total events",
     "actionLabel": "Action",
@@ -158,6 +164,7 @@
     }
   },
   "dashboard": {
+    "adminSubtitle": "Monitor operations, validations, and platform health.",
     "totalOrganismes": "Organizations",
     "totalUsers": "Users",
     "evaluationsEnCours": "Evaluations in progress",
@@ -526,6 +533,10 @@
     "loadError": "Loading error"
   },
   "responsable": {
+    "dashboardSubtitle": "Track your progress and quickly resume the next useful action.",
+    "nextAction": "Do this now",
+    "continueEvaluation": "Continue the active evaluation",
+    "progressHint": "Your answers are kept as a draft as you progress.",
     "adminEvaluationsTitle": "Organizations' evaluations",
     "kpiMyEvaluations": "My evaluations",
     "kpiEvaluations": "Evaluations",
@@ -562,6 +573,7 @@
     "correctionReasonPrompt": "Correction request reason:",
     "evaluationRejectReasonPrompt": "Global correction reason:",
     "evaluationValidateConfirm": "Validate this evaluation? The score will be calculated automatically.",
+    "validateDialogTitle": "Confirm final validation",
     "tooltipValidate": "Validate",
     "tooltipReject": "Reject",
     "tooltipCorrection": "Request correction",
@@ -681,7 +693,30 @@
     "rejectionReason": "Rejection reason: {{reason}}",
     "principeNeedsCorrection": "This principle contains criteria to correct",
     "pendingCorrections": "{{count}} criterion/criteria requested for correction must be updated before submission",
-    "noEditableResponses": "No editable criteria"
+    "noEditableResponses": "No editable criteria",
+    "workspaceEyebrow": "Guided evaluation workspace",
+    "reviewAndSubmit": "Review and submit",
+    "overallProgress": "Overall progress",
+    "completedCount": "{{completed}} of {{total}} criteria completed",
+    "savedState": "Draft saved",
+    "saveFailed": "Save failed — try again",
+    "draftReady": "Draft ready",
+    "principlesNavigation": "Principle navigation",
+    "principles": "Principles",
+    "choosePrinciple": "Choose a section",
+    "correctionsCount": "{{count}} correction(s)",
+    "criteriaNavigation": "Criterion navigation",
+    "criterionPosition": "Criterion {{current}} of {{total}}",
+    "complete": "Complete",
+    "chooseLevel": "Choose the maturity level",
+    "chooseLevelHint": "Select the level that best describes the organization's current situation.",
+    "commentGuidance": "Briefly explain your choice and add any useful context.",
+    "context": "Contextual help",
+    "evidenceAndReferences": "Evidence and references",
+    "notSpecified": "No guidance was provided for this criterion.",
+    "attachedEvidence": "Attached items",
+    "noEvidence": "No evidence has been added yet.",
+    "submitReview": "{{count}} criterion/criteria remain incomplete. Review the answers before locking the evaluation."
   },
   "authPage": {
     "fillAllFields": "Please fill in all fields",

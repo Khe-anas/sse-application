@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
@@ -29,6 +29,7 @@ import type { Notification } from '@/types';
 export default function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toggleSidebar, language, theme, toggleThemeForAccount, sidebarOpen, assistantOpen, toggleAssistant } = useUIStore();
   const { user, token, logout } = useAuthStore();
   const {
@@ -51,6 +52,22 @@ export default function Header() {
   const unreadReadyRef = useRef(false);
   const previousUnreadCountRef = useRef(0);
   const suppressNextUnreadPopupRef = useRef(false);
+
+  const pageTitleKey = [
+    ['/admin/users', 'navigation.users'],
+    ['/admin/account-requests', 'navigation.accountRequests'],
+    ['/admin/organismes', 'navigation.organismes'],
+    ['/admin/evaluations', 'navigation.evaluations'],
+    ['/admin/principes', 'navigation.principes'],
+    ['/admin/reclamations', 'navigation.reclamations'],
+    ['/admin/email-jobs', 'navigation.emailJobs'],
+    ['/admin/notifications', 'navigation.notifications'],
+    ['/admin/audit-logs', 'navigation.auditLogs'],
+    ['/evaluateur/evaluations', 'navigation.evaluations'],
+    ['/gouvernement/evaluations', 'navigation.evaluations'],
+    ['/gouvernement/ranking', 'navigation.ranking'],
+    ['/settings', 'navigation.settings'],
+  ].find(([path]) => location.pathname.startsWith(path))?.[1] || 'navigation.dashboard';
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -318,21 +335,23 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-20 h-16 border-b border-gray-200 bg-white/95 px-2 shadow-sm backdrop-blur transition-all duration-300 sm:px-4 dark:border-[#2b3b35] dark:bg-[#17201d] dark:shadow-black/20 ${sidebarOpen ? 'lg:left-sidebar' : ''}`}
+      className={`fixed inset-x-0 top-0 z-30 h-16 border-b bg-white/90 px-2 backdrop-blur-xl transition-[margin] duration-200 sm:px-4 dark:bg-[#132129]/90 ${sidebarOpen ? 'lg:ms-sidebar' : ''}`}
     >
       <div className="flex h-full items-center justify-between gap-4">
       {/* Left */}
       <div className="flex items-center gap-2 sm:gap-4">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="icon-button border-0 bg-transparent shadow-none"
           title={t('navigation.dashboard')}
+          aria-label={t('navigation.dashboard')}
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h2 className="hidden text-lg font-semibold text-gray-800 sm:block">
-          {t('navigation.dashboard')}
-        </h2>
+        <div className="hidden sm:block">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">SSE · CNI</p>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t(pageTitleKey)}</h2>
+        </div>
       </div>
 
       {/* Right */}
@@ -340,7 +359,7 @@ export default function Header() {
         <button
           type="button"
           onClick={() => user && toggleThemeForAccount(user.id)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="icon-button"
           title={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
           aria-label={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
@@ -356,7 +375,7 @@ export default function Header() {
           className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${
             assistantOpen
               ? 'border-primary-700 bg-primary-700 text-white'
-              : 'border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'
+              : 'border-gray-200 bg-white text-gray-600 hover:bg-primary-50 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-200 dark:hover:bg-[#192a33]'
           }`}
         >
           <Bot className="h-4 w-4" />
@@ -366,19 +385,19 @@ export default function Header() {
         <div className="relative" ref={langRef}>
           <button
             onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-gray-600 hover:bg-primary-50 dark:text-slate-200 dark:hover:bg-[#192a33]"
           >
             <Globe className="w-4 h-4" />
             <span className="hidden text-sm font-medium md:inline">{LANGUAGES.find(l => l.code === language)?.name}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {langOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute end-0 z-50 mt-2 w-44 rounded-xl border bg-white py-1.5 shadow-xl dark:bg-[#132129]">
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => handleLanguageChange(lang.code)}
-                  className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  className="flex min-h-10 w-full items-center gap-2 px-4 py-2 text-start text-sm text-gray-700 hover:bg-gray-50 dark:text-slate-200"
                 >
                   <span>{lang.name}</span>
                 </button>
@@ -396,14 +415,14 @@ export default function Header() {
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-danger-500 text-white text-[10px] rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute end-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] text-white">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+            <div className="absolute end-0 z-50 mt-2 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border bg-white shadow-xl dark:bg-[#132129]">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">{t('navigation.notifications')}</h3>
@@ -439,7 +458,7 @@ export default function Header() {
                       <button
                         type="button"
                         onClick={() => handleNotificationClick(notification)}
-                        className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left hover:bg-gray-50"
+                        className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-start hover:bg-gray-50"
                       >
                         <span className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${
                           notification.isRead ? 'bg-gray-300' : 'bg-primary-700'
@@ -473,7 +492,7 @@ export default function Header() {
           )}
 
           {selectedNotification && (
-            <div className="fixed top-20 right-4 z-[60] w-[min(560px,calc(100vw-2rem))] max-h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
+            <div className="fixed end-4 top-20 z-[60] max-h-[calc(100vh-6rem)] w-[min(560px,calc(100vw-2rem))] overflow-hidden rounded-xl border bg-white shadow-2xl dark:bg-[#132129]">
               <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4">
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wide text-primary-700">
@@ -534,14 +553,14 @@ export default function Header() {
             <ChevronDown className="w-3 h-3" />
           </button>
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute end-0 z-50 mt-2 w-56 rounded-xl border bg-white py-1.5 shadow-xl dark:bg-[#132129]">
               <div className="px-4 py-2 border-b border-gray-100">
                 <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full px-4 py-2 text-sm text-left text-danger-600 hover:bg-gray-50 flex items-center gap-2"
+                className="flex min-h-10 w-full items-center gap-2 px-4 py-2 text-start text-sm text-danger-600 hover:bg-gray-50"
               >
                 <LogOut className="w-4 h-4" />
                 {t('auth.logout')}

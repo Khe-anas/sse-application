@@ -89,6 +89,12 @@
     "profile": "Profil",
     "auditLogs": "Journaux d'audit"
   },
+  "navigationGroups": {
+    "overview": "Vue d'ensemble",
+    "work": "Espace de travail",
+    "administration": "Administration",
+    "system": "Système"
+  },
   "auditLogs": {
     "total": "Nombre d'événements",
     "actionLabel": "Action",
@@ -158,6 +164,7 @@
     }
   },
   "dashboard": {
+    "adminSubtitle": "Pilotez les opérations, les validations et la santé de la plateforme.",
     "totalOrganismes": "Organismes",
     "totalUsers": "Utilisateurs",
     "evaluationsEnCours": "Évaluations en cours",
@@ -526,6 +533,10 @@
     "loadError": "Erreur de chargement"
   },
   "responsable": {
+    "dashboardSubtitle": "Suivez votre progression et reprenez rapidement la prochaine action utile.",
+    "nextAction": "À faire maintenant",
+    "continueEvaluation": "Continuer l'évaluation en cours",
+    "progressHint": "Vos réponses sont conservées en brouillon au fil de votre progression.",
     "adminEvaluationsTitle": "Évaluations des organismes",
     "kpiMyEvaluations": "Mes évaluations",
     "kpiEvaluations": "Évaluations",
@@ -562,6 +573,7 @@
     "correctionReasonPrompt": "Motif de la demande de correction :",
     "evaluationRejectReasonPrompt": "Motif de la correction globale :",
     "evaluationValidateConfirm": "Valider cette évaluation ? Le score sera calculé automatiquement.",
+    "validateDialogTitle": "Confirmer la validation finale",
     "tooltipValidate": "Valider",
     "tooltipReject": "Rejeter",
     "tooltipCorrection": "Demander correction",
@@ -681,7 +693,30 @@
     "rejectionReason": "Motif du rejet : {{reason}}",
     "principeNeedsCorrection": "Ce principe contient des critères à corriger",
     "pendingCorrections": "{{count}} critère(s) demandé(s) en correction doivent être retouchés avant la soumission",
-    "noEditableResponses": "Aucun critère modifiable"
+    "noEditableResponses": "Aucun critère modifiable",
+    "workspaceEyebrow": "Espace d'évaluation guidé",
+    "reviewAndSubmit": "Vérifier et soumettre",
+    "overallProgress": "Progression globale",
+    "completedCount": "{{completed}} critères complétés sur {{total}}",
+    "savedState": "Brouillon enregistré",
+    "saveFailed": "Échec de sauvegarde — réessayez",
+    "draftReady": "Brouillon prêt",
+    "principlesNavigation": "Navigation entre les principes",
+    "principles": "Principes",
+    "choosePrinciple": "Choisir une section",
+    "correctionsCount": "{{count}} correction(s)",
+    "criteriaNavigation": "Navigation entre les critères",
+    "criterionPosition": "Critère {{current}} sur {{total}}",
+    "complete": "Terminé",
+    "chooseLevel": "Choisissez le niveau de maturité",
+    "chooseLevelHint": "Sélectionnez le niveau qui décrit le mieux la situation actuelle de l'organisme.",
+    "commentGuidance": "Expliquez brièvement votre choix et ajoutez les éléments de contexte utiles.",
+    "context": "Aide contextuelle",
+    "evidenceAndReferences": "Preuves et références",
+    "notSpecified": "Aucune indication fournie pour ce critère.",
+    "attachedEvidence": "Éléments joints",
+    "noEvidence": "Aucune preuve ajoutée pour le moment.",
+    "submitReview": "{{count}} critère(s) restent incomplets. Vérifiez les réponses avant de verrouiller l'évaluation."
   },
   "authPage": {
     "fillAllFields": "Veuillez remplir tous les champs",

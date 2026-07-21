@@ -140,10 +140,10 @@ export default function AccountRequestsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('accountRequests.title')}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('accountRequests.title')}</h1>
           <p className="mt-1 text-sm text-gray-500">{t('accountRequests.subtitle')}</p>
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function AccountRequestsPage() {
         <KPICard title={t('accountRequests.kpiPageSize')} value={requests?.pageSize || 20} icon={CheckCircle2} color="success" />
       </div>
 
-      <div className="card p-4">
+      <div className="filter-panel">
         <div className="grid gap-3 md:grid-cols-[1fr_220px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

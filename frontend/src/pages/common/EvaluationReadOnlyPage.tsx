@@ -141,7 +141,7 @@ export default function EvaluationReadOnlyPage() {
                 activePrincipe === principe.id ? 'bg-primary-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}>
               {principe.number}. {getLocalizedField(principe, 'name', language)}
-              <span className="ml-1 opacity-70">({answered}/{criteria.length})</span>
+              <span className="ms-1 opacity-70">({answered}/{criteria.length})</span>
             </button>
           );
         })}
@@ -152,11 +152,11 @@ export default function EvaluationReadOnlyPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
+              <th className="w-10 px-3 py-2.5 text-start font-semibold text-gray-700">N°</th>
+              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">BP</th>
+              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">Critère</th>
               <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">Niveau</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 min-w-[160px]">Commentaire & Preuves</th>
+              <th className="min-w-[160px] px-3 py-2.5 text-start font-semibold text-gray-700">Commentaire & Preuves</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

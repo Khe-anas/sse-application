@@ -231,7 +231,7 @@ export default function AccountRequestPage() {
                     <div>
                       <label className="label">{t('requestAccount.phone')}</label>
                       <div className="flex">
-                        <span className="inline-flex items-center rounded-l-lg border border-r-0 border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-600">
+                        <span className="inline-flex items-center rounded-s-lg border border-e-0 border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-600">
                           +216
                         </span>
                         <input

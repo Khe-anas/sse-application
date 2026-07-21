@@ -114,10 +114,10 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('navigation.notifications')}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.notifications')}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('notificationsPage.subtitle')}</p>
         </div>
         <div className="h-11 w-11 rounded-lg bg-primary-700 text-white flex items-center justify-center">

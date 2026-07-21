@@ -25,6 +25,7 @@ import { Role } from '@/types';
 import { getLocalizedField } from '@/utils/localization';
 import { referenceDataService } from '@/services/referenceDataService';
 import { useAuthStore } from '@/stores/authStore';
+import useConfirmDialog from '@/components/ui/useConfirmDialog';
 
 type EditorType = 'principe' | 'bp' | 'critere';
 type EditorMode = 'create' | 'edit';
@@ -296,6 +297,7 @@ export default function PrincipesPage() {
   const [expandedBP, setExpandedBP] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [editor, setEditor] = useState<EditorState | null>(null);
+  const { confirm: confirmAction, confirmationDialog } = useConfirmDialog();
 
   const loadPrincipes = useCallback(async () => {
     try {
@@ -333,7 +335,14 @@ export default function PrincipesPage() {
   }, [principes, searchQuery]);
 
   const handleDelete = async (type: EditorType, id: string, label: string) => {
-    if (!window.confirm(t('principesPage.deleteConfirm', { label }))) return;
+    const confirmed = await confirmAction({
+      title: t('common.confirm'),
+      description: t('principesPage.deleteConfirm', { label }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     try {
       if (type === 'principe') await referenceDataService.deletePrincipe(id);
       if (type === 'bp') await referenceDataService.deleteBonnePratique(id);
@@ -423,10 +432,10 @@ export default function PrincipesPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="page-shell">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t('navigation.principes')}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.principes')}</h1>
           <p className="mt-1 text-sm text-gray-500">{t('principesPage.subtitle')}</p>
         </div>
         {canManage && (
@@ -541,6 +550,7 @@ export default function PrincipesPage() {
       </section>
 
       <ReferenceEditor editor={editor} title={editorTitle} fields={editorFields} initialData={editorInitialData} onClose={() => setEditor(null)} onSave={handleSave} />
+      {confirmationDialog}
     </div>
   );
 }
