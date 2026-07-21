@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Eye, Trash2, ToggleLeft, ToggleRight, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
@@ -425,8 +426,8 @@ export default function UsersPage() {
       </div>
 
       {/* Create user modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-slate-950/60 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
           <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl animate-fade-in">
             <h2 id="create-user-title" className="mb-4 text-xl font-bold">{t('users.createTitle')}</h2>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -532,7 +533,8 @@ export default function UsersPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Read-only user details */}
@@ -565,8 +567,8 @@ function UserDetailsDialog({
 }) {
   const resolvedStatus = user.status || (user.isActive ? UserStatus.ACTIVE : UserStatus.DISABLED);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="user-details-title">
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-slate-950/60 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="user-details-title">
       <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl animate-fade-in">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-100 bg-white px-6 py-5">
           <div>
@@ -621,7 +623,8 @@ function UserDetailsDialog({
           </section>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

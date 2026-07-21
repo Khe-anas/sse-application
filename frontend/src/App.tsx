@@ -41,15 +41,18 @@ function LoadingScreen() {
 
 function App() {
   const { isAuthenticated, isLoading, user } = useAuthStore();
-  const { language, theme, direction, loadThemeForAccount } = useUIStore();
+  const { language, theme, direction, activeAccountId, loadThemeForAccount, loadLanguageForAccount } = useUIStore();
+  const accountId = isAuthenticated && user ? user.id : null;
 
   useEffect(() => {
+    if (activeAccountId !== accountId) return;
     changeLanguage(language);
-  }, [language]);
+  }, [accountId, activeAccountId, language]);
 
   useEffect(() => {
-    loadThemeForAccount(isAuthenticated && user ? user.id : null);
-  }, [isAuthenticated, loadThemeForAccount, user]);
+    loadThemeForAccount(accountId);
+    loadLanguageForAccount(accountId);
+  }, [accountId, loadLanguageForAccount, loadThemeForAccount]);
 
   useEffect(() => {
     const root = document.documentElement;

@@ -30,7 +30,7 @@ export default function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { toggleSidebar, language, theme, toggleThemeForAccount, sidebarOpen, assistantOpen, toggleAssistant } = useUIStore();
+  const { toggleSidebar, language, theme, toggleThemeForAccount, loadLanguageForAccount, sidebarOpen, assistantOpen, toggleAssistant } = useUIStore();
   const { user, token, logout } = useAuthStore();
   const {
     notifications,
@@ -246,6 +246,7 @@ export default function Header() {
     try {
       await authService.logout();
     } finally {
+      loadLanguageForAccount(null);
       logout();
       navigate('/login');
     }

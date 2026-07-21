@@ -22,7 +22,7 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const { theme, toggleTheme } = useUIStore();
+  const { theme, toggleTheme, loadLanguageForAccount } = useUIStore();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<LoginRequest>({
@@ -41,6 +41,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await authService.login(formData);
+      loadLanguageForAccount(response.user.id);
       login(response.user, response.accessToken, response.refreshToken);
       toast.success(t('authPage.loginSuccess'));
       navigate('/');

@@ -618,7 +618,7 @@ export default function EvaluationValidatePage() {
             </div>
           ) : activeReviewRow ? (
             <>
-              <nav className="flex items-center gap-2 border border-gray-200 bg-white p-2" aria-label={t('validation.goodPracticesNavigation')}>
+              <nav className="flex items-center gap-3 border border-gray-200 bg-white p-2" aria-label={t('validation.goodPracticesNavigation')}>
                 <button
                   type="button"
                   onClick={() => moveToGoodPractice(-1)}
@@ -628,7 +628,7 @@ export default function EvaluationValidatePage() {
                 >
                   <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                 </button>
-                <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto py-0.5">
+                <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto py-0.5 ps-1">
                   {filteredGoodPractices.map((bonnePratique, index) => {
                     const selected = bonnePratique.id === activeBonnePratiqueId;
                     return (
@@ -669,7 +669,7 @@ export default function EvaluationValidatePage() {
                 </div>
               </nav>
 
-              <nav className="flex items-center gap-2 border border-gray-200 bg-white p-2" aria-label={t('validation.criteriaNavigation')}>
+              <nav className="flex items-center gap-3 border border-gray-200 bg-white p-2" aria-label={t('validation.criteriaNavigation')}>
                 <button
                   type="button"
                   onClick={() => moveToCriterion(-1)}
@@ -679,7 +679,7 @@ export default function EvaluationValidatePage() {
                 >
                   <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                 </button>
-                <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto py-0.5">
+                <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto py-0.5 ps-1">
                   {visibleCriterionRows.map((row, index) => {
                     const selected = row.critere.id === activeCriterionId;
                     return (
@@ -856,7 +856,7 @@ function FocusedCriterionReview({
   };
 
   return (
-    <section className="min-h-[720px] overflow-hidden border border-gray-200 bg-white shadow-sm">
+    <section className="overflow-hidden border border-gray-200 bg-white shadow-sm">
       <header className="border-b border-gray-200 px-4 py-4 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
