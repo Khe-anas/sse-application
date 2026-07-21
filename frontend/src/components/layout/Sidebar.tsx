@@ -41,7 +41,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: 'navigationGroups.work',
     items: [
       { label: 'navigation.evaluations', icon: ClipboardList, path: '/evaluateur/evaluations', roles: [Role.EVALUATEUR] },
-      { label: 'navigation.evaluations', icon: ClipboardList, path: '/gouvernement/evaluations', roles: [Role.GOUVERNEMENT] },
       { label: 'navigation.principes', icon: BookOpen, path: '/user/principes', roles: [Role.USER] },
       { label: 'navigation.ranking', icon: Trophy, path: '/gouvernement/ranking', roles: [Role.GOUVERNEMENT] },
     ],

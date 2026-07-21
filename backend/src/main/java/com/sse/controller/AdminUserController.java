@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -53,6 +54,12 @@ public class AdminUserController {
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.ok(userService.createUser(request));
+    }
+
+    @PostMapping(value = "/with-organisme", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> createUserWithOrganisme(
+            @Valid @ModelAttribute CreateUserWithOrganismeRequest request) {
+        return ResponseEntity.ok(userService.createUserWithOrganisme(request));
     }
     
     @GetMapping("/{id}")

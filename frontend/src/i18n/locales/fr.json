@@ -289,7 +289,12 @@
     "createdActive": "Utilisateur créé avec un compte actif",
     "createdAt": "Créé le",
     "lastLoginAt": "Dernière connexion",
-    "noOrganisation": "Aucun organisme associé à cet utilisateur"
+    "noOrganisation": "Aucun organisme associé à cet utilisateur",
+    "backToList": "Retour à la liste des utilisateurs",
+    "useExistingOrganisme": "Organisme existant",
+    "createNewOrganisme": "Nouvel organisme",
+    "newOrganismeRequired": "Le nom et le type du nouvel organisme sont obligatoires",
+    "enlargeLogo": "Agrandir le logo"
   },
   "accountRequests": {
     "title": "Demandes de comptes",
@@ -410,7 +415,16 @@
   },
   "settingsPage": {
     "title": "Paramètres",
-    "subtitle": "Coordonnées officielles et réclamations de l'organisme.",
+    "subtitle": "Préférences du compte, coordonnées officielles et réclamations.",
+    "interfaceTitle": "Interface",
+    "interfaceHeading": "Préférences d’affichage",
+    "interfaceHint": "La langue et le thème sont mémorisés séparément pour ce compte.",
+    "language": "Langue",
+    "appearance": "Apparence",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "change": "Changer",
+    "currentAccount": "Compte connecté",
     "organismeInfo": "Organisme",
     "website": "Site web",
     "saving": "Enregistrement...",

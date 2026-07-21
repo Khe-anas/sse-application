@@ -289,7 +289,12 @@
     "createdActive": "تم إنشاء المستخدم بحساب نشط",
     "createdAt": "تاريخ الإنشاء",
     "lastLoginAt": "آخر تسجيل دخول",
-    "noOrganisation": "لا توجد هيئة مرتبطة بهذا المستخدم"
+    "noOrganisation": "لا توجد هيئة مرتبطة بهذا المستخدم",
+    "backToList": "العودة إلى قائمة المستخدمين",
+    "useExistingOrganisme": "هيئة موجودة",
+    "createNewOrganisme": "هيئة جديدة",
+    "newOrganismeRequired": "اسم ونوع الهيئة الجديدة مطلوبان",
+    "enlargeLogo": "تكبير الشعار"
   },
   "accountRequests": {
     "title": "طلبات الحسابات",
@@ -410,7 +415,16 @@
   },
   "settingsPage": {
     "title": "الإعدادات",
-    "subtitle": "بيانات الاتصال الرسمية وشكاوى الهيئة.",
+    "subtitle": "تفضيلات الحساب وبيانات الاتصال الرسمية والشكاوى.",
+    "interfaceTitle": "الواجهة",
+    "interfaceHeading": "تفضيلات العرض",
+    "interfaceHint": "يتم حفظ اللغة والمظهر بشكل منفصل لهذا الحساب.",
+    "language": "اللغة",
+    "appearance": "المظهر",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن",
+    "change": "تغيير",
+    "currentAccount": "الحساب المتصل",
     "organismeInfo": "الهيئة",
     "website": "الموقع الإلكتروني",
     "saving": "جاري الحفظ...",

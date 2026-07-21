@@ -289,7 +289,12 @@
     "createdActive": "User created with an active account",
     "createdAt": "Created at",
     "lastLoginAt": "Last login",
-    "noOrganisation": "No organization is associated with this user"
+    "noOrganisation": "No organization is associated with this user",
+    "backToList": "Back to the user list",
+    "useExistingOrganisme": "Existing organization",
+    "createNewOrganisme": "New organization",
+    "newOrganismeRequired": "The new organization name and type are required",
+    "enlargeLogo": "Enlarge logo"
   },
   "accountRequests": {
     "title": "Account requests",
@@ -410,7 +415,16 @@
   },
   "settingsPage": {
     "title": "Settings",
-    "subtitle": "Official organization contact details and complaints.",
+    "subtitle": "Account preferences, official contact details and complaints.",
+    "interfaceTitle": "Interface",
+    "interfaceHeading": "Display preferences",
+    "interfaceHint": "Language and theme are saved separately for this account.",
+    "language": "Language",
+    "appearance": "Appearance",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "change": "Change",
+    "currentAccount": "Signed-in account",
     "organismeInfo": "Organization",
     "website": "Website",
     "saving": "Saving...",

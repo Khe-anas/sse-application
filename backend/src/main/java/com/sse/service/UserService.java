@@ -43,6 +43,7 @@ public class UserService {
     private final AuditLogService auditLogService;
     private final EmailJobRepository emailJobRepository;
     private final NotificationRepository notificationRepository;
+    private final FileStorageService fileStorageService;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -98,6 +99,49 @@ public class UserService {
             queuedActivation != null ? queuedActivation.getEmailJobId() : null,
             queuedActivation != null ? queuedActivation.getExpiresAt() : null
         );
+    }
+
+    @Transactional
+    public UserResponse createUserWithOrganisme(CreateUserWithOrganismeRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        String organisationName = request.getOrganisationName().trim();
+        if (organismeRepository.findActiveByNameIgnoreCase(organisationName).isPresent()) {
+            throw new RuntimeException("An active organization with this name already exists");
+        }
+
+        String logoUrl = fileStorageService.storeImage(request.getLogo());
+        try {
+            Organisme organisme = new Organisme();
+            organisme.setName(organisationName);
+            organisme.setType(request.getOrganisationType());
+            organisme.setSector(normalizeNullable(request.getSector()));
+            organisme.setAddress(normalizeNullable(request.getAddress()));
+            organisme.setEmail(normalizeNullable(request.getOrganisationEmail()));
+            organisme.setPhone(normalizeNullable(request.getOrganisationPhone()));
+            organisme.setFax(normalizeNullable(request.getFax()));
+            organisme.setWebsite(normalizeNullable(request.getWebsite()));
+            organisme.setLogoUrl(logoUrl);
+            organisme.setIsActive(true);
+            Organisme savedOrganisme = organismeRepository.save(organisme);
+
+            CreateUserRequest createUserRequest = new CreateUserRequest();
+            createUserRequest.setEmail(email);
+            createUserRequest.setFirstName(request.getFirstName().trim());
+            createUserRequest.setLastName(request.getLastName().trim());
+            createUserRequest.setPassword(request.getPassword());
+            createUserRequest.setPhone(request.getPhone());
+            createUserRequest.setPosition(request.getPosition());
+            createUserRequest.setRole(Role.USER);
+            createUserRequest.setOrganismeId(savedOrganisme.getId());
+            return createUserWithResult(createUserRequest).getUser();
+        } catch (RuntimeException exception) {
+            fileStorageService.delete(logoUrl);
+            throw exception;
+        }
     }
     
     public Page<UserResponse> getAllUsers(Role role, UserStatus status, UUID organismeId, String search, Pageable pageable) {

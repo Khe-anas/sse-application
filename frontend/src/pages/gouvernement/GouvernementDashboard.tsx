@@ -57,18 +57,13 @@ export default function GouvernementDashboard() {
         title={t('navigation.governmentDashboard')}
         description={t('gouvernement.dashboardSubtitle')}
         icon={Landmark}
-        actions={<div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-gray-500">{t('gouvernement.year', { year: currentYear })}</span>
-          <button onClick={() => navigate('/gouvernement/evaluations')} className="btn-outline gap-2">
-            <ClipboardList className="h-4 w-4" /> {t('navigation.evaluations')}
-          </button>
-        </div>}
+        actions={<span className="text-sm text-gray-500">{t('gouvernement.year', { year: currentYear })}</span>}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('gouvernement.kpiCompanies')} value={kpis?.totalOrganismes || 0} icon={Building2} color="primary" to="/gouvernement/evaluations" />
+        <KPICard title={t('gouvernement.kpiCompanies')} value={kpis?.totalOrganismes || 0} icon={Building2} color="primary" />
         <KPICard title={t('dashboard.evaluationsValidees')} value={kpis?.evaluationsValidees || 0} icon={CheckCircle} color="success" to="/gouvernement/ranking" />
-        <KPICard title={t('dashboard.evaluationsEnCours')} value={kpis?.evaluationsEnCours || 0} icon={ClipboardList} color="warning" to="/gouvernement/evaluations" />
+        <KPICard title={t('dashboard.evaluationsEnCours')} value={kpis?.evaluationsEnCours || 0} icon={ClipboardList} color="warning" />
         <KPICard title={t('dashboard.averageScore')} value={kpis?.averageScore ? `${kpis.averageScore.toFixed(1)}%` : '-'} icon={Award} color="secondary" to="/gouvernement/ranking" />
       </div>
 

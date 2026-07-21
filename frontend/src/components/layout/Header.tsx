@@ -64,7 +64,6 @@ export default function Header() {
     ['/admin/notifications', 'navigation.notifications'],
     ['/admin/audit-logs', 'navigation.auditLogs'],
     ['/evaluateur/evaluations', 'navigation.evaluations'],
-    ['/gouvernement/evaluations', 'navigation.evaluations'],
     ['/gouvernement/ranking', 'navigation.ranking'],
     ['/settings', 'navigation.settings'],
   ].find(([path]) => location.pathname.startsWith(path))?.[1] || 'navigation.dashboard';

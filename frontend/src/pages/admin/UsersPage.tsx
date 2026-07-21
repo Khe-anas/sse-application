@@ -1,18 +1,43 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Eye, Trash2, ToggleLeft, ToggleRight, KeyRound } from 'lucide-react';
+import { ArrowLeft, Eye, Image, KeyRound, Plus, Search, Trash2, ToggleLeft, ToggleRight, Upload, X, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { userService, type CreateUserRequest } from '@/services/userService';
+import { userService, type CreateUserRequest, type CreateUserWithOrganismeRequest } from '@/services/userService';
 import { organismeService } from '@/services/organismeService';
 import { fileService } from '@/services/fileService';
-import { Role, UserStatus } from '@/types';
+import { Role, TypeOrganisme, UserStatus } from '@/types';
 import { formatBackendDateTime } from '@/utils/date';
 import type { User, PageResponse, Organisme } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
 import { Users } from 'lucide-react';
 import useConfirmDialog from '@/components/ui/useConfirmDialog';
+
+const MAX_LOGO_SIZE_MB = 5;
+const MAX_LOGO_SIZE = MAX_LOGO_SIZE_MB * 1024 * 1024;
+const ALLOWED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const SECTOR_VALUES = [
+  'AGRICULTURE', 'INDUSTRY', 'ENERGY', 'CONSTRUCTION', 'COMMERCE', 'TRANSPORT',
+  'TECHNOLOGY', 'FINANCE', 'HEALTH', 'EDUCATION', 'TOURISM', 'PUBLIC_ADMINISTRATION',
+  'SERVICES', 'CIVIL_SOCIETY', 'OTHER',
+] as const;
+
+type NewOrganismeForm = Omit<CreateUserWithOrganismeRequest, 'email' | 'firstName' | 'lastName' | 'password' | 'phone' | 'position'> & {
+  otherSector?: string;
+};
+
+const emptyNewOrganisme: Partial<NewOrganismeForm> = {
+  organisationName: '',
+  organisationType: TypeOrganisme.PRIVE,
+  sector: '',
+  otherSector: '',
+  address: '',
+  organisationEmail: '',
+  organisationPhone: '',
+  fax: '',
+  website: '',
+};
 
 export default function UsersPage() {
   const { t } = useTranslation();
@@ -28,10 +53,13 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<UserStatus | ''>('');
   const [showModal, setShowModal] = useState(false);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [logoPreview, setLogoPreview] = useState<{ src: string; alt: string } | null>(null);
   const [isGeneratingPassword, setIsGeneratingPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activationMode, setActivationMode] = useState<'link' | 'password'>('link');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [organisationMode, setOrganisationMode] = useState<'existing' | 'new'>('existing');
+  const [newOrganisme, setNewOrganisme] = useState<Partial<NewOrganismeForm>>(emptyNewOrganisme);
   const [formData, setFormData] = useState<CreateUserRequest>({
     email: '', firstName: '', lastName: '', position: '',
   });
@@ -82,10 +110,10 @@ export default function UsersPage() {
   }, [loadUsers]);
 
   useEffect(() => {
-    if (!showModal || formData.role !== Role.USER) return;
+    if (!showModal || formData.role !== Role.USER || organisationMode !== 'existing') return;
     const timeoutId = window.setTimeout(() => loadOrganismes(organismeSearch), 250);
     return () => window.clearTimeout(timeoutId);
-  }, [formData.role, loadOrganismes, organismeSearch, showModal]);
+  }, [formData.role, loadOrganismes, organisationMode, organismeSearch, showModal]);
 
   const logoUrlKey = Array.from(new Set(
     users?.content
@@ -142,9 +170,23 @@ export default function UsersPage() {
       toast.error(t('users.roleRequired'));
       return;
     }
-    if (formData.role === Role.USER && !formData.organismeId) {
+    if (formData.role === Role.USER && organisationMode === 'existing' && !formData.organismeId) {
       toast.error(t('users.organismeRequired'));
       return;
+    }
+    if (formData.role === Role.USER && organisationMode === 'new') {
+      if (!newOrganisme.organisationName?.trim() || !newOrganisme.organisationType) {
+        toast.error(t('users.newOrganismeRequired'));
+        return;
+      }
+      if (!newOrganisme.logo) {
+        toast.error(t('requestAccount.toastNeedLogo'));
+        return;
+      }
+      if (newOrganisme.sector === 'OTHER' && !newOrganisme.otherSector?.trim()) {
+        toast.error(t('requestAccount.toastNeedOtherSector'));
+        return;
+      }
     }
 
     const payload: CreateUserRequest = {
@@ -172,13 +214,31 @@ export default function UsersPage() {
 
     setIsSubmitting(true);
     try {
-      await userService.create(payload);
+      if (formData.role === Role.USER && organisationMode === 'new') {
+        await userService.createWithOrganisme({
+          email,
+          firstName,
+          lastName,
+          password: payload.password,
+          phone,
+          position,
+          organisationName: newOrganisme.organisationName!.trim(),
+          organisationType: newOrganisme.organisationType!,
+          sector: newOrganisme.sector === 'OTHER'
+            ? newOrganisme.otherSector?.trim()
+            : newOrganisme.sector?.trim(),
+          address: newOrganisme.address?.trim(),
+          organisationEmail: newOrganisme.organisationEmail?.trim(),
+          organisationPhone: newOrganisme.organisationPhone?.trim(),
+          fax: newOrganisme.fax?.trim(),
+          website: newOrganisme.website?.trim(),
+          logo: newOrganisme.logo!,
+        });
+      } else {
+        await userService.create(payload);
+      }
       toast.success(t(activationMode === 'link' ? 'users.createdActivationQueued' : 'users.createdActive'));
-      setShowModal(false);
-      setFormData(emptyForm);
-      setPasswordConfirmation('');
-      setOrganismeSearch('');
-      setOrganismes([]);
+      closeCreateModal(true);
       loadUsers();
     } catch (error) {
       const message = axios.isAxiosError(error)
@@ -269,10 +329,38 @@ export default function UsersPage() {
     }
   };
 
+  const handleLogoSelected = (files: FileList | null) => {
+    const logo = files?.[0];
+    if (!logo) return;
+    if (!ALLOWED_LOGO_TYPES.has(logo.type)) {
+      toast.error(t('requestAccount.toastOnlyImages'));
+      return;
+    }
+    if (logo.size > MAX_LOGO_SIZE) {
+      toast.error(t('requestAccount.toastLogoTooBig', { max: MAX_LOGO_SIZE_MB }));
+      return;
+    }
+    setNewOrganisme((current) => ({ ...current, logo }));
+  };
+
+  const closeCreateModal = (force = false) => {
+    if (isSubmitting && !force) return;
+    setShowModal(false);
+    setFormData(emptyForm);
+    setActivationMode('link');
+    setPasswordConfirmation('');
+    setOrganisationMode('existing');
+    setNewOrganisme(emptyNewOrganisme);
+    setOrganismeSearch('');
+    setOrganismes([]);
+  };
+
   const openCreateModal = () => {
     setFormData(emptyForm);
     setActivationMode('link');
     setPasswordConfirmation('');
+    setOrganisationMode('existing');
+    setNewOrganisme(emptyNewOrganisme);
     setOrganismeSearch('');
     setOrganismes([]);
     setShowModal(true);
@@ -376,6 +464,8 @@ export default function UsersPage() {
                       objectUrl={user.organismeLogoUrl ? logoObjectUrls[user.organismeLogoUrl] : undefined}
                       hasError={user.organismeLogoUrl ? failedLogoUrls.has(user.organismeLogoUrl) : false}
                       alt={user.organismeName || t('common.logo')}
+                      onPreview={(src, alt) => setLogoPreview({ src, alt })}
+                      previewLabel={t('users.enlargeLogo')}
                     />
                   </td>
                   <td className="table-td">
@@ -428,9 +518,17 @@ export default function UsersPage() {
       {/* Create user modal */}
       {showModal && createPortal(
         <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-slate-950/60 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl animate-fade-in">
-            <h2 id="create-user-title" className="mb-4 text-xl font-bold">{t('users.createTitle')}</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl animate-fade-in dark:bg-slate-900">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-100 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
+              <button type="button" onClick={() => closeCreateModal()} disabled={isSubmitting} className="icon-button" title={t('users.backToList')} aria-label={t('users.backToList')}>
+                <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+              </button>
+              <h2 id="create-user-title" className="min-w-0 flex-1 text-xl font-bold text-gray-900 dark:text-slate-100">{t('users.createTitle')}</h2>
+              <button type="button" onClick={() => closeCreateModal()} disabled={isSubmitting} className="icon-button" title={t('common.close')} aria-label={t('common.close')}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5 p-6">
               <fieldset className="space-y-4 rounded-lg border border-gray-200 p-4">
                 <legend className="px-2 text-sm font-semibold text-gray-900">{t('users.identitySection')}</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -474,32 +572,110 @@ export default function UsersPage() {
               {formData.role === Role.USER && (
                 <fieldset className="space-y-4 rounded-lg border border-gray-200 p-4">
                   <legend className="px-2 text-sm font-semibold text-gray-900">{t('users.organisationSection')}</legend>
-                  <div>
-                    <label htmlFor="organisme-search" className="label">{t('users.organismeSearch')}</label>
-                    <div className="flex gap-2">
-                      <input id="organisme-search" type="search" className="input" value={organismeSearch} onChange={(e) => setOrganismeSearch(e.target.value)} placeholder={t('users.organismeSearchPlaceholder')} />
-                      <button type="button" onClick={() => loadOrganismes(organismeSearch)} disabled={isLoadingOrganismes} className="btn-outline shrink-0 disabled:cursor-not-allowed disabled:opacity-50">{t('common.refresh')}</button>
-                    </div>
+                  <div className="grid grid-cols-2 rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
+                    <button type="button" onClick={() => setOrganisationMode('existing')} className={`rounded-md px-3 py-2 text-sm font-semibold transition ${organisationMode === 'existing' ? 'bg-white text-primary-700 shadow-sm dark:bg-slate-700 dark:text-primary-300' : 'text-gray-500'}`}>
+                      {t('users.useExistingOrganisme')}
+                    </button>
+                    <button type="button" onClick={() => setOrganisationMode('new')} className={`rounded-md px-3 py-2 text-sm font-semibold transition ${organisationMode === 'new' ? 'bg-white text-primary-700 shadow-sm dark:bg-slate-700 dark:text-primary-300' : 'text-gray-500'}`}>
+                      {t('users.createNewOrganisme')}
+                    </button>
                   </div>
-                  <div>
-                    <label htmlFor="new-user-organisme" className="label">{t('users.organismeExisting')} *</label>
-                    <select id="new-user-organisme" required className="select" value={formData.organismeId || ''} onChange={(e) => setFormData({ ...formData, organismeId: e.target.value || undefined })}>
-                      <option value="">{isLoadingOrganismes ? t('common.loading') : t('common.selectPlaceholder')}</option>
-                      {organismes.map((organisme) => (
-                        <option key={organisme.id} value={organisme.id}>{organisme.name} — {t(`organisme.type.${organisme.type}`)}{organisme.sector ? ` — ${organisme.sector}` : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {formData.organismeId && (() => {
-                    const selected = organismes.find((organisme) => organisme.id === formData.organismeId);
-                    return selected ? (
-                      <div className="rounded-md bg-gray-50 p-3 text-sm text-gray-700">
-                        <strong>{selected.name}</strong><br />
-                        {t(`organisme.type.${selected.type}`)}{selected.sector ? ` · ${selected.sector}` : ''}
+
+                  {organisationMode === 'existing' ? (
+                    <>
+                      <div>
+                        <label htmlFor="organisme-search" className="label">{t('users.organismeSearch')}</label>
+                        <div className="flex gap-2">
+                          <input id="organisme-search" type="search" className="input" value={organismeSearch} onChange={(e) => setOrganismeSearch(e.target.value)} placeholder={t('users.organismeSearchPlaceholder')} />
+                          <button type="button" onClick={() => loadOrganismes(organismeSearch)} disabled={isLoadingOrganismes} className="btn-outline shrink-0 disabled:cursor-not-allowed disabled:opacity-50">{t('common.refresh')}</button>
+                        </div>
                       </div>
-                    ) : null;
-                  })()}
-                  <a href="/admin/organismes" target="_blank" rel="noreferrer" className="inline-flex text-sm font-medium text-primary-700 hover:underline">{t('users.manageOrganisations')}</a>
+                      <div>
+                        <label htmlFor="new-user-organisme" className="label">{t('users.organismeExisting')} *</label>
+                        <select id="new-user-organisme" required className="select" value={formData.organismeId || ''} onChange={(e) => setFormData({ ...formData, organismeId: e.target.value || undefined })}>
+                          <option value="">{isLoadingOrganismes ? t('common.loading') : t('common.selectPlaceholder')}</option>
+                          {organismes.map((organisme) => (
+                            <option key={organisme.id} value={organisme.id}>{organisme.name} — {t(`organisme.type.${organisme.type}`)}{organisme.sector ? ` — ${organisme.sector}` : ''}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {formData.organismeId && (() => {
+                        const selected = organismes.find((organisme) => organisme.id === formData.organismeId);
+                        return selected ? (
+                          <div className="rounded-md bg-gray-50 p-3 text-sm text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                            <strong>{selected.name}</strong><br />
+                            {t(`organisme.type.${selected.type}`)}{selected.sector ? ` · ${selected.sector}` : ''}
+                          </div>
+                        ) : null;
+                      })()}
+                      <a href="/admin/organismes" target="_blank" rel="noreferrer" className="inline-flex text-sm font-medium text-primary-700 hover:underline">{t('users.manageOrganisations')}</a>
+                    </>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="new-organisme-name" className="label">{t('requestAccount.companyName')} *</label>
+                        <input id="new-organisme-name" required className="input" value={newOrganisme.organisationName || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, organisationName: e.target.value })} />
+                      </div>
+                      <div>
+                        <label htmlFor="new-organisme-type" className="label">{t('requestAccount.companyType')} *</label>
+                        <select id="new-organisme-type" required className="select" value={newOrganisme.organisationType || TypeOrganisme.PRIVE} onChange={(e) => setNewOrganisme({ ...newOrganisme, organisationType: e.target.value as TypeOrganisme })}>
+                          <option value={TypeOrganisme.PRIVE}>{t('requestAccount.typePrive')}</option>
+                          <option value={TypeOrganisme.PUBLIC}>{t('requestAccount.typePublic')}</option>
+                          <option value={TypeOrganisme.SOCIETE_CIVILE}>{t('requestAccount.typeCivil')}</option>
+                        </select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="new-organisme-sector" className="label">{t('requestAccount.sector')}</label>
+                        <select id="new-organisme-sector" className="select" value={newOrganisme.sector || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, sector: e.target.value, otherSector: e.target.value === 'OTHER' ? newOrganisme.otherSector : '' })}>
+                          <option value="">{t('requestAccount.sectorPlaceholder')}</option>
+                          {SECTOR_VALUES.map((sector) => <option key={sector} value={sector}>{t(`requestAccount.sectorOptions.${sector}`)}</option>)}
+                        </select>
+                      </div>
+                      {newOrganisme.sector === 'OTHER' && (
+                        <div className="sm:col-span-2">
+                          <label htmlFor="new-organisme-other-sector" className="label">{t('requestAccount.otherSector')} *</label>
+                          <input id="new-organisme-other-sector" required className="input" value={newOrganisme.otherSector || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, otherSector: e.target.value })} />
+                        </div>
+                      )}
+                      <div>
+                        <label htmlFor="new-organisme-email" className="label">{t('common.email')}</label>
+                        <input id="new-organisme-email" type="email" className="input" value={newOrganisme.organisationEmail || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, organisationEmail: e.target.value })} />
+                      </div>
+                      <div>
+                        <label htmlFor="new-organisme-phone" className="label">{t('common.phone')}</label>
+                        <input id="new-organisme-phone" type="tel" className="input" value={newOrganisme.organisationPhone || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, organisationPhone: e.target.value })} />
+                      </div>
+                      <div>
+                        <label htmlFor="new-organisme-fax" className="label">{t('common.fax')}</label>
+                        <input id="new-organisme-fax" type="tel" className="input" value={newOrganisme.fax || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, fax: e.target.value })} />
+                      </div>
+                      <div>
+                        <label htmlFor="new-organisme-website" className="label">{t('settingsPage.website')}</label>
+                        <input id="new-organisme-website" type="url" className="input" value={newOrganisme.website || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, website: e.target.value })} />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="new-organisme-address" className="label">{t('common.address')}</label>
+                        <textarea id="new-organisme-address" rows={2} className="input" value={newOrganisme.address || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, address: e.target.value })} />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="label">{t('requestAccount.companyLogo')} *</span>
+                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-center hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800">
+                          <Upload className="mb-2 h-6 w-6 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-slate-200">{t('requestAccount.attachLogo')}</span>
+                          <span className="mt-1 text-xs text-gray-500">{t('requestAccount.logoHint', { max: MAX_LOGO_SIZE_MB })}</span>
+                          <input type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { handleLogoSelected(e.target.files); e.target.value = ''; }} />
+                        </label>
+                        {newOrganisme.logo && (
+                          <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                            <Image className="h-5 w-5 flex-shrink-0 text-primary-600" />
+                            <span className="min-w-0 flex-1 truncate">{newOrganisme.logo.name}</span>
+                            <span className="flex-shrink-0 text-xs text-gray-400">{formatFileSize(newOrganisme.logo.size)}</span>
+                            <button type="button" onClick={() => setNewOrganisme({ ...newOrganisme, logo: undefined })} className="icon-button h-7 w-7 text-red-600" title={t('requestAccount.removeLogoTitle')} aria-label={t('requestAccount.removeLogoTitle')}><X className="h-4 w-4" /></button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </fieldset>
               )}
 
@@ -528,7 +704,7 @@ export default function UsersPage() {
               </fieldset>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} disabled={isSubmitting} className="btn-outline disabled:cursor-not-allowed disabled:opacity-50">{t('common.cancel')}</button>
+                <button type="button" onClick={() => closeCreateModal()} disabled={isSubmitting} className="btn-outline disabled:cursor-not-allowed disabled:opacity-50">{t('common.cancel')}</button>
                 <button type="submit" disabled={isSubmitting} className="btn-primary disabled:cursor-not-allowed disabled:opacity-50">{isSubmitting ? t('users.creating') : t('common.create')}</button>
               </div>
             </form>
@@ -543,8 +719,17 @@ export default function UsersPage() {
           user={viewingUser}
           logoObjectUrl={viewingUser.organismeLogoUrl ? logoObjectUrls[viewingUser.organismeLogoUrl] : undefined}
           logoHasError={viewingUser.organismeLogoUrl ? failedLogoUrls.has(viewingUser.organismeLogoUrl) : false}
+          onLogoPreview={(src, alt) => setLogoPreview({ src, alt })}
           onClose={() => setViewingUser(null)}
           t={t}
+        />
+      )}
+      {logoPreview && (
+        <LogoPreviewDialog
+          src={logoPreview.src}
+          alt={logoPreview.alt}
+          closeLabel={t('common.close')}
+          onClose={() => setLogoPreview(null)}
         />
       )}
       {confirmationDialog}
@@ -556,12 +741,14 @@ function UserDetailsDialog({
   user,
   logoObjectUrl,
   logoHasError,
+  onLogoPreview,
   onClose,
   t,
 }: {
   user: User;
   logoObjectUrl?: string;
   logoHasError: boolean;
+  onLogoPreview: (src: string, alt: string) => void;
   onClose: () => void;
   t: (key: string) => string;
 }) {
@@ -575,7 +762,7 @@ function UserDetailsDialog({
             <p className="text-sm font-semibold uppercase tracking-wide text-primary-700">{t('users.detailTitle')}</p>
             <h2 id="user-details-title" className="mt-1 text-2xl font-bold text-gray-900">{user.fullName}</h2>
           </div>
-          <button type="button" onClick={onClose} className="btn-outline btn-sm">{t('common.close')}</button>
+          <button type="button" onClick={onClose} className="icon-button" title={t('common.close')} aria-label={t('common.close')}><X className="h-5 w-5" /></button>
         </div>
 
         <div className="space-y-6 px-6 py-5">
@@ -613,6 +800,8 @@ function UserDetailsDialog({
                       hasError={logoHasError}
                       alt={user.organismeName || t('common.logo')}
                       size="large"
+                      onPreview={onLogoPreview}
+                      previewLabel={t('users.enlargeLogo')}
                     />
                   </div>
                 </div>
@@ -643,12 +832,16 @@ function OrganisationLogo({
   hasError,
   alt,
   size = 'small',
+  onPreview,
+  previewLabel,
 }: {
   logoUrl?: string;
   objectUrl?: string;
   hasError: boolean;
   alt: string;
   size?: 'small' | 'large';
+  onPreview?: (src: string, alt: string) => void;
+  previewLabel?: string;
 }) {
   if (!logoUrl || hasError) {
     return <span className="text-gray-400">-</span>;
@@ -661,10 +854,36 @@ function OrganisationLogo({
   }
 
   return (
-    <div className={`flex ${sizeClass} items-center justify-center rounded-md border border-gray-200 bg-white`}>
+    <button
+      type="button"
+      onClick={() => onPreview?.(objectUrl, alt)}
+      className={`group relative flex ${sizeClass} cursor-zoom-in items-center justify-center rounded-md border border-gray-200 bg-white transition hover:border-primary-300 hover:shadow-md`}
+      title={previewLabel}
+      aria-label={previewLabel}
+    >
       <img src={objectUrl} alt={alt} className="max-h-full max-w-full object-contain" />
-    </div>
+      <span className="absolute inset-0 flex items-center justify-center rounded-md bg-slate-950/0 text-white opacity-0 transition group-hover:bg-slate-950/35 group-hover:opacity-100">
+        <ZoomIn className="h-5 w-5" />
+      </span>
+    </button>
   );
+}
+
+function LogoPreviewDialog({ src, alt, closeLabel, onClose }: { src: string; alt: string; closeLabel: string; onClose: () => void }) {
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={alt} onClick={onClose}>
+      <button type="button" onClick={onClose} className="absolute end-5 top-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20" title={closeLabel} aria-label={closeLabel}>
+        <X className="h-6 w-6" />
+      </button>
+      <img src={src} alt={alt} onClick={(event) => event.stopPropagation()} className="max-h-[86vh] max-w-[92vw] rounded-xl bg-white p-4 object-contain shadow-2xl" />
+    </div>,
+    document.body,
+  );
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function userStatusClass(status: UserStatus | undefined, isActive: boolean) {

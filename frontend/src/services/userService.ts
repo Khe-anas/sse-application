@@ -1,5 +1,5 @@
 import api from './api';
-import type { User, PageResponse, Role, UserStatus } from '@/types';
+import type { User, PageResponse, Role, TypeOrganisme, UserStatus } from '@/types';
 
 export const userService = {
   getAll: async (params?: { role?: Role; status?: UserStatus; search?: string; page?: number; size?: number }): Promise<PageResponse<User>> => {
@@ -9,6 +9,29 @@ export const userService = {
 
   create: async (data: CreateUserRequest): Promise<User> => {
     const response = await api.post<User>('/admin/users', data);
+    return response.data;
+  },
+
+  createWithOrganisme: async (data: CreateUserWithOrganismeRequest): Promise<User> => {
+    const formData = new FormData();
+    formData.append('email', data.email);
+    formData.append('firstName', data.firstName);
+    formData.append('lastName', data.lastName);
+    formData.append('organisationName', data.organisationName);
+    formData.append('organisationType', data.organisationType);
+    formData.append('logo', data.logo);
+
+    if (data.password) formData.append('password', data.password);
+    if (data.phone) formData.append('phone', data.phone);
+    if (data.position) formData.append('position', data.position);
+    if (data.sector) formData.append('sector', data.sector);
+    if (data.address) formData.append('address', data.address);
+    if (data.organisationEmail) formData.append('organisationEmail', data.organisationEmail);
+    if (data.organisationPhone) formData.append('organisationPhone', data.organisationPhone);
+    if (data.fax) formData.append('fax', data.fax);
+    if (data.website) formData.append('website', data.website);
+
+    const response = await api.post<User>('/admin/users/with-organisme', formData);
     return response.data;
   },
 
@@ -46,4 +69,22 @@ export interface CreateUserRequest {
   phone?: string;
   position?: string;
   organismeId?: string;
+}
+
+export interface CreateUserWithOrganismeRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password?: string;
+  phone?: string;
+  position?: string;
+  organisationName: string;
+  organisationType: TypeOrganisme;
+  sector?: string;
+  address?: string;
+  organisationEmail?: string;
+  organisationPhone?: string;
+  fax?: string;
+  website?: string;
+  logo: File;
 }

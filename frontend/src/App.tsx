@@ -110,7 +110,7 @@ function App() {
           {/* Gouvernement routes */}
           <Route element={<ProtectedRoute requiredRole={Role.GOUVERNEMENT} />}>
             <Route path="/gouvernement/dashboard" element={<GouvernementDashboard />} />
-            <Route path="/gouvernement/evaluations" element={<EvaluationsPage />} />
+            <Route path="/gouvernement/evaluations" element={<Navigate to="/gouvernement/dashboard" replace />} />
             <Route path="/gouvernement/ranking" element={<RankingPage />} />
           </Route>
 
