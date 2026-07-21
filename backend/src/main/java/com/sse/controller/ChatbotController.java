@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/chatbot")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ChatbotController {
     
     private final ChatbotService chatbotService;

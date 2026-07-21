@@ -8,10 +8,13 @@ export interface AccountRequestSubmitForm {
   responsibleLastName: string;
   companyEmail: string;
   phone?: string;
+  fax?: string;
   address?: string;
   sector?: string;
-  message?: string;
-  verificationFiles?: File[];
+  otherSector?: string;
+  companyRole: string;
+  position: string;
+  logo?: File;
 }
 
 export interface ApproveAccountRequestResponse {
@@ -31,10 +34,13 @@ export const accountRequestService = {
     formData.append('companyEmail', data.companyEmail);
 
     if (data.phone) formData.append('phone', data.phone);
+    if (data.fax) formData.append('fax', data.fax);
     if (data.address) formData.append('address', data.address);
     if (data.sector) formData.append('sector', data.sector);
-    if (data.message) formData.append('message', data.message);
-    data.verificationFiles?.forEach((file) => formData.append('verificationFiles', file));
+    if (data.sector === 'OTHER' && data.otherSector) formData.append('otherSector', data.otherSector);
+    formData.append('companyRole', data.companyRole);
+    formData.append('position', data.position);
+    if (data.logo) formData.append('logo', data.logo);
 
     const response = await api.post<AccountRequest>('/account-requests', formData);
     return response.data;

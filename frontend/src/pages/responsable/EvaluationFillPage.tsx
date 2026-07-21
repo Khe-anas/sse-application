@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronLeft, Send, Upload, Link, FileText, X } from 'lucide-react';
@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 import { evaluationService, reponseService } from '@/services/evaluationService';
 import { fileService } from '@/services/fileService';
 import { Niveau, StatusEvaluation, StatusReponse } from '@/types';
-import type { Evaluation, Reponse, Principe } from '@/types';
+import type { BonnePratique, Critere, Evaluation, Reponse, Principe } from '@/types';
 import api from '@/services/api';
 import { getLocalizedField } from '@/utils/localization';
+import { getNiveauTranslationKey } from '@/utils/niveau';
 
 const niveaux: { key: Niveau; label: string; color: string }[] = [
   { key: Niveau.N0, label: 'evaluation.niveau0', color: 'bg-red-100 text-red-700 border-red-200' },
@@ -29,7 +30,6 @@ export default function EvaluationFillPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [touchedCorrectionIds, setTouchedCorrectionIds] = useState<Set<string>>(new Set());
-  const commentSaveTimers = useRef<Record<string, number>>({});
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -52,22 +52,19 @@ export default function EvaluationFillPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  useEffect(() => {
-    return () => {
-      Object.values(commentSaveTimers.current).forEach(window.clearTimeout);
-    };
-  }, []);
+  const isCorrectionStatus = (status: StatusReponse | undefined) =>
+    status === StatusReponse.A_CORRIGER || status === StatusReponse.REJETEE;
 
   const canEditReponse = (reponse: Reponse | undefined) =>
     evaluation?.status === StatusEvaluation.EN_COURS
     && !!reponse
-    && (reponse.status === StatusReponse.BROUILLON || reponse.status === StatusReponse.A_CORRIGER);
+    && (reponse.status === StatusReponse.BROUILLON || isCorrectionStatus(reponse.status));
 
   const canEditCritere = (critereId: string) => canEditReponse(reponses[critereId]);
 
   const isCorrectionAddressed = (reponse: Reponse | undefined) =>
     !!reponse
-    && (reponse.status !== StatusReponse.A_CORRIGER
+    && (!isCorrectionStatus(reponse.status)
         || Boolean(reponse.correctionAddressed)
         || touchedCorrectionIds.has(reponse.critereId));
 
@@ -89,23 +86,17 @@ export default function EvaluationFillPage() {
     } catch (error) { toast.error(t('evaluationFill.saveError')); }
   };
 
-  const scheduleReponseDraftSave = (reponse: Reponse) => {
-    window.clearTimeout(commentSaveTimers.current[reponse.critereId]);
-    commentSaveTimers.current[reponse.critereId] = window.setTimeout(() => {
-      void saveReponseDraft(reponse);
-    }, 600);
-  };
-
   const handleNiveauChange = (critereId: string, niveau: Niveau) => {
     if (!canEditCritere(critereId)) return;
     const existing = reponses[critereId];
+    const isCorrection = isCorrectionStatus(existing?.status);
     const updated = {
       ...existing, critereId, niveau,
       status: existing?.status || StatusReponse.BROUILLON,
-      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
+      correctionAddressed: isCorrection ? true : existing?.correctionAddressed,
     } as Reponse;
     setReponses(prev => ({ ...prev, [critereId]: updated }));
-    if (existing?.status === StatusReponse.A_CORRIGER) {
+    if (isCorrection) {
       setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
     }
     void saveReponseDraft(updated);
@@ -114,13 +105,16 @@ export default function EvaluationFillPage() {
   const handleCommentChange = (critereId: string, commentaire: string) => {
     if (!canEditCritere(critereId)) return;
     const existing = reponses[critereId];
+    const isCorrection = isCorrectionStatus(existing?.status);
     const updated = {
-      ...existing, critereId, commentaire,
-      status: existing?.status || StatusReponse.BROUILLON,
-      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
+      ...existing,
+      commentaire,
+      correctionAddressed: isCorrection ? true : existing?.correctionAddressed,
     } as Reponse;
     setReponses(prev => ({ ...prev, [critereId]: updated }));
-    scheduleReponseDraftSave(updated);
+    if (isCorrection) {
+      setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
+    }
   };
 
   const handleAddLink = (critereId: string) => {
@@ -129,13 +123,17 @@ export default function EvaluationFillPage() {
     const trimmedUrl = url?.trim();
     if (!trimmedUrl) return;
     const existing = reponses[critereId];
+    const isCorrection = isCorrectionStatus(existing?.status);
     const updated = {
       ...existing, critereId,
       preuveLinks: [...(existing?.preuveLinks || []), trimmedUrl],
       status: existing?.status || StatusReponse.BROUILLON,
-      correctionAddressed: existing?.status === StatusReponse.A_CORRIGER ? true : existing?.correctionAddressed,
+      correctionAddressed: isCorrection ? true : existing?.correctionAddressed,
     } as Reponse;
     setReponses(prev => ({ ...prev, [critereId]: updated }));
+    if (isCorrection) {
+      setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
+    }
     void saveReponseDraft(updated);
   };
 
@@ -146,9 +144,12 @@ export default function EvaluationFillPage() {
     const updated = {
       ...existing,
       preuveLinks: (existing.preuveLinks || []).filter(link => link !== linkToRemove),
-      correctionAddressed: existing.status === StatusReponse.A_CORRIGER ? true : existing.correctionAddressed,
+      correctionAddressed: isCorrectionStatus(existing.status) ? true : existing.correctionAddressed,
     } as Reponse;
     setReponses(prev => ({ ...prev, [critereId]: updated }));
+    if (isCorrectionStatus(existing.status)) {
+      setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
+    }
     void saveReponseDraft(updated);
   };
 
@@ -163,8 +164,18 @@ export default function EvaluationFillPage() {
       for (const file of filesToUpload) uploadedFileUrls.push(await reponseService.uploadProof(reponse.id, file));
       setReponses(prev => {
         const existing = prev[critereId];
-        return { ...prev, [critereId]: { ...existing, preuveFiles: [...(existing?.preuveFiles || []), ...uploadedFileUrls] } as Reponse };
+        return {
+          ...prev,
+          [critereId]: {
+            ...existing,
+            preuveFiles: [...(existing?.preuveFiles || []), ...uploadedFileUrls],
+            correctionAddressed: isCorrectionStatus(existing?.status) ? true : existing?.correctionAddressed,
+          } as Reponse,
+        };
       });
+      if (isCorrectionStatus(reponse.status)) {
+        setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
+      }
       toast.success(filesToUpload.length > 1 ? t('evaluationFill.uploadedMultiple') : t('evaluationFill.uploadedSingle'));
     } catch (error) { toast.error(t('evaluationFill.uploadError')); }
   };
@@ -178,8 +189,18 @@ export default function EvaluationFillPage() {
       setReponses(prev => {
         const existing = prev[critereId];
         if (!existing) return prev;
-        return { ...prev, [critereId]: { ...existing, preuveFiles: (existing.preuveFiles || []).filter(f => f !== fileUrl) } as Reponse };
+        return {
+          ...prev,
+          [critereId]: {
+            ...existing,
+            preuveFiles: (existing.preuveFiles || []).filter(f => f !== fileUrl),
+            correctionAddressed: isCorrectionStatus(existing.status) ? true : existing.correctionAddressed,
+          } as Reponse,
+        };
       });
+      if (isCorrectionStatus(reponse.status)) {
+        setTouchedCorrectionIds(prev => { const next = new Set(prev); next.add(critereId); return next; });
+      }
       toast.success(t('evaluationFill.removed'));
     } catch (error) { toast.error(t('evaluationFill.removeError')); }
   };
@@ -204,7 +225,7 @@ export default function EvaluationFillPage() {
   const handleSubmit = async () => {
     if (!id) return;
     const pendingCorrections = Object.values(reponses).filter(r =>
-      r.status === StatusReponse.A_CORRIGER && !isCorrectionAddressed(r));
+      isCorrectionStatus(r.status) && !isCorrectionAddressed(r));
     if (pendingCorrections.length > 0) {
       toast.error(t('evaluationFill.pendingCorrections', { count: pendingCorrections.length }));
       return;
@@ -230,7 +251,7 @@ export default function EvaluationFillPage() {
   const getAllCriteres = () => {
     const active = principes.find(p => p.id === activePrincipe);
     if (!active) return [];
-    const rows: { principe: Principe; bp: any; critere: any }[] = [];
+    const rows: { principe: Principe; bp: BonnePratique; critere: Critere }[] = [];
     active.bonnesPratiques.forEach(bp => {
       bp.criteres.forEach(critere => {
         rows.push({ principe: active, bp, critere });
@@ -293,16 +314,17 @@ export default function EvaluationFillPage() {
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N0</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N1</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N2</th>
-              <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">N3</th>
+              {niveaux.map((niveau) => (
+                <th key={niveau.key} className="min-w-[112px] px-3 py-2.5 text-center font-semibold text-gray-700">
+                  {t(niveau.label)}
+                </th>
+              ))}
               <th className="px-3 py-2.5 text-left font-semibold text-gray-700 min-w-[160px]">Preuves & Commentaire</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {(() => {
-              const groups: { bp: any; criteres: { critere: any; idx: number }[] }[] = [];
+              const groups: { bp: BonnePratique; criteres: { critere: Critere; idx: number }[] }[] = [];
               rows.forEach((row, idx) => {
                 const bpKey = row.bp.id || getLocalizedField(row.bp, 'label', language);
                 let group = groups.find(g => g.bp.id === bpKey);
@@ -319,7 +341,7 @@ export default function EvaluationFillPage() {
                   const isFirstInGroup = ci === 0;
 
                   return (
-                    <tr key={item.critere.id} className={`hover:bg-gray-50 ${reponse?.status === StatusReponse.A_CORRIGER ? 'bg-amber-50/50' : ''}`}>
+                    <tr key={item.critere.id} className={`hover:bg-gray-50 ${isCorrectionStatus(reponse?.status) ? 'bg-amber-50/50' : ''}`}>
                       {isFirstInGroup ? (
                         <td className="px-3 py-2 text-gray-500 align-top align-middle" rowSpan={group.criteres.length}>{gi + 1}</td>
                       ) : null}
@@ -328,10 +350,10 @@ export default function EvaluationFillPage() {
                       ) : null}
                       <td className="px-3 py-2 text-gray-900 align-top">
                         <span className="font-medium">{ci + 1}.</span> {getLocalizedField(item.critere, 'label', language)}
-                        {reponse?.status === StatusReponse.A_CORRIGER && (
-                          <div className="mt-1 text-xs text-amber-700 flex items-center gap-1">
+                        {isCorrectionStatus(reponse?.status) && (
+                          <div className="mt-1 flex items-start gap-1 rounded border border-amber-200 bg-amber-50 p-2 text-xs font-medium text-amber-800">
                             <AlertTriangle className="w-3 h-3" />
-                            {reponse.validatorComment || t('evaluationFill.correctionRequested')}
+                            <span>{reponse?.validatorComment || reponse?.rejectionReason || t('evaluationFill.correctionRequested')}</span>
                           </div>
                         )}
                       </td>
@@ -344,12 +366,29 @@ export default function EvaluationFillPage() {
                               checked={reponse?.niveau === n.key}
                               onChange={() => handleNiveauChange(item.critere.id, n.key)}
                               disabled={!canEdit}
+                              aria-label={getNiveauTranslationKey(n.key) ? t(getNiveauTranslationKey(n.key)) : undefined}
+                              title={t(getNiveauTranslationKey(n.key))}
                               className="w-4 h-4 text-primary-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                             />
                           </div>
                         </td>
                       ))}
                       <td className="px-3 py-2 align-top">
+                        {canEdit ? (
+                          <textarea
+                            value={reponse?.commentaire || ''}
+                            onChange={(event) => handleCommentChange(item.critere.id, event.target.value)}
+                            onBlur={() => {
+                              const current = reponses[item.critere.id];
+                              if (current) void saveReponseDraft(current);
+                            }}
+                            placeholder={t('evaluationFill.commentairePlaceholder')}
+                            rows={2}
+                            className="input w-full resize-y px-2 py-1.5 text-xs"
+                          />
+                        ) : reponse?.commentaire ? (
+                          <p className="mb-1 text-xs text-gray-600">{reponse.commentaire}</p>
+                        ) : null}
                         {preuvesAttendues && (
                           <div className="mt-1 rounded bg-blue-50 border border-blue-100 p-1.5 text-xs text-blue-800">
                             <div className="flex items-center gap-1 font-semibold"><FileText className="w-3 h-3" /> {t('evaluationFill.preuvesAttendues')}</div>

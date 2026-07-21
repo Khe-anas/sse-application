@@ -4,6 +4,7 @@ import com.sse.service.PrincipeService;
 import com.sse.service.DemoDataService;
 import com.sse.service.EvaluationService;
 import com.sse.service.DatabaseMigrationService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,12 +26,15 @@ public class SseBackendApplication {
             DatabaseMigrationService databaseMigrationService,
             PrincipeService principeService,
             DemoDataService demoDataService,
-            EvaluationService evaluationService) {
+            EvaluationService evaluationService,
+            @Value("${sse.demo-data.enabled:false}") boolean demoDataEnabled) {
         return args -> {
             databaseMigrationService.updateUserActivationSchema();
             databaseMigrationService.updateNotificationTypeConstraint();
             principeService.seedPrincipes();
-            demoDataService.seedDemoData();
+            if (demoDataEnabled) {
+                demoDataService.seedDemoData();
+            }
             evaluationService.ensureReponsesForExistingEvaluations();
         };
     }

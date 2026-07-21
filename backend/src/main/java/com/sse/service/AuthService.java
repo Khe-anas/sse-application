@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,12 +32,12 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         try {
-            User user = userRepository.findByEmail(request.getEmail())
+            User user = userRepository.findByEmailIgnoreCase(request.getEmail().trim())
                 .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
             ensureUserCanAuthenticate(user);
 
-            Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getEmail(), request.getPassword())
             );
 
             int newVersion = user.getTokenVersion() + 1;
@@ -63,7 +62,7 @@ public class AuthService {
         }
         
         String email = jwtUtil.extractUsername(refreshToken);
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailIgnoreCase(email)
             .orElseThrow(() -> new BadCredentialsException("User not found"));
         ensureUserCanAuthenticate(user);
 
@@ -76,6 +75,14 @@ public class AuthService {
         
         return new AuthResponse(newAccessToken, refreshToken, "Bearer",
             jwtUtil.getAccessTokenExpiration() / 1000, mapToUserResponse(user));
+    }
+
+    @Transactional
+    public void logout(UUID userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BadCredentialsException("User not found"));
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.save(user);
     }
 
     @Transactional
@@ -127,6 +134,7 @@ public class AuthService {
         response.setFullName(user.getFullName());
         response.setRole(user.getRole());
         response.setPhone(user.getPhone());
+        response.setPosition(user.getPosition());
         response.setIsActive(user.getIsActive());
         response.setStatus(user.getStatus() != null ? user.getStatus() : inferStatus(user));
         response.setCreatedAt(user.getCreatedAt());
@@ -134,6 +142,14 @@ public class AuthService {
         if (user.getOrganisme() != null) {
             response.setOrganismeId(user.getOrganisme().getId());
             response.setOrganismeName(user.getOrganisme().getName());
+            response.setOrganismeType(user.getOrganisme().getType());
+            response.setOrganismeSector(user.getOrganisme().getSector());
+            response.setOrganismeAddress(user.getOrganisme().getAddress());
+            response.setOrganismeEmail(user.getOrganisme().getEmail());
+            response.setOrganismePhone(user.getOrganisme().getPhone());
+            response.setOrganismeFax(user.getOrganisme().getFax());
+            response.setOrganismeWebsite(user.getOrganisme().getWebsite());
+            response.setOrganismeLogoUrl(user.getOrganisme().getLogoUrl());
         }
         return response;
     }

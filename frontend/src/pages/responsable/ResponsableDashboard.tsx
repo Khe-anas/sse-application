@@ -47,6 +47,9 @@ export default function ResponsableDashboard() {
   const soumises = evaluations.filter(e => e.status === 'SOUMISE').length;
   const validees = evaluations.filter(e => e.status === 'VALIDEE');
   const lastScore = validees.length > 0 ? validees[0].globalScore : null;
+  const firstInProgress = evaluations.find(e => e.status === StatusEvaluation.EN_COURS);
+  const latestValidated = validees[0];
+  const evaluationsAnchor = '/user/dashboard#evaluations';
 
   const handleCreateEvaluation = async () => {
     if (!user?.organismeId) {
@@ -107,13 +110,13 @@ export default function ResponsableDashboard() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={user?.role === Role.ADMIN ? t('responsable.kpiEvaluations') : t('responsable.kpiMyEvaluations')} value={evaluations.length} icon={ClipboardList} color="primary" />
-        <KPICard title={t('responsable.kpiInProgress')} value={enCours} icon={AlertCircle} color="warning" />
-        <KPICard title={t('responsable.kpiSubmitted')} value={soumises} icon={TrendingUp} color="info" />
-        <KPICard title={t('responsable.kpiLastScore')} value={lastScore ? `${lastScore.toFixed(1)}%` : '-'} icon={Award} color="success" />
+        <KPICard title={user?.role === Role.ADMIN ? t('responsable.kpiEvaluations') : t('responsable.kpiMyEvaluations')} value={evaluations.length} icon={ClipboardList} color="primary" to={evaluationsAnchor} />
+        <KPICard title={t('responsable.kpiInProgress')} value={enCours} icon={AlertCircle} color="warning" to={firstInProgress ? `/user/evaluation/${firstInProgress.id}` : evaluationsAnchor} />
+        <KPICard title={t('responsable.kpiSubmitted')} value={soumises} icon={TrendingUp} color="info" to={evaluationsAnchor} />
+        <KPICard title={t('responsable.kpiLastScore')} value={lastScore ? `${lastScore.toFixed(1)}%` : '-'} icon={Award} color="success" to={latestValidated ? `/evaluations/${latestValidated.id}/view` : evaluationsAnchor} />
       </div>
 
-      <div className="card">
+      <div id="evaluations" className="card scroll-mt-6">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold">{user?.role === Role.ADMIN ? t('responsable.listTitleAdmin') : t('responsable.listTitle')}</h2>
         </div>

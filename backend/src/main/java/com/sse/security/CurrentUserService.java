@@ -49,7 +49,7 @@ public class CurrentUserService {
             throw new RuntimeException("Authenticated user email not found");
         }
 
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailIgnoreCase(email)
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

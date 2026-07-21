@@ -1,4 +1,5 @@
 import api from './api';
+import { downloadBlob } from '@/utils/download';
 
 const getFileName = (fileUrl: string) => fileUrl.split('/').pop() || 'fichier';
 
@@ -8,18 +9,18 @@ const getApiPath = (fileUrl: string) => {
 };
 
 export const fileService = {
+  getObjectUrl: async (fileUrl: string): Promise<string> => {
+    const response = await api.get<Blob>(getApiPath(fileUrl), {
+      responseType: 'blob',
+    });
+    return window.URL.createObjectURL(response.data);
+  },
+
   download: async (fileUrl: string): Promise<void> => {
     const response = await api.get<Blob>(getApiPath(fileUrl), {
       responseType: 'blob',
     });
 
-    const downloadUrl = window.URL.createObjectURL(response.data);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = getFileName(fileUrl);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
+    downloadBlob(response.data, getFileName(fileUrl));
   },
 };

@@ -1,10 +1,13 @@
 package com.sse.controller;
 
 import com.sse.dto.PrincipeResponse;
+import com.sse.dto.ReferenceTranslationRequest;
+import com.sse.dto.ReferenceTranslationResponse;
 import com.sse.entity.BonnePratique;
 import com.sse.entity.Critere;
 import com.sse.entity.Principe;
 import com.sse.service.PrincipeService;
+import com.sse.service.ReferenceTranslationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,10 +20,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/principes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PrincipeController {
     
     private final PrincipeService principeService;
+    private final ReferenceTranslationService referenceTranslationService;
     
     @GetMapping
     public ResponseEntity<List<PrincipeResponse>> getAllPrincipes() {
@@ -38,8 +41,12 @@ public class PrincipeController {
         String nameFr = request.get("nameFr");
         String nameAr = request.get("nameAr");
         String nameEn = request.get("nameEn");
+        String descriptionFr = request.get("descriptionFr");
+        String descriptionAr = request.get("descriptionAr");
+        String descriptionEn = request.get("descriptionEn");
         Float weight = request.containsKey("weight") ? Float.parseFloat(request.get("weight")) : 1.0f;
-        return ResponseEntity.ok(principeService.createPrincipe(nameFr, nameAr, nameEn, weight));
+        return ResponseEntity.ok(principeService.createPrincipe(nameFr, nameAr, nameEn,
+            descriptionFr, descriptionAr, descriptionEn, weight));
     }
 
     @PutMapping("/{id}")
@@ -133,5 +140,13 @@ public class PrincipeController {
     @GetMapping("/count-criteres")
     public ResponseEntity<Long> countAllCriteres() {
         return ResponseEntity.ok(principeService.countAllCriteres());
+    }
+
+    @PostMapping("/translate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReferenceTranslationResponse> translateReferenceFields(
+        @RequestBody ReferenceTranslationRequest request
+    ) {
+        return ResponseEntity.ok(referenceTranslationService.translateFields(request.fields()));
     }
 }

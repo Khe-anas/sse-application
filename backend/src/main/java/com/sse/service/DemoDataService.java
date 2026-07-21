@@ -8,6 +8,7 @@ import com.sse.repository.OrganismeRepository;
 import com.sse.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DemoDataService {
 
-    private static final String DEMO_PASSWORD = "password";
+    @Value("${sse.demo-data.password:password}")
+    private String demoPassword;
 
     private final OrganismeRepository organismeRepository;
     private final UserRepository userRepository;
@@ -25,6 +27,10 @@ public class DemoDataService {
 
     @Transactional
     public void seedDemoData() {
+        if (demoPassword == null || demoPassword.length() < 8) {
+            throw new IllegalStateException("Demo password must contain at least 8 characters");
+        }
+
         Organisme organisme = organismeRepository.findAll().stream()
             .filter(org -> "Organisme de démonstration".equals(org.getName()))
             .findFirst()
@@ -49,13 +55,13 @@ public class DemoDataService {
     }
 
     private void createUserIfMissing(String email, String firstName, String lastName, Role role, Organisme organisme) {
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             return;
         }
 
         User user = new User();
         user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(DEMO_PASSWORD));
+        user.setPassword(passwordEncoder.encode(demoPassword));
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setRole(role);

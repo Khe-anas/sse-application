@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
   ArrowRight,
+  Bot,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
@@ -21,13 +22,14 @@ import { useUIStore } from '@/stores/uiStore';
 import { changeLanguage, LANGUAGES } from '@/i18n';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { API_BASE_URL } from '@/services/api';
+import { authService } from '@/services/authService';
 import { formatBackendShortDateTime } from '@/utils/date';
 import type { Notification } from '@/types';
 
 export default function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { toggleSidebar, language, theme, toggleTheme, sidebarOpen } = useUIStore();
+  const { toggleSidebar, language, theme, toggleThemeForAccount, sidebarOpen, assistantOpen, toggleAssistant } = useUIStore();
   const { user, token, logout } = useAuthStore();
   const {
     notifications,
@@ -126,6 +128,18 @@ export default function Header() {
     let reconnectTimer: number | undefined;
     let stopped = false;
 
+    const getNotificationTitleFromPayload = (notification: Partial<Notification>) => {
+      if (language === 'ar') return notification.titleAr || notification.titleFr || t('header.newNotificationAr');
+      if (language === 'en') return notification.titleEn || notification.titleFr || t('header.newNotificationEn');
+      return notification.titleFr || t('header.newNotification');
+    };
+
+    const getNotificationMessageFromPayload = (notification: Partial<Notification>) => {
+      if (language === 'ar') return notification.messageAr || notification.messageFr || t('header.newNotificationDescAr');
+      if (language === 'en') return notification.messageEn || notification.messageFr || t('header.newNotificationDescEn');
+      return notification.messageFr || t('header.newNotificationDesc');
+    };
+
     const showLiveNotification = (notification: Partial<Notification>) => {
       suppressNextUnreadPopupRef.current = true;
       playNotificationSound();
@@ -209,11 +223,15 @@ export default function Header() {
         window.clearTimeout(reconnectTimer);
       }
     };
-  }, [fetchNotifications, fetchUnreadCount, language, token, user]);
+  }, [fetchNotifications, fetchUnreadCount, language, t, token, user]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      logout();
+      navigate('/login');
+    }
   };
 
   const handleLanguageChange = (code: string) => {
@@ -239,18 +257,6 @@ export default function Header() {
     if (language === 'ar') return notification.messageAr || notification.messageFr;
     if (language === 'en') return notification.messageEn || notification.messageFr;
     return notification.messageFr;
-  };
-
-  const getNotificationTitleFromPayload = (notification: Partial<Notification>) => {
-    if (language === 'ar') return notification.titleAr || notification.titleFr || t('header.newNotificationAr');
-    if (language === 'en') return notification.titleEn || notification.titleFr || t('header.newNotificationEn');
-    return notification.titleFr || t('header.newNotification');
-  };
-
-  const getNotificationMessageFromPayload = (notification: Partial<Notification>) => {
-    if (language === 'ar') return notification.messageAr || notification.messageFr || t('header.newNotificationDescAr');
-    if (language === 'en') return notification.messageEn || notification.messageFr || t('header.newNotificationDescEn');
-    return notification.messageFr || t('header.newNotificationDesc');
   };
 
   const formatNotificationDate = (date: string) => {
@@ -312,11 +318,11 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-20 h-16 border-b border-gray-200 bg-white/95 px-4 shadow-sm backdrop-blur transition-all duration-300 dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-black/20 ${sidebarOpen ? 'lg:left-sidebar' : ''}`}
+      className={`fixed top-0 right-0 left-0 z-20 h-16 border-b border-gray-200 bg-white/95 px-2 shadow-sm backdrop-blur transition-all duration-300 sm:px-4 dark:border-[#2b3b35] dark:bg-[#17201d] dark:shadow-black/20 ${sidebarOpen ? 'lg:left-sidebar' : ''}`}
     >
       <div className="flex h-full items-center justify-between gap-4">
       {/* Left */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <button
           onClick={toggleSidebar}
           className="p-2 rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -324,21 +330,36 @@ export default function Header() {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h2 className="text-lg font-semibold text-gray-800">
+        <h2 className="hidden text-lg font-semibold text-gray-800 sm:block">
           {t('navigation.dashboard')}
         </h2>
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3">
         <button
           type="button"
-          onClick={toggleTheme}
+          onClick={() => user && toggleThemeForAccount(user.id)}
           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           title={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
           aria-label={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={toggleAssistant}
+          aria-pressed={assistantOpen}
+          aria-label={t('chatbot.title')}
+          title={t('chatbot.title')}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${
+            assistantOpen
+              ? 'border-primary-700 bg-primary-700 text-white'
+              : 'border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Bot className="h-4 w-4" />
         </button>
 
         {/* Language */}
@@ -348,7 +369,7 @@ export default function Header() {
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100"
           >
             <Globe className="w-4 h-4" />
-            <span className="text-sm font-medium">{LANGUAGES.find(l => l.code === language)?.name}</span>
+            <span className="hidden text-sm font-medium md:inline">{LANGUAGES.find(l => l.code === language)?.name}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {langOpen && (
@@ -409,30 +430,24 @@ export default function Header() {
                   </div>
                 ) : (
                   notifications.map((notification) => (
-                    <button
+                    <div
                       key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                      className={`flex items-start border-b border-gray-100 ${
                         notification.isRead ? 'bg-white' : 'bg-primary-50/60'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleNotificationClick(notification)}
+                        className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left hover:bg-gray-50"
+                      >
                         <span className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${
                           notification.isRead ? 'bg-gray-300' : 'bg-primary-700'
                         }`} />
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                              {getNotificationTitle(notification)}
-                            </p>
-                            <button
-                              onClick={(event) => handleDeleteNotification(event, notification.id)}
-                              className="p-1 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50"
-                              title={t('common.delete')}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                            {getNotificationTitle(notification)}
+                          </p>
                           <p className="mt-1 text-xs text-gray-600 line-clamp-2">
                             {getNotificationMessage(notification)}
                           </p>
@@ -440,8 +455,17 @@ export default function Header() {
                             {formatNotificationDate(notification.createdAt)}
                           </p>
                         </div>
-                      </div>
-                    </button>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => handleDeleteNotification(event, notification.id)}
+                        className="m-2 rounded p-2 text-gray-400 hover:bg-danger-50 hover:text-danger-600"
+                        title={t('common.delete')}
+                        aria-label={t('common.delete')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))
                 )}
               </div>

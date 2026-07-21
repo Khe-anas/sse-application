@@ -110,8 +110,9 @@ export default function ReclamationsPage() {
   };
 
   const closeSelectedReclamation = () => {
-    if (selectedReclamation?.status !== ReclamationStatus.RESOLVED) {
-      void reclamationService.release(selectedReclamation.id).catch(() => undefined);
+    const current = selectedReclamation;
+    if (current && current.status !== ReclamationStatus.RESOLVED) {
+      void reclamationService.release(current.id).catch(() => undefined);
       void loadReclamations(false);
     }
     setSelectedReclamation(null);

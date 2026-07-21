@@ -55,19 +55,30 @@ public class NotificationService {
             "Une nouvelle évaluation a été assignée à " + organismeName + " pour l'année " + year,
             "تم تخصيص تقييم جديد لـ " + organismeName + " للسنة " + year,
             "A new evaluation has been assigned to " + organismeName + " for year " + year,
-            evaluationId != null ? "/responsable/evaluation/" + evaluationId : "/responsable/dashboard");
+            evaluationId != null ? "/user/evaluation/" + evaluationId : "/user/dashboard");
     }
     
     @Transactional
     public void sendEvaluationSubmitted(UUID userId, String organismeName, Integer year) {
-        createNotification(userId, TypeNotification.EVALUATION_SUBMITTED,
+        sendEvaluationSubmitted(userId, organismeName, year, null);
+    }
+
+    @Transactional
+    public void sendEvaluationSubmitted(UUID userId, String organismeName, Integer year, UUID evaluationId) {
+        User recipient = userRepository.findById(userId).orElse(null);
+        if (recipient == null) return;
+
+        String basePath = recipient.getRole() == Role.EVALUATEUR ? "/evaluateur/evaluations" : "/admin/evaluations";
+        String link = evaluationId != null ? basePath + "/" + evaluationId + "/validate" : basePath;
+
+        createNotification(recipient, TypeNotification.EVALUATION_SUBMITTED,
             "Évaluation soumise",
             "تم تقديم التقييم",
             "Evaluation submitted",
             organismeName + " a soumis son évaluation pour l'année " + year,
             "قدم " + organismeName + " تقييمه للسنة " + year,
             organismeName + " has submitted its evaluation for year " + year,
-            "/admin/evaluations");
+            link);
     }
     
     @Transactional
@@ -84,7 +95,7 @@ public class NotificationService {
             "Votre évaluation pour " + organismeName + " a été validée. Score : " + String.format("%.1f", score) + "% - Niveau : " + level,
             "تم التحقق من تقييمك لـ " + organismeName + ". النتيجة : " + String.format("%.1f", score) + "% - المستوى : " + level,
             "Your evaluation for " + organismeName + " has been validated. Score: " + String.format("%.1f", score) + "% - Level: " + level,
-            evaluationId != null ? "/evaluations/" + evaluationId + "/view" : "/responsable/dashboard");
+            evaluationId != null ? "/evaluations/" + evaluationId + "/view" : "/user/dashboard");
     }
     
     @Transactional
@@ -96,7 +107,7 @@ public class NotificationService {
             "Votre évaluation pour " + organismeName + " a été rejetée. Motif : " + reason,
             "تم رفض تقييمك لـ " + organismeName + ". السبب : " + reason,
             "Your evaluation for " + organismeName + " has been rejected. Reason: " + reason,
-            "/responsable/dashboard");
+            "/user/dashboard");
     }
     
     @Transactional
@@ -114,7 +125,7 @@ public class NotificationService {
         String targetFr = critereLabel != null && !critereLabel.isBlank() ? " pour le critère \"" + critereLabel + "\"" : "";
         String targetAr = critereLabel != null && !critereLabel.isBlank() ? " للمعيار \"" + critereLabel + "\"" : "";
         String targetEn = critereLabel != null && !critereLabel.isBlank() ? " for criterion \"" + critereLabel + "\"" : "";
-        String link = evaluationId != null ? "/responsable/evaluation/" + evaluationId : "/responsable/dashboard";
+        String link = evaluationId != null ? "/user/evaluation/" + evaluationId : "/user/dashboard";
 
         createNotification(userId, TypeNotification.CORRECTION_REQUESTED,
             "Correction demandée",
@@ -213,7 +224,7 @@ public class NotificationService {
             UUID evaluationId = evaluation.getId();
             UUID organismeId = evaluation.getOrganisme().getId();
             String organismeName = evaluation.getOrganisme().getName();
-            String link = "/responsable/evaluation/" + evaluationId;
+            String link = "/user/evaluation/" + evaluationId;
             long total = reponseRepository.countTotalByEvaluation(evaluationId);
             long answered = reponseRepository.countAnsweredByEvaluation(evaluationId);
 

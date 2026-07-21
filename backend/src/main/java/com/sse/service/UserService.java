@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Slf4j
@@ -56,17 +57,19 @@ public class UserService {
                 throw new RuntimeException("Only ADMIN can create users with ADMIN role");
             }
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new RuntimeException("Email already exists");
         }
         
         User user = new User();
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setRole(request.getRole());
-        user.setPhone(request.getPhone());
-        
+        user.setPhone(normalizeNullable(request.getPhone()));
+        user.setPosition(normalizeNullable(request.getPosition()));
+
         if (request.getRole() == Role.USER) {
             user.setOrganisme(resolveUserOrganisme(request.getOrganismeId(), request.getEntrepriseName()));
         }
@@ -97,11 +100,11 @@ public class UserService {
         );
     }
     
-    public Page<UserResponse> getAllUsers(Role role, UUID organismeId, String search, Pageable pageable) {
+    public Page<UserResponse> getAllUsers(Role role, UserStatus status, UUID organismeId, String search, Pageable pageable) {
         String normalizedSearch = search != null && !search.isBlank() ? search.trim() : null;
         Page<User> users = normalizedSearch == null
-            ? userRepository.findAllWithFilters(role, organismeId, pageable)
-            : userRepository.findAllWithSearch(role, organismeId, normalizedSearch, pageable);
+            ? userRepository.findAllWithFilters(role, status, organismeId, pageable)
+            : userRepository.findAllWithSearch(role, status, organismeId, normalizedSearch, pageable);
 
         return users.map(authService::mapToUserResponse);
     }
@@ -119,6 +122,8 @@ public class UserService {
 
         User currentUser = currentUserService.getCurrentUser();
         
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName().trim());
+        if (request.getLastName() != null) user.setLastName(request.getLastName().trim());
         if (request.getRole() != null) {
             if (request.getRole() == Role.ADMIN && currentUser.getRole() != Role.ADMIN) {
                 throw new RuntimeException("Only ADMIN can assign ADMIN role");
@@ -128,19 +133,22 @@ public class UserService {
                 user.setOrganisme(null);
             }
         }
-        if (request.getPhone() != null) user.setPhone(request.getPhone());
+        if (request.getPhone() != null) user.setPhone(normalizeNullable(request.getPhone()));
+        if (request.getPosition() != null) user.setPosition(normalizeNullable(request.getPosition()));
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setStatus(UserStatus.ACTIVE);
             user.setIsActive(true);
         }
         if (request.getIsActive() != null) {
-            user.setIsActive(request.getIsActive());
             if (!request.getIsActive()) {
+                user.setIsActive(false);
                 user.setStatus(UserStatus.DISABLED);
             } else if (user.getPassword() == null || user.getPassword().isBlank()) {
+                user.setIsActive(false);
                 user.setStatus(UserStatus.PENDING_ACTIVATION);
             } else {
+                user.setIsActive(true);
                 user.setStatus(UserStatus.ACTIVE);
             }
         }
@@ -265,6 +273,15 @@ public class UserService {
         emailJobRepository.save(job);
 
         log.info("New password generated and email queued for user: {}", user.getEmail());
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private Organisme resolveUserOrganisme(UUID organismeId, String entrepriseName) {

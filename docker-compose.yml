@@ -27,6 +27,9 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       JWT_SECRET: ${JWT_SECRET:-sse-super-secret-key-change-in-production-min-32-chars}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://localhost:3000,http://localhost:5173}
+      SSE_DEMO_DATA_ENABLED: ${SSE_DEMO_DATA_ENABLED:-true}
+      SSE_DEMO_DATA_PASSWORD: ${SSE_DEMO_DATA_PASSWORD:-password}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
@@ -36,6 +39,9 @@ services:
       SSE_MAIL_ENABLED: ${SSE_MAIL_ENABLED:-false}
       SSE_MAIL_FROM: ${SSE_MAIL_FROM:-no-reply@sse.local}
       SSE_MAIL_APP_URL: ${SSE_MAIL_APP_URL:-http://localhost:3000}
+      SSE_TRANSLATION_ENABLED: ${SSE_TRANSLATION_ENABLED:-true}
+      SSE_TRANSLATION_API_URL: ${SSE_TRANSLATION_API_URL:-https://api.mymemory.translated.net}
+      SSE_TRANSLATION_CONTACT_EMAIL: ${SSE_TRANSLATION_CONTACT_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy

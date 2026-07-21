@@ -8,7 +8,6 @@ import {
   Bell,
   BookOpen,
   Trophy,
-  Shield,
   FileCheck2,
   ChevronLeft,
   MessageSquareWarning,
@@ -19,6 +18,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
 import { useUIStore } from '@/stores/uiStore';
+import BrandLogo from '@/components/branding/BrandLogo';
 
 interface NavItem {
   label: string;
@@ -47,7 +47,7 @@ const navItems: NavItem[] = [
   { label: 'navigation.governmentDashboard', icon: LayoutDashboard, path: '/gouvernement/dashboard', roles: [Role.ADMIN, Role.GOUVERNEMENT] },
   { label: 'navigation.evaluations', icon: ClipboardList, path: '/gouvernement/evaluations', roles: [Role.GOUVERNEMENT] },
   { label: 'navigation.ranking', icon: Trophy, path: '/gouvernement/ranking', roles: [Role.ADMIN, Role.GOUVERNEMENT] },
-  { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.USER, Role.GOUVERNEMENT] },
+  { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.USER, Role.EVALUATEUR, Role.GOUVERNEMENT] },
 ];
 
 export default function Sidebar() {
@@ -61,14 +61,19 @@ export default function Sidebar() {
     user?.role && item.roles.includes(user.role)
   );
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      toggleSidebar();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-secondary-400 rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
-          </div>
+          <BrandLogo className="h-11 w-11 flex-shrink-0 rounded-md border border-white/20 shadow-sm" />
           <div>
             <h1 className="text-white font-bold text-lg leading-tight">{t('app.name')}</h1>
             <p className="text-gray-400 text-xs">{t('app.tagline')}</p>
@@ -89,7 +94,7 @@ export default function Sidebar() {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigate(item.path)}
               className={isActive ? 'sidebar-item-active w-full' : 'sidebar-item w-full'}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />

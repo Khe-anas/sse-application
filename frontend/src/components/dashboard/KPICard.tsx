@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface KPICardProps {
   title: string;
@@ -6,6 +7,7 @@ interface KPICardProps {
   icon: LucideIcon;
   color: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
   subtitle?: string;
+  to?: string;
 }
 
 const colorMap = {
@@ -26,9 +28,9 @@ const iconColorMap = {
   info: 'text-blue-500 dark:text-blue-300',
 };
 
-export default function KPICard({ title, value, icon: Icon, color, subtitle }: KPICardProps) {
-  return (
-    <div className="card group min-h-[116px] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:border-slate-600">
+export default function KPICard({ title, value, icon: Icon, color, subtitle, to }: KPICardProps) {
+  const content = (
+    <>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
@@ -39,6 +41,16 @@ export default function KPICard({ title, value, icon: Icon, color, subtitle }: K
           <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />
         </div>
       </div>
-    </div>
+    </>
   );
+
+  const className = `card group min-h-[116px] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:border-slate-600 ${
+    to ? 'block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2' : ''
+  }`;
+
+  if (to) {
+    return <Link to={to} className={className}>{content}</Link>;
+  }
+
+  return <div className={className}>{content}</div>;
 }
