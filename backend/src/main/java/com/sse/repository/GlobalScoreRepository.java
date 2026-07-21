@@ -18,12 +18,23 @@ public interface GlobalScoreRepository extends JpaRepository<GlobalScore, UUID> 
     
     Optional<GlobalScore> findByOrganismeIdAndYear(UUID organismeId, Integer year);
     
-    @Query("SELECT gs FROM GlobalScore gs JOIN gs.organisme o WHERE o.type = :type AND gs.year = :year ORDER BY gs.score DESC")
+    @Query("SELECT gs FROM GlobalScore gs JOIN FETCH gs.organisme o WHERE o.type = :type AND gs.year = :year ORDER BY gs.score DESC")
     List<GlobalScore> findRankingByTypeAndYear(@Param("type") TypeOrganisme type, 
                                                 @Param("year") Integer year);
     
-    @Query("SELECT gs FROM GlobalScore gs WHERE gs.year = :year ORDER BY gs.score DESC")
+    @Query("SELECT gs FROM GlobalScore gs JOIN FETCH gs.organisme WHERE gs.year = :year ORDER BY gs.score DESC")
     List<GlobalScore> findRankingByYear(@Param("year") Integer year);
+
+    @Query("""
+        SELECT gs FROM GlobalScore gs
+        JOIN FETCH gs.organisme o
+        WHERE o.id IN :organismeIds AND gs.year < :year
+        ORDER BY gs.year DESC
+        """)
+    List<GlobalScore> findHistoryBeforeYear(
+        @Param("organismeIds") List<UUID> organismeIds,
+        @Param("year") Integer year
+    );
     
     @Query("SELECT AVG(gs.score) FROM GlobalScore gs WHERE gs.year = :year")
     Double findAverageScoreByYear(@Param("year") Integer year);

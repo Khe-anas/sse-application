@@ -8,20 +8,24 @@ import com.sse.enums.TypeOrganisme;
 import com.sse.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DashboardService {
     
     private final OrganismeRepository organismeRepository;
     private final UserRepository userRepository;
     private final EvaluationRepository evaluationRepository;
     private final GlobalScoreRepository globalScoreRepository;
-    private final PrincipeRepository principeRepository;
     
     public DashboardKPIs getGlobalKPIs() {
         int currentYear = java.time.Year.now().getValue();
@@ -33,7 +37,10 @@ public class DashboardService {
             evaluationRepository.countByStatus(StatusEvaluation.VALIDEE),
             evaluationRepository.countByStatus(StatusEvaluation.SOUMISE),
             evaluationRepository.findAverageScoreByYear(currentYear),
-            (long) evaluationRepository.findPendingValidations().size(),
+            evaluationRepository.countByStatusIn(List.of(
+                StatusEvaluation.SOUMISE,
+                StatusEvaluation.EN_VALIDATION
+            )),
             getOrganismesByType(),
             getEvaluationsByStatus()
         );
@@ -64,6 +71,20 @@ public class DashboardService {
             scores = globalScoreRepository.findRankingByYear(rankingYear);
         }
         
+        Map<UUID, GlobalScore> previousScores = scores.isEmpty()
+            ? Map.of()
+            : globalScoreRepository.findHistoryBeforeYear(
+                    scores.stream()
+                        .map(score -> score.getOrganisme().getId())
+                        .toList(),
+                    rankingYear
+                ).stream()
+                .collect(Collectors.toMap(
+                    history -> history.getOrganisme().getId(),
+                    Function.identity(),
+                    (mostRecent, ignored) -> mostRecent
+                ));
+
         List<RankingItem> ranking = new ArrayList<>();
         for (int i = 0; i < scores.size(); i++) {
             GlobalScore gs = scores.get(i);
@@ -76,22 +97,15 @@ public class DashboardService {
             item.setMaturityLevel(gs.getMaturityLevel());
             item.setYear(gs.getYear());
             
-            // Determine trend
-            List<GlobalScore> history = globalScoreRepository.findByOrganismeIdOrderByYearDesc(gs.getOrganisme().getId());
-            if (history.size() > 1) {
-                GlobalScore previous = history.stream()
-                    .filter(h -> h.getYear() < rankingYear)
-                    .findFirst()
-                    .orElse(null);
-                if (previous != null) {
-                    if (gs.getScore() > previous.getScore()) item.setTrend("UP");
-                    else if (gs.getScore() < previous.getScore()) item.setTrend("DOWN");
-                    else item.setTrend("STABLE");
-                } else {
-                    item.setTrend("NEW");
-                }
-            } else {
+            GlobalScore previous = previousScores.get(gs.getOrganisme().getId());
+            if (previous == null) {
                 item.setTrend("NEW");
+            } else if (gs.getScore() > previous.getScore()) {
+                item.setTrend("UP");
+            } else if (gs.getScore() < previous.getScore()) {
+                item.setTrend("DOWN");
+            } else {
+                item.setTrend("STABLE");
             }
             
             ranking.add(item);
@@ -106,11 +120,11 @@ public class DashboardService {
         }
         
         // Get organisme's evaluation for the year
-        var evalOpt = evaluationRepository.findAllWithFilters(null, organismeId, year, 
-            org.springframework.data.domain.Pageable.unpaged())
-            .getContent().stream()
-            .filter(e -> e.getStatus() == StatusEvaluation.VALIDEE)
-            .findFirst();
+        var evalOpt = evaluationRepository.findFirstByOrganismeIdAndYearAndStatusOrderByValidatedAtDesc(
+            organismeId,
+            year,
+            StatusEvaluation.VALIDEE
+        );
         
         if (evalOpt.isEmpty()) {
             return new ArrayList<>();

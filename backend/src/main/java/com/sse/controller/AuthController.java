@@ -7,6 +7,8 @@ import com.sse.service.UserService;
 import com.sse.security.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AuthController {
     
     private final AuthService authService;
@@ -41,7 +42,8 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        authService.logout(currentUserService.getCurrentUserId(request));
         return ResponseEntity.ok().build();
     }
     
@@ -62,7 +64,7 @@ public class AuthController {
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(
             HttpServletRequest request,
-            @RequestBody ChangePasswordRequest requestDto) {
+            @Valid @RequestBody ChangePasswordRequest requestDto) {
         UUID userId = currentUserService.getCurrentUserId(request);
         authService.changePassword(userId, requestDto.getOldPassword(), requestDto.getNewPassword());
         return ResponseEntity.ok().build();
@@ -76,7 +78,11 @@ public class AuthController {
 
     @Data
     public static class ChangePasswordRequest {
+        @NotBlank(message = "Current password is required")
         private String oldPassword;
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 8, message = "New password must be at least 8 characters")
         private String newPassword;
     }
 }

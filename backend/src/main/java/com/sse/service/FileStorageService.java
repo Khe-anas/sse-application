@@ -21,6 +21,8 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
+    private static final long MAX_IMAGE_FILE_SIZE = 5L * 1024 * 1024;
+
     private static final Set<String> PDF_CONTENT_TYPES = Set.of(
         "application/pdf",
         "application/x-pdf",
@@ -65,6 +67,10 @@ public class FileStorageService {
     public String storePdf(MultipartFile file) {
         validatePdf(file);
         return store(file, ".pdf");
+    }
+
+    public String storeImage(MultipartFile file) {
+        return store(file, validateImage(file));
     }
 
     private String store(MultipartFile file, String extensionOverride) {
@@ -130,6 +136,63 @@ public class FileStorageService {
         } catch (IOException ex) {
             throw new RuntimeException("Impossible de lire le fichier PDF", ex);
         }
+    }
+
+    private String validateImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Ajoutez le logo de l'entreprise");
+        }
+        if (file.getSize() > MAX_IMAGE_FILE_SIZE) {
+            throw new RuntimeException("Le logo dépasse la taille maximale autorisée de 5MB");
+        }
+
+        try {
+            byte[] content = file.getBytes();
+            if (isPng(content)) {
+                return ".png";
+            }
+            if (isJpeg(content)) {
+                return ".jpg";
+            }
+            if (isWebp(content)) {
+                return ".webp";
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("Impossible de lire le logo", ex);
+        }
+
+        throw new RuntimeException("Le logo doit être une image PNG, JPG ou WebP valide");
+    }
+
+    private boolean isPng(byte[] content) {
+        return content.length >= 8
+            && (content[0] & 0xff) == 0x89
+            && content[1] == 0x50
+            && content[2] == 0x4e
+            && content[3] == 0x47
+            && content[4] == 0x0d
+            && content[5] == 0x0a
+            && content[6] == 0x1a
+            && content[7] == 0x0a;
+    }
+
+    private boolean isJpeg(byte[] content) {
+        return content.length >= 3
+            && (content[0] & 0xff) == 0xff
+            && (content[1] & 0xff) == 0xd8
+            && (content[2] & 0xff) == 0xff;
+    }
+
+    private boolean isWebp(byte[] content) {
+        return content.length >= 12
+            && content[0] == 'R'
+            && content[1] == 'I'
+            && content[2] == 'F'
+            && content[3] == 'F'
+            && content[8] == 'W'
+            && content[9] == 'E'
+            && content[10] == 'B'
+            && content[11] == 'P';
     }
 
     private boolean containsPdfName(String pdfText, String token) {

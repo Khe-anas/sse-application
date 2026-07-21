@@ -2,17 +2,14 @@ package com.sse.service;
 
 import com.sse.dto.ReponseBatchRequest;
 import com.sse.dto.ReponseResponse;
-import com.sse.entity.Critere;
 import com.sse.entity.Evaluation;
 import com.sse.entity.Reponse;
 import com.sse.entity.User;
 import com.sse.enums.StatusEvaluation;
 import com.sse.enums.StatusReponse;
 import com.sse.exception.ResourceLockedException;
-import com.sse.repository.CritereRepository;
 import com.sse.repository.EvaluationRepository;
 import com.sse.repository.ReponseRepository;
-import com.sse.repository.UserRepository;
 import com.sse.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,10 +28,7 @@ public class ReponseService {
     
     private final ReponseRepository reponseRepository;
     private final EvaluationRepository evaluationRepository;
-    private final CritereRepository critereRepository;
     private final FileStorageService fileStorageService;
-    private final UserRepository userRepository;
-    private final NotificationService notificationService;
     private final CurrentUserService currentUserService;
     
     public List<ReponseResponse> getReponsesByEvaluationAndPrincipe(UUID evaluationId, UUID principeId) {
@@ -71,7 +65,7 @@ public class ReponseService {
             if (item.getPreuveLinks() != null) {
                 reponse.setPreuveLinks(item.getPreuveLinks());
             }
-            if (reponse.getStatus() == StatusReponse.A_CORRIGER && Boolean.TRUE.equals(item.getCorrectionAddressed())) {
+            if (isCorrectionStatus(reponse.getStatus()) && Boolean.TRUE.equals(item.getCorrectionAddressed())) {
                 reponse.setCorrectionAddressed(true);
             }
             reponseRepository.save(reponse);
@@ -130,30 +124,14 @@ public class ReponseService {
         Evaluation evaluation = reponse.getEvaluation();
         ensureValidationOwner(evaluation);
         String correctionReason = reason != null && !reason.isBlank() ? reason : "Correction demandée";
-        
-        evaluation.setStatus(StatusEvaluation.EN_COURS);
-        clearValidationLock(evaluation);
-        evaluationRepository.save(evaluation);
 
         reponse.setStatus(StatusReponse.A_CORRIGER);
         reponse.setValidatorComment(correctionReason);
         reponse.setRejectionReason(null);
         reponse.setValidatedAt(null);
         reponse.setCorrectionAddressed(false);
-        Reponse saved = reponseRepository.save(reponse);
 
-        List<User> responsables = userRepository.findActiveUsersByOrganisme(evaluation.getOrganisme().getId());
-        for (User responsable : responsables) {
-            notificationService.sendCorrectionRequested(
-                responsable.getId(),
-                evaluation.getOrganisme().getName(),
-                correctionReason,
-                evaluation.getId(),
-                reponse.getCritere().getLabelFr()
-            );
-        }
-        
-        return mapToResponse(saved);
+        return mapToResponse(reponseRepository.save(reponse));
     }
     
     @Transactional
@@ -209,16 +187,20 @@ public class ReponseService {
     }
 
     private void markCorrectionAddressed(Reponse reponse) {
-        if (reponse.getStatus() == StatusReponse.A_CORRIGER) {
+        if (isCorrectionStatus(reponse.getStatus())) {
             reponse.setCorrectionAddressed(true);
         }
     }
 
     private void assertReponseCanBeEdited(Reponse reponse) {
         if (reponse.getEvaluation().getStatus() != StatusEvaluation.EN_COURS
-            || (reponse.getStatus() != StatusReponse.BROUILLON && reponse.getStatus() != StatusReponse.A_CORRIGER)) {
-            throw new RuntimeException("Only draft responses or responses requested for correction can be updated");
+            || (reponse.getStatus() != StatusReponse.BROUILLON && !isCorrectionStatus(reponse.getStatus()))) {
+            throw new RuntimeException("Only draft, rejected, or correction-requested responses can be updated");
         }
+    }
+
+    private boolean isCorrectionStatus(StatusReponse status) {
+        return status == StatusReponse.A_CORRIGER || status == StatusReponse.REJETEE;
     }
 
     private void ensureValidationOwner(Evaluation evaluation) {
@@ -228,18 +210,18 @@ public class ReponseService {
             throw new RuntimeException("Evaluation must be SOUMISE or EN_VALIDATION to review responses");
         }
 
-        User admin = currentUserService.getCurrentUser();
+        User validator = currentUserService.getCurrentUser();
         User openedBy = evaluation.getValidationOpenedBy();
 
         if (openedBy == null) {
-            evaluation.setValidationOpenedBy(admin);
+            evaluation.setValidationOpenedBy(validator);
             evaluation.setValidationOpenedAt(LocalDateTime.now());
             evaluation.setStatus(StatusEvaluation.EN_VALIDATION);
             evaluationRepository.save(evaluation);
             return;
         }
 
-        if (!openedBy.getId().equals(admin.getId())) {
+        if (!openedBy.getId().equals(validator.getId())) {
             throw new ResourceLockedException("Cette validation est deja ouverte par " + openedBy.getFullName());
         }
 

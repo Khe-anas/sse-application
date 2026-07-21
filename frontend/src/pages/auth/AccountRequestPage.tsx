@@ -1,17 +1,43 @@
 import { type FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Building2, CheckCircle2, FileCheck2, Send, Upload, UserRound, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  Image,
+  Send,
+  Upload,
+  UserRound,
+  X,
+} from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { accountRequestService, type AccountRequestSubmitForm } from '@/services/accountRequestService';
 import { TypeOrganisme } from '@/types';
+import BrandLogo from '@/components/branding/BrandLogo';
 
-const MAX_VERIFICATION_FILES = 5;
-const MAX_PDF_FILE_SIZE_MB = 25;
-const MAX_TOTAL_PDF_SIZE_MB = 125;
-const MAX_PDF_FILE_SIZE = MAX_PDF_FILE_SIZE_MB * 1024 * 1024;
-const MAX_TOTAL_PDF_SIZE = MAX_TOTAL_PDF_SIZE_MB * 1024 * 1024;
+const MAX_LOGO_SIZE_MB = 5;
+const MAX_LOGO_SIZE = MAX_LOGO_SIZE_MB * 1024 * 1024;
+const ALLOWED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const SECTOR_VALUES = [
+  'AGRICULTURE',
+  'INDUSTRY',
+  'ENERGY',
+  'CONSTRUCTION',
+  'COMMERCE',
+  'TRANSPORT',
+  'TECHNOLOGY',
+  'FINANCE',
+  'HEALTH',
+  'EDUCATION',
+  'TOURISM',
+  'PUBLIC_ADMINISTRATION',
+  'SERVICES',
+  'CIVIL_SOCIETY',
+  'OTHER',
+] as const;
 
 const emptyForm: AccountRequestSubmitForm = {
   companyName: '',
@@ -20,19 +46,23 @@ const emptyForm: AccountRequestSubmitForm = {
   responsibleLastName: '',
   companyEmail: '',
   phone: '',
+  fax: '',
   address: '',
   sector: '',
-  message: '',
-  verificationFiles: [],
+  otherSector: '',
+  companyRole: '',
+  position: '',
 };
+
+const PHONE_REGEX = /^\+216\d{8}$/;
+
+const extractPhoneDigits = (value: string) => value.replace(/^\+216/, '').replace(/[\s-]/g, '').replace(/\D/g, '').slice(0, 8);
 
 export default function AccountRequestPage() {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<AccountRequestSubmitForm>(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const selectedFiles = formData.verificationFiles || [];
-  const selectedFilesSize = selectedFiles.reduce((total, file) => total + file.size, 0);
 
   const typeOptions = [
     { value: TypeOrganisme.PRIVE, label: t('requestAccount.typePrive') },
@@ -43,25 +73,23 @@ export default function AccountRequestPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!formData.companyName || !formData.type || !formData.responsibleFirstName || !formData.responsibleLastName || !formData.companyEmail) {
+    if (
+      !formData.companyName.trim()
+      || !formData.responsibleFirstName.trim()
+      || !formData.responsibleLastName.trim()
+      || !formData.companyEmail.trim()
+      || !formData.companyRole.trim()
+      || !formData.position.trim()
+    ) {
       toast.error(t('requestAccount.toastRequired'));
       return;
     }
-    if (!selectedFiles.length) {
-      toast.error(t('requestAccount.toastNeedPdf'));
+    if (!formData.logo) {
+      toast.error(t('requestAccount.toastNeedLogo'));
       return;
     }
-    if (selectedFiles.length > MAX_VERIFICATION_FILES) {
-      toast.error(t('requestAccount.toastMaxFiles', { max: MAX_VERIFICATION_FILES }));
-      return;
-    }
-    const oversizedFile = selectedFiles.find((file) => file.size > MAX_PDF_FILE_SIZE);
-    if (oversizedFile) {
-      toast.error(t('requestAccount.toastFileTooBig', { name: oversizedFile.name, max: MAX_PDF_FILE_SIZE_MB }));
-      return;
-    }
-    if (selectedFilesSize > MAX_TOTAL_PDF_SIZE) {
-      toast.error(t('requestAccount.toastTotalTooBig', { max: MAX_TOTAL_PDF_SIZE_MB }));
+    if (formData.sector === 'OTHER' && !formData.otherSector?.trim()) {
+      toast.error(t('requestAccount.toastNeedOtherSector'));
       return;
     }
 
@@ -73,10 +101,13 @@ export default function AccountRequestPage() {
         responsibleFirstName: formData.responsibleFirstName.trim(),
         responsibleLastName: formData.responsibleLastName.trim(),
         companyEmail: formData.companyEmail.trim(),
-        phone: formData.phone?.trim(),
+        phone: formData.phone?.trim() ? `+216${extractPhoneDigits(formData.phone)}` : undefined,
+        fax: formData.fax?.trim(),
         address: formData.address?.trim(),
         sector: formData.sector?.trim(),
-        message: formData.message?.trim(),
+        otherSector: formData.sector === 'OTHER' ? formData.otherSector?.trim() : undefined,
+        companyRole: formData.companyRole.trim(),
+        position: formData.position.trim(),
       });
       setSubmitted(true);
       setFormData(emptyForm);
@@ -91,71 +122,25 @@ export default function AccountRequestPage() {
     }
   };
 
-  const handleFilesSelected = (files: FileList | null) => {
-    const newFiles = Array.from(files || []);
-    if (newFiles.length === 0) return;
+  const handleLogoSelected = (files: FileList | null) => {
+    const logo = files?.[0];
+    if (!logo) return;
 
-    const invalidFiles = newFiles.filter((file) => file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf'));
-    if (invalidFiles.length > 0) {
-      toast.error(t('requestAccount.toastOnlyPdf'));
+    if (!ALLOWED_LOGO_TYPES.has(logo.type)) {
+      toast.error(t('requestAccount.toastOnlyImages'));
+      return;
+    }
+    if (logo.size > MAX_LOGO_SIZE) {
+      toast.error(t('requestAccount.toastLogoTooBig', { max: MAX_LOGO_SIZE_MB }));
+      return;
     }
 
-    const pdfFiles = newFiles.filter((file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
-    if (pdfFiles.length === 0) return;
-
-    const oversizedFiles = pdfFiles.filter((file) => file.size > MAX_PDF_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-      toast.error(t('requestAccount.toastFileOversized', { name: oversizedFiles[0].name, max: MAX_PDF_FILE_SIZE_MB }));
-    }
-
-    const acceptableFiles = pdfFiles.filter((file) => file.size <= MAX_PDF_FILE_SIZE);
-    if (acceptableFiles.length === 0) return;
-
-    setFormData((current) => {
-      const currentFiles = current.verificationFiles || [];
-      const remainingSlots = MAX_VERIFICATION_FILES - currentFiles.length;
-      const currentSize = currentFiles.reduce((total, file) => total + file.size, 0);
-
-      if (remainingSlots <= 0) {
-        toast.error(t('requestAccount.toastMaxSlots', { max: MAX_VERIFICATION_FILES }));
-        return current;
-      }
-
-      const filesToAdd: File[] = [];
-      for (const file of acceptableFiles) {
-        const nextTotalSize = currentSize + filesToAdd.reduce((total, addedFile) => total + addedFile.size, 0) + file.size;
-        if (nextTotalSize > MAX_TOTAL_PDF_SIZE) {
-          toast.error(t('requestAccount.toastMaxTotalSize', { max: MAX_TOTAL_PDF_SIZE_MB }));
-          break;
-        }
-        filesToAdd.push(file);
-        if (filesToAdd.length === remainingSlots) break;
-      }
-
-      if (acceptableFiles.length > remainingSlots) {
-        toast.warning(t('requestAccount.toastOnlyAdded', { added: remainingSlots, max: MAX_VERIFICATION_FILES }));
-      }
-      if (filesToAdd.length === 0) return current;
-
-      return {
-        ...current,
-        verificationFiles: [...currentFiles, ...filesToAdd],
-      };
-    });
-  };
-
-  const removeSelectedFile = (indexToRemove: number) => {
-    setFormData((current) => ({
-      ...current,
-      verificationFiles: (current.verificationFiles || []).filter((_, index) => index !== indexToRemove),
-    }));
+    setFormData((current) => ({ ...current, logo }));
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes < 1024 * 1024) {
-      return `${Math.max(1, Math.round(bytes / 1024))}KB`;
-    }
-    return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
   return (
@@ -163,13 +148,9 @@ export default function AccountRequestPage() {
       <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <aside className="hidden rounded-2xl border border-white/10 bg-white/10 p-8 text-white shadow-xl backdrop-blur lg:block">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-secondary-400">
-              <FileCheck2 className="h-8 w-8" />
-            </div>
+            <BrandLogo className="mb-8 h-20 w-20 rounded-md border border-white/20 shadow-lg" />
             <h1 className="text-3xl font-bold leading-tight">{t('requestAccount.asideTitle')}</h1>
-            <p className="mt-4 text-sm leading-6 text-primary-100">
-              {t('requestAccount.asideDesc')}
-            </p>
+            <p className="mt-4 text-sm leading-6 text-primary-100">{t('requestAccount.asideDesc')}</p>
             <div className="mt-8 space-y-4 text-sm text-primary-100">
               <div className="flex gap-3">
                 <Building2 className="mt-0.5 h-5 w-5 text-secondary-300" />
@@ -180,8 +161,12 @@ export default function AccountRequestPage() {
                 <span>{t('requestAccount.asideResponsible')}</span>
               </div>
               <div className="flex gap-3">
-                <Upload className="mt-0.5 h-5 w-5 text-secondary-300" />
-                <span>{t('requestAccount.asideFiles')}</span>
+                <Briefcase className="mt-0.5 h-5 w-5 text-secondary-300" />
+                <span>{t('requestAccount.asideRole')}</span>
+              </div>
+              <div className="flex gap-3">
+                <Image className="mt-0.5 h-5 w-5 text-secondary-300" />
+                <span>{t('requestAccount.asideLogo')}</span>
               </div>
             </div>
           </aside>
@@ -198,9 +183,7 @@ export default function AccountRequestPage() {
                   <CheckCircle2 className="h-9 w-9" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">{t('requestAccount.submittedTitle')}</h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-gray-600">
-                  {t('requestAccount.submittedDesc')}
-                </p>
+                <p className="mt-3 max-w-md text-sm leading-6 text-gray-600">{t('requestAccount.submittedDesc')}</p>
                 <button onClick={() => setSubmitted(false)} className="btn-primary mt-6">
                   {t('requestAccount.submitAnother')}
                 </button>
@@ -217,161 +200,111 @@ export default function AccountRequestPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="md:col-span-2">
                       <label className="label">{t('requestAccount.companyName')} *</label>
-                      <input
-                        required
-                        className="input"
-                        value={formData.companyName}
-                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                        placeholder={t('requestAccount.companyNamePlaceholder')}
-                      />
+                      <input required className="input" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} placeholder={t('requestAccount.companyNamePlaceholder')} />
                     </div>
                     <div className="md:col-span-2">
                       <label className="label">{t('requestAccount.companyType')} *</label>
-                      <select
-                        required
-                        className="select"
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value as TypeOrganisme })}
-                      >
-                        {typeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
+                      <select required className="select" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as TypeOrganisme })}>
+                        {typeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="label">{t('requestAccount.responsibleFirst')} *</label>
-                      <input
-                        required
-                        className="input"
-                        value={formData.responsibleFirstName}
-                        onChange={(e) => setFormData({ ...formData, responsibleFirstName: e.target.value })}
-                      />
+                      <input required className="input" value={formData.responsibleFirstName} onChange={(e) => setFormData({ ...formData, responsibleFirstName: e.target.value })} />
                     </div>
                     <div>
                       <label className="label">{t('requestAccount.responsibleLast')} *</label>
-                      <input
-                        required
-                        className="input"
-                        value={formData.responsibleLastName}
-                        onChange={(e) => setFormData({ ...formData, responsibleLastName: e.target.value })}
-                      />
+                      <input required className="input" value={formData.responsibleLastName} onChange={(e) => setFormData({ ...formData, responsibleLastName: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="label">{t('requestAccount.companyRole')} *</label>
+                      <input required className="input" value={formData.companyRole} onChange={(e) => setFormData({ ...formData, companyRole: e.target.value })} placeholder={t('requestAccount.companyRolePlaceholder')} />
+                    </div>
+                    <div>
+                      <label className="label">{t('requestAccount.position')} *</label>
+                      <input required className="input" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder={t('requestAccount.positionPlaceholder')} />
                     </div>
                     <div>
                       <label className="label">{t('requestAccount.companyEmail')} *</label>
-                      <input
-                        required
-                        type="email"
-                        className="input"
-                        value={formData.companyEmail}
-                        onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                        placeholder={t('requestAccount.companyEmailPlaceholder')}
-                      />
+                      <input required type="email" className="input" value={formData.companyEmail} onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })} placeholder={t('requestAccount.companyEmailPlaceholder')} />
                     </div>
                     <div>
                       <label className="label">{t('requestAccount.phone')}</label>
-                      <input
-                        type="tel"
-                        className="input"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center rounded-s-lg border border-e-0 border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-600">
+                          +216
+                        </span>
+                        <input
+                          type="tel"
+                          className="input rounded-l-none"
+                          value={formData.phone ? formData.phone.replace(/^\+216/, '') : ''}
+                          onChange={(e) => setFormData({ ...formData, phone: extractPhoneDigits(e.target.value) })}
+                          placeholder="22 345 678"
+                          inputMode="numeric"
+                        />
+                      </div>
+                      {formData.phone && !PHONE_REGEX.test(`+216${extractPhoneDigits(formData.phone)}`) && (
+                        <p className="mt-1 text-xs text-red-600">{t('requestAccount.phoneHint')}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="label">{t('requestAccount.fax')}</label>
+                      <input type="tel" className="input" value={formData.fax} onChange={(e) => setFormData({ ...formData, fax: e.target.value })} />
                     </div>
                     <div className="md:col-span-2">
                       <label className="label">{t('requestAccount.address')}</label>
-                      <input
-                        className="input"
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      />
+                      <input className="input" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
                     </div>
                     <div className="md:col-span-2">
                       <label className="label">{t('requestAccount.sector')}</label>
-                      <input
-                        className="input"
-                        value={formData.sector}
-                        onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                        placeholder={t('requestAccount.sectorPlaceholder')}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="label">{t('requestAccount.message')}</label>
-                      <textarea
-                        rows={3}
-                        className="input"
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        placeholder={t('requestAccount.messagePlaceholder')}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="label">{t('requestAccount.verificationFiles')}</label>
-                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center hover:bg-gray-100">
-                      <Upload className="mb-2 h-6 w-6 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-700">{t('requestAccount.attachPdf')}</span>
-                      <span className="mt-1 text-xs text-gray-500">
-                        {t('requestAccount.pdfHint', { max: MAX_PDF_FILE_SIZE_MB })}
-                      </span>
-                      <input
-                        type="file"
-                        multiple
-                        accept="application/pdf,.pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          handleFilesSelected(e.target.files);
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
-                    <p className="mt-2 text-xs text-gray-500">
-                      {t('requestAccount.filesCount', {
-                        selected: selectedFiles.length,
-                        max: MAX_VERIFICATION_FILES,
-                        size: formatFileSize(selectedFilesSize),
-                        total: MAX_TOTAL_PDF_SIZE_MB,
-                      })}
-                    </p>
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        {selectedFiles.map((file, index) => (
-                          <div
-                            key={`${file.name}-${file.size}-${index}`}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700"
-                          >
-                            <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                            <span className="flex-shrink-0 text-gray-400">{formatFileSize(file.size)}</span>
-                            <button
-                              type="button"
-                              onClick={() => removeSelectedFile(index)}
-                              className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
-                              title={t('requestAccount.removeFileTitle')}
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
+                      <select className="select" value={formData.sector} onChange={(e) => setFormData({ ...formData, sector: e.target.value, otherSector: e.target.value === 'OTHER' ? formData.otherSector : '' })}>
+                        <option value="">{t('requestAccount.sectorPlaceholder')}</option>
+                        {SECTOR_VALUES.map((sector) => (
+                          <option key={sector} value={sector}>{t(`requestAccount.sectorOptions.${sector}`)}</option>
                         ))}
+                      </select>
+                    </div>
+                    {formData.sector === 'OTHER' && (
+                      <div className="md:col-span-2">
+                        <label className="label">{t('requestAccount.otherSector')} *</label>
+                        <input
+                          className="input"
+                          value={formData.otherSector || ''}
+                          onChange={(e) => setFormData({ ...formData, otherSector: e.target.value })}
+                          placeholder={t('requestAccount.otherSectorPlaceholder')}
+                        />
                       </div>
                     )}
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="btn-primary w-full gap-2 py-3 text-base disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                  <div>
+                    <label className="label">{t('requestAccount.companyLogo')} *</label>
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center hover:bg-gray-100">
+                      <Upload className="mb-2 h-6 w-6 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700">{t('requestAccount.attachLogo')}</span>
+                      <span className="mt-1 text-xs text-gray-500">{t('requestAccount.logoHint', { max: MAX_LOGO_SIZE_MB })}</span>
+                      <input type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { handleLogoSelected(e.target.files); e.target.value = ''; }} />
+                    </label>
+                    {formData.logo && (
+                      <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                        <Image className="h-5 w-5 flex-shrink-0 text-primary-600" />
+                        <span className="min-w-0 flex-1 truncate">{formData.logo.name}</span>
+                        <span className="flex-shrink-0 text-xs text-gray-400">{formatFileSize(formData.logo.size)}</span>
+                        <button type="button" onClick={() => setFormData((current) => ({ ...current, logo: undefined }))} className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center text-red-600 hover:bg-red-50" title={t('requestAccount.removeLogoTitle')}>
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <button type="submit" disabled={isSubmitting} className="btn-primary w-full gap-2 py-3 text-base disabled:cursor-not-allowed disabled:opacity-50">
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                         {t('requestAccount.submitting')}
                       </span>
                     ) : (
-                      <>
-                        <Send className="h-5 w-5" />
-                        {t('requestAccount.submit')}
-                      </>
+                      <><Send className="h-5 w-5" />{t('requestAccount.submit')}</>
                     )}
                   </button>
                 </form>

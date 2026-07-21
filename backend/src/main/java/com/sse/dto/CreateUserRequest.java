@@ -28,6 +28,7 @@ public class CreateUserRequest {
     private String password;
     
     private String phone;
+    private String position;
     private UUID organismeId;
     private String entrepriseName;
 

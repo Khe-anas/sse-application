@@ -23,6 +23,7 @@ export default function EvaluationsPage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ organismeId: '', year: new Date().getFullYear() });
   const isAdmin = user?.role === Role.ADMIN;
+  const isEvaluateur = user?.role === Role.EVALUATEUR;
   const isGovernment = user?.role === Role.GOUVERNEMENT;
 
   const loadData = useCallback(async (showError = true) => {
@@ -88,7 +89,7 @@ export default function EvaluationsPage() {
     setClaimingEvaluationId(evaluation.id);
     try {
       await evaluationService.claimValidation(evaluation.id);
-      navigate(`/admin/evaluations/${evaluation.id}/validate`);
+      navigate(`/${isAdmin ? 'admin' : 'evaluateur'}/evaluations/${evaluation.id}/validate`);
     } catch (error) {
       toast.error(getErrorMessage(error, t('evaluations.claimError')));
       loadData();
@@ -106,9 +107,9 @@ export default function EvaluationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.evaluations')}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.evaluations')}</h1>
         {isAdmin && (
           <button onClick={() => setShowModal(true)} className="btn-primary gap-2">
             <Plus className="w-4 h-4" /> {t('evaluations.new')}
@@ -138,8 +139,8 @@ export default function EvaluationsPage() {
                 <td className="table-td">{ev.globalScore != null ? `${ev.globalScore.toFixed(1)}%` : '-'}</td>
                 <td className="table-td">
                   {(() => {
-                    const canExamine = isAdmin && (ev.status === StatusEvaluation.SOUMISE || ev.status === StatusEvaluation.EN_VALIDATION);
-                    const canReadOnly = ev.status === StatusEvaluation.VALIDEE && (isAdmin || isGovernment);
+                    const canExamine = (isAdmin || isEvaluateur) && (ev.status === StatusEvaluation.SOUMISE || ev.status === StatusEvaluation.EN_VALIDATION);
+                    const canReadOnly = ev.status === StatusEvaluation.VALIDEE && (isAdmin || isGovernment || isEvaluateur);
 
                     if (!canExamine && !canReadOnly) {
                       return <span className="text-gray-400">-</span>;

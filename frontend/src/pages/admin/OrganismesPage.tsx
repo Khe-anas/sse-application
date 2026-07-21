@@ -6,6 +6,7 @@ import { organismeService } from '@/services/organismeService';
 import { TypeOrganisme } from '@/types';
 import type { Organisme, PageResponse } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
+import useConfirmDialog from '@/components/ui/useConfirmDialog';
 
 export default function OrganismesPage() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export default function OrganismesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organisme | null>(null);
   const [formData, setFormData] = useState<Partial<Organisme>>({ type: TypeOrganisme.PUBLIC });
+  const { confirm: confirmAction, confirmationDialog } = useConfirmDialog();
 
   const loadOrganismes = useCallback(async () => {
     try {
@@ -22,7 +24,7 @@ export default function OrganismesPage() {
       setOrganismes(data);
     } catch (error) { toast.error(t('organismesPage.loadError')); }
     finally { setIsLoading(false); }
-  }, [search]);
+  }, [search, t]);
 
   useEffect(() => { loadOrganismes(); }, [loadOrganismes]);
 
@@ -43,15 +45,22 @@ export default function OrganismesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('organismesPage.deleteConfirm'))) return;
+    const confirmed = await confirmAction({
+      title: t('common.confirm'),
+      description: t('organismesPage.deleteConfirm'),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     try { await organismeService.delete(id); toast.success(t('organismesPage.deleted')); loadOrganismes(); }
     catch (error) { toast.error(t('organismesPage.error')); }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.organismes')}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.organismes')}</h1>
         <button onClick={() => { setEditingOrg(null); setFormData({ type: TypeOrganisme.PUBLIC }); setShowModal(true); }} className="btn-primary gap-2">
           <Plus className="w-4 h-4" /> {t('organismesPage.new')}
         </button>
@@ -59,10 +68,10 @@ export default function OrganismesPage() {
 
       <KPICard title={t('organismesPage.total')} value={organismes?.totalElements || 0} icon={Building2} color="primary" />
 
-      <div className="card p-4">
+      <div className="filter-panel">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('organismesPage.searchPlaceholder')} className="input pl-10" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('organismesPage.searchPlaceholder')} className="input ps-10" />
         </div>
       </div>
 
@@ -84,8 +93,8 @@ export default function OrganismesPage() {
                 </td>
                 <td className="table-td">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setEditingOrg(org); setFormData({ ...org }); setShowModal(true); }} className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={() => handleDelete(org.id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => { setEditingOrg(org); setFormData({ ...org }); setShowModal(true); }} className="icon-button h-9 w-9 border-0 bg-transparent text-blue-600 shadow-none hover:bg-blue-50" aria-label={t('common.edit')}><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => void handleDelete(org.id)} className="icon-button h-9 w-9 border-0 bg-transparent text-red-600 shadow-none hover:bg-red-50" aria-label={t('common.delete')}><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>
               </tr>
@@ -117,6 +126,7 @@ export default function OrganismesPage() {
           </div>
         </div>
       )}
+      {confirmationDialog}
     </div>
   );
 }

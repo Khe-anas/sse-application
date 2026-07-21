@@ -13,6 +13,7 @@ public class UpdateUserRequest {
     private String lastName;
     private Role role;
     private String phone;
+    private String position;
     private String password;
     private UUID organismeId;
     private Boolean isActive;

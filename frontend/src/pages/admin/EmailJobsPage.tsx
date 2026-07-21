@@ -51,10 +51,10 @@ export default function EmailJobsPage() {
   const failedCount = jobs?.content.filter((job) => job.status === EmailJobStatus.FAILED).length || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('emailJobs.title')}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('emailJobs.title')}</h1>
           <p className="mt-1 text-sm text-gray-500">{t('emailJobs.subtitle')}</p>
         </div>
         <button onClick={loadJobs} className="btn-outline gap-2">
@@ -69,7 +69,7 @@ export default function EmailJobsPage() {
         <KPICard title={t('emailJobs.kpiFailed')} value={failedCount} icon={AlertCircle} color="danger" />
       </div>
 
-      <div className="card p-4">
+      <div className="filter-panel">
         <select
           className="select max-w-xs"
           value={status}

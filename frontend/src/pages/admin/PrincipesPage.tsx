@@ -1,76 +1,287 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, BookOpen, Plus, Edit3, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Edit3,
+  Languages,
+  Layers3,
+  ListChecks,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import type { Principe } from '@/types';
-import KPICard from '@/components/dashboard/KPICard';
+import type { BonnePratique, Critere, Principe } from '@/types';
+import { Role } from '@/types';
 import { getLocalizedField } from '@/utils/localization';
 import { referenceDataService } from '@/services/referenceDataService';
+import { useAuthStore } from '@/stores/authStore';
+import useConfirmDialog from '@/components/ui/useConfirmDialog';
 
-interface FormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: Record<string, string>) => Promise<void>;
-  title: string;
-  fields: { key: string; label: string; type?: 'text' | 'textarea'; required?: boolean }[];
-  initialData?: Record<string, string>;
+type EditorType = 'principe' | 'bp' | 'critere';
+type EditorMode = 'create' | 'edit';
+type TranslationStatus = 'idle' | 'waiting' | 'translating' | 'ready' | 'error';
+
+interface EditorState {
+  type: EditorType;
+  mode: EditorMode;
+  parentId?: string;
+  data?: Principe | BonnePratique | Critere;
+  contextLabel?: string;
 }
 
-function FormModal({ isOpen, onClose, onSave, title, fields, initialData }: FormModalProps) {
+interface EditorField {
+  key: string;
+  label: string;
+  type?: 'text' | 'textarea' | 'number';
+  required?: boolean;
+  enKey?: string;
+  arKey?: string;
+  min?: number;
+  step?: number;
+}
+
+interface ReferenceEditorProps {
+  editor: EditorState | null;
+  title: string;
+  fields: EditorField[];
+  initialData: Record<string, string>;
+  onClose: () => void;
+  onSave: (data: Record<string, string>) => Promise<void>;
+}
+
+function ReferenceEditor({ editor, title, fields, initialData, onClose, onSave }: ReferenceEditorProps) {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState<Record<string, string>>(initialData || {});
+  const [formData, setFormData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [translationStatus, setTranslationStatus] = useState<TranslationStatus>('idle');
+  const lastTranslatedSignature = useRef('');
+  const translationSequence = useRef(0);
+
+  const translatableFields = useMemo(
+    () => fields.filter((field) => field.enKey && field.arKey),
+    [fields]
+  );
+
+  const sourcePayload = useMemo(() => Object.fromEntries(
+    translatableFields
+      .map((field) => [field.key, (formData[field.key] || '').trim()])
+      .filter(([, value]) => value)
+  ), [formData, translatableFields]);
+  const sourceSignature = JSON.stringify(sourcePayload);
 
   useEffect(() => {
-    setFormData(initialData || {});
-  }, [initialData, isOpen]);
+    if (!editor) return;
+    setFormData(initialData);
+    setSaving(false);
+    translationSequence.current += 1;
 
-  if (!isOpen) return null;
+    const initialSource = Object.fromEntries(
+      fields
+        .filter((field) => field.enKey && field.arKey)
+        .map((field) => [field.key, (initialData[field.key] || '').trim()])
+        .filter(([, value]) => value)
+    );
+    const translationsComplete = fields
+      .filter((field) => field.enKey && field.arKey && initialData[field.key]?.trim())
+      .every((field) => initialData[field.enKey!]?.trim() && initialData[field.arKey!]?.trim());
+    lastTranslatedSignature.current = translationsComplete ? JSON.stringify(initialSource) : '';
+    setTranslationStatus(translationsComplete ? 'ready' : 'idle');
+  }, [editor, fields, initialData]);
 
-  const handleSave = async () => {
-    setSaving(true);
+  const translateData = useCallback(async (draft: Record<string, string>) => {
+    const payload = Object.fromEntries(
+      translatableFields
+        .map((field) => [field.key, (draft[field.key] || '').trim()])
+        .filter(([, value]) => value)
+    );
+    if (Object.keys(payload).length === 0) return draft;
+
+    const response = await referenceDataService.translateDraft(payload);
+    const translated = { ...draft };
+    translatableFields.forEach((field) => {
+      const value = response.fields[field.key];
+      if (!value) return;
+      translated[field.enKey!] = value.en;
+      translated[field.arKey!] = value.ar;
+    });
+    lastTranslatedSignature.current = JSON.stringify(payload);
+    return translated;
+  }, [translatableFields]);
+
+  useEffect(() => {
+    if (!editor || Object.keys(sourcePayload).length === 0 || sourceSignature === lastTranslatedSignature.current) {
+      return undefined;
+    }
+
+    setTranslationStatus('waiting');
+    const sequence = ++translationSequence.current;
+    const timer = window.setTimeout(async () => {
+      setTranslationStatus('translating');
+      try {
+        const translated = await translateData(formData);
+        if (sequence !== translationSequence.current) return;
+        setFormData(translated);
+        setTranslationStatus('ready');
+      } catch {
+        if (sequence !== translationSequence.current) return;
+        setTranslationStatus('error');
+      }
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [editor, formData, sourcePayload, sourceSignature, translateData]);
+
+  if (!editor) return null;
+
+  const runTranslation = async () => {
+    translationSequence.current += 1;
+    setTranslationStatus('translating');
     try {
-      await onSave(formData);
-      onClose();
-    } catch { /* toast handled by caller */ }
-    finally { setSaving(false); }
+      const translated = await translateData(formData);
+      setFormData(translated);
+      setTranslationStatus('ready');
+      return translated;
+    } catch {
+      setTranslationStatus('error');
+      toast.error(t('principesPage.translationError'));
+      throw new Error('translation-failed');
+    }
   };
 
+  const handleSave = async () => {
+    const missingRequiredField = fields.some((field) => field.required && !formData[field.key]?.trim());
+    if (missingRequiredField) {
+      toast.error(t('principesPage.requiredFields'));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      let payload = formData;
+      if (sourceSignature && sourceSignature !== lastTranslatedSignature.current) {
+        payload = await runTranslation();
+      }
+      await onSave(payload);
+      onClose();
+    } catch {
+      // The translation or save error is already presented to the user.
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const statusContent = {
+    idle: { icon: Sparkles, text: t('principesPage.translationIdle'), tone: 'text-gray-600' },
+    waiting: { icon: Sparkles, text: t('principesPage.translationWaiting'), tone: 'text-primary-700' },
+    translating: { icon: Loader2, text: t('principesPage.translating'), tone: 'text-primary-700' },
+    ready: { icon: CheckCircle2, text: t('principesPage.translationReady'), tone: 'text-green-700' },
+    error: { icon: AlertTriangle, text: t('principesPage.translationError'), tone: 'text-red-700' },
+  }[translationStatus];
+  const StatusIcon = statusContent.icon;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-        </div>
-        <div className="p-5 space-y-4">
-          {fields.map(f => (
-            <div key={f.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}{f.required ? ' *' : ''}</label>
-              {f.type === 'textarea' ? (
-                <textarea
-                  value={formData[f.key] || ''}
-                  onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
-                  className="w-input"
-                  rows={3}
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={formData[f.key] || ''}
-                  onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
-                  className="w-input"
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="p-5 border-t border-gray-100 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="btn-outline">{t('common.cancel')}</button>
-          <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
-            {saving ? t('common.save') + '...' : t('common.save')}
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/45" role="dialog" aria-modal="true" aria-labelledby="reference-editor-title">
+      <button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label={t('common.close')} />
+      <section className="relative flex h-full w-full max-w-3xl flex-col border-l border-gray-200 bg-white shadow-2xl dark:border-[#2b3b35] dark:bg-[#17201d]">
+        <header className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-[#2b3b35]">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase text-primary-700">{t('principesPage.referenceEditor')}</p>
+            <h2 id="reference-editor-title" className="mt-1 text-xl font-semibold text-gray-900 dark:text-slate-100">{title}</h2>
+            {editor.contextLabel && <p className="mt-1 truncate text-sm text-gray-500">{editor.contextLabel}</p>}
+          </div>
+          <button type="button" onClick={onClose} className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100" title={t('common.close')}>
+            <X className="h-4 w-4" />
           </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto">
+          <section className="border-b border-gray-200 px-5 py-5 dark:border-[#2b3b35]">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary-100 text-xs font-bold text-primary-700">FR</span>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t('principesPage.sourceContent')}</h3>
+                <p className="text-xs text-gray-500">{t('principesPage.sourceContentHint')}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {fields.map((field) => (
+                <label key={field.key} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-200">
+                    {field.label}{field.required ? ' *' : ''}
+                  </span>
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      value={formData[field.key] || ''}
+                      onChange={(event) => setFormData((current) => ({ ...current, [field.key]: event.target.value }))}
+                      rows={4}
+                      className="input resize-y"
+                    />
+                  ) : (
+                    <input
+                      type={field.type === 'number' ? 'number' : 'text'}
+                      min={field.min}
+                      step={field.step}
+                      value={formData[field.key] || ''}
+                      onChange={(event) => setFormData((current) => ({ ...current, [field.key]: event.target.value }))}
+                      className="input"
+                    />
+                  )}
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="px-5 py-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className={`flex items-center gap-2 text-sm font-medium ${statusContent.tone}`}>
+                <StatusIcon className={`h-4 w-4 ${translationStatus === 'translating' ? 'animate-spin' : ''}`} />
+                {statusContent.text}
+              </div>
+              <button type="button" onClick={() => void runTranslation()} disabled={translationStatus === 'translating' || Object.keys(sourcePayload).length === 0} className="btn-outline btn-sm gap-2 disabled:opacity-50">
+                <RefreshCw className="h-4 w-4" />
+                {t('principesPage.refreshTranslation')}
+              </button>
+            </div>
+
+            <div className="mt-4 border border-gray-200 dark:border-[#2b3b35]">
+              <div className="grid grid-cols-2 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-600 dark:border-[#2b3b35] dark:bg-[#0f1613] dark:text-slate-300">
+                <div className="flex items-center gap-2 border-r border-gray-200 px-3 py-2 dark:border-[#2b3b35]"><Languages className="h-4 w-4" /> English</div>
+                <div className="flex items-center justify-end gap-2 px-3 py-2"><Languages className="h-4 w-4" /> العربية</div>
+              </div>
+              {translatableFields.map((field) => (
+                <div key={field.key} className="grid grid-cols-1 border-b border-gray-100 last:border-b-0 sm:grid-cols-2 dark:border-[#2b3b35]">
+                  <div className="border-b border-gray-100 p-3 sm:border-b-0 sm:border-r dark:border-[#2b3b35]">
+                    <p className="mb-1 text-[11px] font-semibold uppercase text-gray-400">{field.label}</p>
+                    <p className="min-h-6 whitespace-pre-wrap text-sm leading-6 text-gray-700 dark:text-slate-200">{formData[field.enKey!] || '-'}</p>
+                  </div>
+                  <div className="p-3 text-right" dir="rtl">
+                    <p className="mb-1 text-[11px] font-semibold text-gray-400">{field.label}</p>
+                    <p className="min-h-6 whitespace-pre-wrap text-sm leading-6 text-gray-700 dark:text-slate-200">{formData[field.arKey!] || '-'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
-      </div>
+
+        <footer className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-4 dark:border-[#2b3b35]">
+          <button type="button" onClick={onClose} className="btn-outline">{t('common.cancel')}</button>
+          <button type="button" onClick={() => void handleSave()} disabled={saving || translationStatus === 'translating'} className="btn-primary gap-2 disabled:opacity-50">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {t('common.save')}
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -78,259 +289,285 @@ function FormModal({ isOpen, onClose, onSave, title, fields, initialData }: Form
 export default function PrincipesPage() {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language;
+  const { user } = useAuthStore();
+  const canManage = user?.role === Role.ADMIN;
   const [principes, setPrincipes] = useState<Principe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedPrincipe, setExpandedPrincipe] = useState<string | null>(null);
   const [expandedBP, setExpandedBP] = useState<string | null>(null);
-
-  // Modal state
-  const [modal, setModal] = useState<{
-    type: 'principe' | 'bp' | 'critere';
-    mode: 'create' | 'edit';
-    parentId?: string;
-    data?: any;
-  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editor, setEditor] = useState<EditorState | null>(null);
+  const { confirm: confirmAction, confirmationDialog } = useConfirmDialog();
 
   const loadPrincipes = useCallback(async () => {
     try {
       const data = await referenceDataService.getAll();
       setPrincipes(data);
-    } catch { toast.error(t('principesPage.loadError')); }
-    finally { setIsLoading(false); }
+    } catch {
+      toast.error(t('principesPage.loadError'));
+    } finally {
+      setIsLoading(false);
+    }
   }, [t]);
 
-  useEffect(() => { loadPrincipes(); }, [loadPrincipes]);
+  useEffect(() => { void loadPrincipes(); }, [loadPrincipes]);
 
-  const handleDelete = async (type: string, id: string, label: string) => {
-    if (!confirm(t('principesPage.deleteConfirm', { label }))) return;
+  const totalBonnesPratiques = principes.reduce((sum, principe) => sum + principe.bonnesPratiques.length, 0);
+  const totalCriteres = principes.reduce(
+    (sum, principe) => sum + principe.bonnesPratiques.reduce((bpSum, bp) => bpSum + bp.criteres.length, 0),
+    0
+  );
+
+  const filteredPrincipes = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    if (!query) return principes;
+    return principes.filter((principe) => [
+      principe.nameFr,
+      principe.nameEn,
+      principe.nameAr,
+      ...principe.bonnesPratiques.flatMap((bp) => [
+        bp.labelFr,
+        bp.labelEn,
+        bp.labelAr,
+        ...bp.criteres.flatMap((critere) => [critere.labelFr, critere.labelEn, critere.labelAr]),
+      ]),
+    ].some((value) => value?.toLocaleLowerCase().includes(query)));
+  }, [principes, searchQuery]);
+
+  const handleDelete = async (type: EditorType, id: string, label: string) => {
+    const confirmed = await confirmAction({
+      title: t('common.confirm'),
+      description: t('principesPage.deleteConfirm', { label }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     try {
       if (type === 'principe') await referenceDataService.deletePrincipe(id);
-      else if (type === 'bp') await referenceDataService.deleteBonnePratique(id);
-      else if (type === 'critere') await referenceDataService.deleteCritere(id);
+      if (type === 'bp') await referenceDataService.deleteBonnePratique(id);
+      if (type === 'critere') await referenceDataService.deleteCritere(id);
       toast.success(t('principesPage.deleted'));
-      loadPrincipes();
-    } catch { toast.error(t('principesPage.deleteError')); }
+      await loadPrincipes();
+    } catch {
+      toast.error(t('principesPage.deleteError'));
+    }
   };
 
-  const getPrincipeFields = (mode: 'create' | 'edit', _data?: any) => [
-    { key: 'nameFr', label: t('principesPage.nameFr'), required: true },
-    { key: 'nameAr', label: t('principesPage.nameAr') },
-    { key: 'nameEn', label: t('principesPage.nameEn') },
-    ...(mode === 'edit' ? [
-      { key: 'descriptionFr', label: t('principesPage.descriptionFr'), type: 'textarea' as const },
-      { key: 'descriptionAr', label: t('principesPage.descriptionAr'), type: 'textarea' as const },
-      { key: 'descriptionEn', label: t('principesPage.descriptionEn'), type: 'textarea' as const },
-      { key: 'weight', label: t('principesPage.weight') },
-    ] : []),
-  ];
+  const editorFields = useMemo<EditorField[]>(() => {
+    if (!editor) return [];
+    if (editor.type === 'principe') {
+      return [
+        { key: 'nameFr', label: t('principesPage.principleName'), required: true, enKey: 'nameEn', arKey: 'nameAr' },
+        { key: 'weight', label: t('principesPage.weight'), type: 'number', required: true, min: 0.1, step: 0.1 },
+        { key: 'descriptionFr', label: t('principesPage.description'), type: 'textarea', enKey: 'descriptionEn', arKey: 'descriptionAr' },
+      ];
+    }
+    if (editor.type === 'bp') {
+      return [{ key: 'labelFr', label: t('principesPage.goodPracticeLabel'), required: true, enKey: 'labelEn', arKey: 'labelAr' }];
+    }
+    return [
+      { key: 'labelFr', label: t('principesPage.criterionLabel'), type: 'textarea', required: true, enKey: 'labelEn', arKey: 'labelAr' },
+      { key: 'preuvesFr', label: t('principesPage.expectedEvidence'), type: 'textarea', enKey: 'preuvesEn', arKey: 'preuvesAr' },
+      { key: 'referencesFr', label: t('principesPage.references'), type: 'textarea', enKey: 'referencesEn', arKey: 'referencesAr' },
+    ];
+  }, [editor, t]);
 
-  const getBPFields = () => [
-    { key: 'labelFr', label: t('principesPage.labelFr'), required: true },
-    { key: 'labelAr', label: t('principesPage.labelAr') },
-    { key: 'labelEn', label: t('principesPage.labelEn') },
-  ];
+  const editorInitialData = useMemo<Record<string, string>>(() => {
+    if (!editor?.data) {
+      const initial: Record<string, string> = {};
+      if (editor?.type === 'principe') initial.weight = '1.0';
+      return initial;
+    }
+    const data = editor.data;
+    if (editor.type === 'principe') {
+      const principe = data as Principe;
+      return {
+        nameFr: principe.nameFr || '', nameEn: principe.nameEn || '', nameAr: principe.nameAr || '',
+        descriptionFr: principe.descriptionFr || '', descriptionEn: principe.descriptionEn || '', descriptionAr: principe.descriptionAr || '',
+        weight: String(principe.weight || 1),
+      };
+    }
+    if (editor.type === 'bp') {
+      const bp = data as BonnePratique;
+      return { labelFr: bp.labelFr || '', labelEn: bp.labelEn || '', labelAr: bp.labelAr || '' };
+    }
+    const critere = data as Critere;
+    return {
+      labelFr: critere.labelFr || '', labelEn: critere.labelEn || '', labelAr: critere.labelAr || '',
+      preuvesFr: critere.preuvesFr || '', preuvesEn: critere.preuvesEn || '', preuvesAr: critere.preuvesAr || '',
+      referencesFr: critere.referencesFr || '', referencesEn: critere.referencesEn || '', referencesAr: critere.referencesAr || '',
+    };
+  }, [editor]);
 
-  const getCritereFields = () => [
-    { key: 'labelFr', label: t('principesPage.labelFr'), required: true },
-    { key: 'labelAr', label: t('principesPage.labelAr') },
-    { key: 'labelEn', label: t('principesPage.labelEn') },
-    { key: 'preuvesFr', label: t('principesPage.preuvesFr'), type: 'textarea' as const },
-    { key: 'preuvesAr', label: t('principesPage.preuvesAr'), type: 'textarea' as const },
-    { key: 'preuvesEn', label: t('principesPage.preuvesEn'), type: 'textarea' as const },
-    { key: 'referencesFr', label: t('principesPage.referencesFr'), type: 'textarea' as const },
-    { key: 'referencesAr', label: t('principesPage.referencesAr'), type: 'textarea' as const },
-    { key: 'referencesEn', label: t('principesPage.referencesEn'), type: 'textarea' as const },
-  ];
+  const editorTitle = !editor ? '' : editor.mode === 'create'
+    ? t(`principesPage.${editor.type === 'principe' ? 'addPrincipe' : editor.type === 'bp' ? 'addBP' : 'addCritere'}`)
+    : t(`principesPage.${editor.type === 'principe' ? 'editPrincipe' : editor.type === 'bp' ? 'editBP' : 'editCritere'}`);
 
   const handleSave = async (data: Record<string, string>) => {
-    if (!modal) return;
+    if (!editor) return;
     try {
-      if (modal.type === 'principe') {
-        if (modal.mode === 'create') await referenceDataService.createPrincipe(data as any);
-        else await referenceDataService.updatePrincipe(modal.data.id, data);
-      } else if (modal.type === 'bp') {
-        if (modal.mode === 'create') await referenceDataService.createBonnePratique({ ...data as any, principeId: modal.parentId! });
-        else await referenceDataService.updateBonnePratique(modal.data.id, data);
-      } else if (modal.type === 'critere') {
-        if (modal.mode === 'create') await referenceDataService.createCritere({ ...data as any, bonnePratiqueId: modal.parentId! });
-        else await referenceDataService.updateCritere(modal.data.id, data);
+      if (editor.type === 'principe') {
+        if (editor.mode === 'create') await referenceDataService.createPrincipe(data);
+        else await referenceDataService.updatePrincipe(editor.data!.id, data);
+      }
+      if (editor.type === 'bp') {
+        if (editor.mode === 'create') await referenceDataService.createBonnePratique({ ...data, principeId: editor.parentId! });
+        else await referenceDataService.updateBonnePratique(editor.data!.id, data);
+      }
+      if (editor.type === 'critere') {
+        if (editor.mode === 'create') await referenceDataService.createCritere({ ...data, bonnePratiqueId: editor.parentId! });
+        else await referenceDataService.updateCritere(editor.data!.id, data);
       }
       toast.success(t('principesPage.saved'));
-      loadPrincipes();
-    } catch { toast.error(t('principesPage.saveError')); }
+      await loadPrincipes();
+    } catch (error) {
+      toast.error(t('principesPage.saveError'));
+      throw error;
+    }
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700" /></div>;
-  }
-
-  const activeModal = modal;
-  let modalFields: { key: string; label: string; type?: 'text' | 'textarea'; required?: boolean }[] = [];
-  let modalTitle = '';
-  let modalInitial: Record<string, string> = {};
-
-  if (activeModal) {
-    if (activeModal.type === 'principe') {
-      modalFields = getPrincipeFields(activeModal.mode, activeModal.data);
-      modalTitle = activeModal.mode === 'create' ? t('principesPage.addPrincipe') : t('principesPage.editPrincipe');
-      if (activeModal.mode === 'edit' && activeModal.data) {
-        modalInitial = {
-          nameFr: activeModal.data.nameFr || '',
-          nameAr: activeModal.data.nameAr || '',
-          nameEn: activeModal.data.nameEn || '',
-          descriptionFr: activeModal.data.descriptionFr || '',
-          descriptionAr: activeModal.data.descriptionAr || '',
-          descriptionEn: activeModal.data.descriptionEn || '',
-          weight: String(activeModal.data.weight || '1.0'),
-        };
-      }
-    } else if (activeModal.type === 'bp') {
-      modalFields = getBPFields();
-      modalTitle = activeModal.mode === 'create' ? t('principesPage.addBP') : t('principesPage.editBP');
-      if (activeModal.mode === 'edit' && activeModal.data) {
-        modalInitial = {
-          labelFr: activeModal.data.labelFr || '',
-          labelAr: activeModal.data.labelAr || '',
-          labelEn: activeModal.data.labelEn || '',
-        };
-      }
-    } else if (activeModal.type === 'critere') {
-      modalFields = getCritereFields();
-      modalTitle = activeModal.mode === 'create' ? t('principesPage.addCritere') : t('principesPage.editCritere');
-      if (activeModal.mode === 'edit' && activeModal.data) {
-        modalInitial = {
-          labelFr: activeModal.data.labelFr || '',
-          labelAr: activeModal.data.labelAr || '',
-          labelEn: activeModal.data.labelEn || '',
-          preuvesFr: activeModal.data.preuvesFr || '',
-          preuvesAr: activeModal.data.preuvesAr || '',
-          preuvesEn: activeModal.data.preuvesEn || '',
-          referencesFr: activeModal.data.referencesFr || '',
-          referencesAr: activeModal.data.referencesAr || '',
-          referencesEn: activeModal.data.referencesEn || '',
-        };
-      }
-    }
+    return <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary-700" /></div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.principes')}</h1>
-        <button onClick={() => setModal({ type: 'principe', mode: 'create' })} className="btn-primary gap-2">
-          <Plus className="w-4 h-4" /> {t('principesPage.addPrincipe')}
-        </button>
+    <div className="page-shell">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.principes')}</h1>
+          <p className="mt-1 text-sm text-gray-500">{t('principesPage.subtitle')}</p>
+        </div>
+        {canManage && (
+          <button type="button" onClick={() => setEditor({ type: 'principe', mode: 'create' })} className="btn-primary gap-2">
+            <Plus className="h-4 w-4" />
+            {t('principesPage.addPrincipe')}
+          </button>
+        )}
+      </header>
+
+      <section className="grid grid-cols-1 border-y border-gray-200 bg-white sm:grid-cols-3 dark:border-[#2b3b35] dark:bg-[#17201d]">
+        <ReferenceMetric icon={BookOpen} label={t('principesPage.principlesMetric')} value={principes.length} />
+        <ReferenceMetric icon={Layers3} label={t('principesPage.goodPracticesMetric')} value={totalBonnesPratiques} />
+        <ReferenceMetric icon={ListChecks} label={t('principesPage.criteriaMetric')} value={totalCriteres} />
+      </section>
+
+      <div className="relative max-w-xl">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="input pl-9" placeholder={t('principesPage.searchPlaceholder')} />
       </div>
 
-      <KPICard title={t('principesPage.kpiTitle')} value={principes.length} icon={BookOpen} color="primary" />
-
-      <div className="space-y-3">
-        {principes.map((principe) => (
-          <div key={principe.id} className="card overflow-hidden">
-            <div className="flex items-center justify-between p-4">
-              <button
-                onClick={() => setExpandedPrincipe(expandedPrincipe === principe.id ? null : principe.id)}
-                className="flex items-center gap-4 flex-1 hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-primary-700 flex items-center justify-center text-white font-bold">
-                  {principe.number}
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold text-gray-900">{getLocalizedField(principe, 'name', language)}</h3>
-                  <p className="text-sm text-gray-500">{t('principesPage.bonnesPratiques', { count: principe.bonnesPratiques.length })}</p>
-                </div>
-                {expandedPrincipe === principe.id ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-              </button>
-              <div className="flex items-center gap-1 ml-2">
-                {!principe.isFixed && (
-                  <>
-                    <button onClick={() => setModal({ type: 'principe', mode: 'edit', data: principe })} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-primary-700" title={t('common.edit')}>
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDelete('principe', principe.id, getLocalizedField(principe, 'name', language))} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-red-600" title={t('common.delete')}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </>
+      <section className="overflow-hidden border border-gray-200 bg-white dark:border-[#2b3b35] dark:bg-[#17201d]">
+        {filteredPrincipes.length === 0 ? (
+          <div className="px-5 py-12 text-center text-sm text-gray-500">{t('principesPage.noResults')}</div>
+        ) : filteredPrincipes.map((principe) => {
+          const isExpanded = expandedPrincipe === principe.id;
+          const criterionCount = principe.bonnesPratiques.reduce((sum, bp) => sum + bp.criteres.length, 0);
+          return (
+            <article key={principe.id} className="border-b border-gray-200 last:border-b-0 dark:border-[#2b3b35]">
+              <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
+                <button type="button" onClick={() => setExpandedPrincipe(isExpanded ? null : principe.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                  {isExpanded ? <ChevronDown className="h-4 w-4 flex-shrink-0 text-gray-400" /> : <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-400 rtl:rotate-180" />}
+                  <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-primary-700 text-sm font-bold text-white">{principe.number}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-gray-900 dark:text-slate-100">{getLocalizedField(principe, 'name', language)}</span>
+                    <span className="mt-0.5 block text-xs text-gray-500">{t('principesPage.structureCount', { bp: principe.bonnesPratiques.length, criteria: criterionCount })}</span>
+                  </span>
+                </button>
+                {canManage && !principe.isFixed && (
+                  <div className="flex items-center gap-1">
+                    <IconButton label={t('common.edit')} icon={Edit3} onClick={() => setEditor({ type: 'principe', mode: 'edit', data: principe })} />
+                    <IconButton label={t('common.delete')} icon={Trash2} danger onClick={() => void handleDelete('principe', principe.id, getLocalizedField(principe, 'name', language))} />
+                  </div>
                 )}
               </div>
-            </div>
 
-            {expandedPrincipe === principe.id && (
-              <div className="border-t border-gray-100 px-4 pb-4">
-                <div className="flex items-center justify-between mt-3 ml-14">
-                  <span className="text-sm font-medium text-gray-500">{t('principesPage.bonnesPratiquesList')}</span>
-                  <button onClick={() => setModal({ type: 'bp', mode: 'create', parentId: principe.id })} className="text-xs btn-outline gap-1 py-1">
-                    <Plus className="w-3 h-3" /> {t('principesPage.addBP')}
-                  </button>
-                </div>
-                {principe.bonnesPratiques.map((bp) => (
-                  <div key={bp.id} className="mt-2 ml-14">
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => setExpandedBP(expandedBP === bp.id ? null : bp.id)}
-                        className="flex items-center gap-2 text-left hover:text-primary-700 flex-1"
-                      >
-                        {expandedBP === bp.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        <span className="font-medium text-gray-800">{getLocalizedField(bp, 'label', language)}</span>
-                        <span className="text-xs text-gray-400">{t('principesPage.criteres', { count: bp.criteres.length })}</span>
+              {isExpanded && (
+                <div className="border-t border-gray-200 bg-gray-50 dark:border-[#2b3b35] dark:bg-[#0f1613]">
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+                    <h3 className="text-xs font-semibold uppercase text-gray-500">{t('principesPage.bonnesPratiquesList')}</h3>
+                    {canManage && (
+                      <button type="button" onClick={() => setEditor({ type: 'bp', mode: 'create', parentId: principe.id, contextLabel: getLocalizedField(principe, 'name', language) })} className="btn-outline btn-sm gap-2">
+                        <Plus className="h-4 w-4" />{t('principesPage.addBP')}
                       </button>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => setModal({ type: 'critere', mode: 'create', parentId: bp.id })} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-primary-700" title={t('principesPage.addCritere')}>
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setModal({ type: 'bp', mode: 'edit', data: bp })} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-primary-700" title={t('common.edit')}>
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete('bp', bp.id, getLocalizedField(bp, 'label', language))} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-red-600" title={t('common.delete')}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {expandedBP === bp.id && (
-                      <div className="mt-2 ml-6 space-y-2">
-                        {bp.criteres.map((critere) => {
-                          const preuves = getLocalizedField(critere, 'preuves', language);
-                          const references = getLocalizedField(critere, 'references', language);
-
-                          return (
-                            <div key={critere.id} className="p-3 bg-gray-50 rounded-lg group">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <p className="text-sm text-gray-800 font-medium">{critere.number}. {getLocalizedField(critere, 'label', language)}</p>
-                                  {preuves && <p className="text-xs text-blue-700 mt-1"><span className="font-semibold">{t('principesPage.preuvesLabel')}</span> {preuves}</p>}
-                                  {references && <p className="text-xs text-gray-500 mt-0.5"><span className="font-semibold">{t('principesPage.referencesLabel')}</span> {references}</p>}
-                                </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => setModal({ type: 'critere', mode: 'edit', data: critere })} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-primary-700" title={t('common.edit')}>
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button onClick={() => handleDelete('critere', critere.id, getLocalizedField(critere, 'label', language))} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-red-600" title={t('common.delete')}>
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
 
-      <FormModal
-        isOpen={!!modal}
-        onClose={() => setModal(null)}
-        onSave={handleSave}
-        title={modalTitle}
-        fields={modalFields}
-        initialData={modalInitial}
-      />
+                  {principe.bonnesPratiques.length === 0 ? (
+                    <p className="px-5 pb-4 text-sm text-gray-500">{t('principesPage.noGoodPractices')}</p>
+                  ) : principe.bonnesPratiques.map((bp) => {
+                    const bpExpanded = expandedBP === bp.id;
+                    return (
+                      <div key={bp.id} className="border-t border-gray-200 bg-white dark:border-[#2b3b35] dark:bg-[#17201d]">
+                        <div className="flex items-center gap-3 px-4 py-3 sm:pl-12 sm:pr-5">
+                          <button type="button" onClick={() => setExpandedBP(bpExpanded ? null : bp.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                            {bpExpanded ? <ChevronDown className="h-4 w-4 flex-shrink-0 text-gray-400" /> : <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-400 rtl:rotate-180" />}
+                            <span className="text-xs font-bold text-primary-700">{bp.number}</span>
+                            <span className="truncate text-sm font-medium text-gray-800 dark:text-slate-100">{getLocalizedField(bp, 'label', language)}</span>
+                            <span className="flex-shrink-0 text-xs text-gray-400">{t('principesPage.criteres', { count: bp.criteres.length })}</span>
+                          </button>
+                          {canManage && (
+                            <div className="flex items-center gap-1">
+                              <IconButton label={t('principesPage.addCritere')} icon={Plus} onClick={() => setEditor({ type: 'critere', mode: 'create', parentId: bp.id, contextLabel: getLocalizedField(bp, 'label', language) })} />
+                              <IconButton label={t('common.edit')} icon={Edit3} onClick={() => setEditor({ type: 'bp', mode: 'edit', data: bp, contextLabel: getLocalizedField(principe, 'name', language) })} />
+                              <IconButton label={t('common.delete')} icon={Trash2} danger onClick={() => void handleDelete('bp', bp.id, getLocalizedField(bp, 'label', language))} />
+                            </div>
+                          )}
+                        </div>
+
+                        {bpExpanded && (
+                          <div className="overflow-x-auto border-t border-gray-100 dark:border-[#2b3b35]">
+                            <table className="w-full min-w-[720px] text-sm">
+                              <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 dark:bg-[#0f1613] dark:text-slate-400">
+                                <tr><th className="w-16 px-4 py-2 sm:pl-16">#</th><th className="px-3 py-2">{t('principesPage.criterionLabel')}</th><th className="px-3 py-2">{t('principesPage.references')}</th>{canManage && <th className="w-24 px-3 py-2 text-right">{t('common.actions')}</th>}</tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100 dark:divide-[#2b3b35]">
+                                {bp.criteres.map((critere) => (
+                                  <tr key={critere.id}>
+                                    <td className="px-4 py-3 text-gray-400 sm:pl-16">{critere.number}</td>
+                                    <td className="max-w-xl px-3 py-3 align-top">
+                                      <p className="font-medium text-gray-800 dark:text-slate-100">{getLocalizedField(critere, 'label', language)}</p>
+                                      {getLocalizedField(critere, 'preuves', language) && <p className="mt-1 text-xs leading-5 text-gray-500">{getLocalizedField(critere, 'preuves', language)}</p>}
+                                    </td>
+                                    <td className="max-w-sm px-3 py-3 align-top text-xs leading-5 text-gray-500">{getLocalizedField(critere, 'references', language) || '-'}</td>
+                                    {canManage && (
+                                      <td className="px-3 py-3 align-top"><div className="flex justify-end gap-1"><IconButton label={t('common.edit')} icon={Edit3} onClick={() => setEditor({ type: 'critere', mode: 'edit', data: critere, contextLabel: getLocalizedField(bp, 'label', language) })} /><IconButton label={t('common.delete')} icon={Trash2} danger onClick={() => void handleDelete('critere', critere.id, getLocalizedField(critere, 'label', language))} /></div></td>
+                                    )}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </section>
+
+      <ReferenceEditor editor={editor} title={editorTitle} fields={editorFields} initialData={editorInitialData} onClose={() => setEditor(null)} onSave={handleSave} />
+      {confirmationDialog}
     </div>
+  );
+}
+
+function ReferenceMetric({ icon: Icon, label, value }: { icon: typeof BookOpen; label: string; value: number }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0 dark:border-[#2b3b35]">
+      <Icon className="h-5 w-5 text-primary-700" />
+      <div><p className="text-xs text-gray-500">{label}</p><p className="text-xl font-semibold text-gray-900 dark:text-slate-100">{value}</p></div>
+    </div>
+  );
+}
+
+function IconButton({ label, icon: Icon, danger = false, onClick }: { label: string; icon: typeof Edit3; danger?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} title={label} aria-label={label} className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${danger ? 'text-gray-400 hover:bg-red-50 hover:text-red-600' : 'text-gray-400 hover:bg-gray-100 hover:text-primary-700'}`}>
+      <Icon className="h-4 w-4" />
+    </button>
   );
 }

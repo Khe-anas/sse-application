@@ -60,7 +60,7 @@ public class AccessControlService {
     }
 
     public boolean canWriteEvaluation(UUID evaluationId) {
-        if (hasRole("ADMIN") || hasRole("EVALUATEUR")) {
+        if (hasRole("ADMIN")) {
             return true;
         }
 
@@ -79,7 +79,7 @@ public class AccessControlService {
     }
 
     public boolean canUploadProof(UUID reponseId) {
-        if (hasRole("ADMIN") || hasRole("EVALUATEUR")) {
+        if (hasRole("ADMIN")) {
             return true;
         }
 
@@ -89,8 +89,8 @@ public class AccessControlService {
                 .orElse(false);
     }
 
-    public boolean isAdmin() {
-        return hasRole("ADMIN");
+    public boolean canValidate() {
+        return hasRole("ADMIN") || hasRole("EVALUATEUR");
     }
 
     private boolean ownsOrganisme(UUID organismeId) {

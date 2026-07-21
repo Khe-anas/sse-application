@@ -110,8 +110,9 @@ export default function ReclamationsPage() {
   };
 
   const closeSelectedReclamation = () => {
-    if (selectedReclamation?.status !== ReclamationStatus.RESOLVED) {
-      void reclamationService.release(selectedReclamation.id).catch(() => undefined);
+    const current = selectedReclamation;
+    if (current && current.status !== ReclamationStatus.RESOLVED) {
+      void reclamationService.release(current.id).catch(() => undefined);
       void loadReclamations(false);
     }
     setSelectedReclamation(null);
@@ -134,10 +135,10 @@ export default function ReclamationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('reclamationsPage.title')}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('reclamationsPage.title')}</h1>
           <p className="mt-1 text-sm text-gray-500">{t('reclamationsPage.subtitle')}</p>
         </div>
       </div>
@@ -148,7 +149,7 @@ export default function ReclamationsPage() {
         <KPICard title={t('reclamationsPage.kpiLocked')} value={lockedCount} icon={Lock} color="danger" />
       </div>
 
-      <div className="card p-4">
+      <div className="filter-panel">
         <div className="grid gap-3 md:grid-cols-[1fr_220px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

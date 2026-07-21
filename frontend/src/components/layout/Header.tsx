@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
@@ -13,7 +13,9 @@ import {
   Inbox,
   Trash2,
   X,
+  ArrowLeft,
   ArrowRight,
+  Bot,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
@@ -21,13 +23,15 @@ import { useUIStore } from '@/stores/uiStore';
 import { changeLanguage, LANGUAGES } from '@/i18n';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { API_BASE_URL } from '@/services/api';
+import { authService } from '@/services/authService';
 import { formatBackendShortDateTime } from '@/utils/date';
-import type { Notification } from '@/types';
+import { Role, type Notification } from '@/types';
 
 export default function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { toggleSidebar, language, theme, toggleTheme, sidebarOpen } = useUIStore();
+  const location = useLocation();
+  const { toggleSidebar, language, theme, toggleThemeForAccount, loadLanguageForAccount, sidebarOpen, assistantOpen, toggleAssistant } = useUIStore();
   const { user, token, logout } = useAuthStore();
   const {
     notifications,
@@ -49,6 +53,38 @@ export default function Header() {
   const unreadReadyRef = useRef(false);
   const previousUnreadCountRef = useRef(0);
   const suppressNextUnreadPopupRef = useRef(false);
+
+  const pageTitleKey = [
+    ['/admin/users', 'navigation.users'],
+    ['/admin/account-requests', 'navigation.accountRequests'],
+    ['/admin/organismes', 'navigation.organismes'],
+    ['/admin/evaluations', 'navigation.evaluations'],
+    ['/admin/principes', 'navigation.principes'],
+    ['/admin/reclamations', 'navigation.reclamations'],
+    ['/admin/email-jobs', 'navigation.emailJobs'],
+    ['/admin/notifications', 'navigation.notifications'],
+    ['/admin/audit-logs', 'navigation.auditLogs'],
+    ['/evaluateur/evaluations', 'navigation.evaluations'],
+    ['/gouvernement/ranking', 'navigation.ranking'],
+    ['/settings', 'navigation.settings'],
+  ].find(([path]) => location.pathname.startsWith(path))?.[1] || 'navigation.dashboard';
+
+  const dashboardPath = user?.role === Role.ADMIN
+    ? '/admin/dashboard'
+    : user?.role === Role.USER
+      ? '/user/dashboard'
+      : user?.role === Role.EVALUATEUR
+        ? '/evaluateur/dashboard'
+        : '/gouvernement/dashboard';
+  const showBackButton = location.pathname !== dashboardPath;
+
+  const handleGoBack = () => {
+    if (location.key !== 'default' && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(dashboardPath, { replace: true });
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -125,6 +161,18 @@ export default function Header() {
     const controller = new AbortController();
     let reconnectTimer: number | undefined;
     let stopped = false;
+
+    const getNotificationTitleFromPayload = (notification: Partial<Notification>) => {
+      if (language === 'ar') return notification.titleAr || notification.titleFr || t('header.newNotificationAr');
+      if (language === 'en') return notification.titleEn || notification.titleFr || t('header.newNotificationEn');
+      return notification.titleFr || t('header.newNotification');
+    };
+
+    const getNotificationMessageFromPayload = (notification: Partial<Notification>) => {
+      if (language === 'ar') return notification.messageAr || notification.messageFr || t('header.newNotificationDescAr');
+      if (language === 'en') return notification.messageEn || notification.messageFr || t('header.newNotificationDescEn');
+      return notification.messageFr || t('header.newNotificationDesc');
+    };
 
     const showLiveNotification = (notification: Partial<Notification>) => {
       suppressNextUnreadPopupRef.current = true;
@@ -209,11 +257,16 @@ export default function Header() {
         window.clearTimeout(reconnectTimer);
       }
     };
-  }, [fetchNotifications, fetchUnreadCount, language, token, user]);
+  }, [fetchNotifications, fetchUnreadCount, language, t, token, user]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      loadLanguageForAccount(null);
+      logout();
+      navigate('/login');
+    }
   };
 
   const handleLanguageChange = (code: string) => {
@@ -239,18 +292,6 @@ export default function Header() {
     if (language === 'ar') return notification.messageAr || notification.messageFr;
     if (language === 'en') return notification.messageEn || notification.messageFr;
     return notification.messageFr;
-  };
-
-  const getNotificationTitleFromPayload = (notification: Partial<Notification>) => {
-    if (language === 'ar') return notification.titleAr || notification.titleFr || t('header.newNotificationAr');
-    if (language === 'en') return notification.titleEn || notification.titleFr || t('header.newNotificationEn');
-    return notification.titleFr || t('header.newNotification');
-  };
-
-  const getNotificationMessageFromPayload = (notification: Partial<Notification>) => {
-    if (language === 'ar') return notification.messageAr || notification.messageFr || t('header.newNotificationDescAr');
-    if (language === 'en') return notification.messageEn || notification.messageFr || t('header.newNotificationDescEn');
-    return notification.messageFr || t('header.newNotificationDesc');
   };
 
   const formatNotificationDate = (date: string) => {
@@ -312,52 +353,80 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-20 h-16 border-b border-gray-200 bg-white/95 px-4 shadow-sm backdrop-blur transition-all duration-300 dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-black/20 ${sidebarOpen ? 'lg:left-sidebar' : ''}`}
+      className={`fixed inset-x-0 top-0 z-30 h-16 border-b bg-white/90 px-2 backdrop-blur-xl transition-[margin] duration-200 sm:px-4 dark:bg-[#132129]/90 ${sidebarOpen ? 'lg:ms-sidebar' : ''}`}
     >
       <div className="flex h-full items-center justify-between gap-4">
       {/* Left */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="icon-button border-0 bg-transparent shadow-none"
           title={t('navigation.dashboard')}
+          aria-label={t('navigation.dashboard')}
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h2 className="text-lg font-semibold text-gray-800">
-          {t('navigation.dashboard')}
-        </h2>
+        {showBackButton && (
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="icon-button"
+            title={t('common.back')}
+            aria-label={t('common.back')}
+          >
+            <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+          </button>
+        )}
+        <div className="hidden sm:block">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary-700 dark:text-primary-300">SSE · CNI</p>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t(pageTitleKey)}</h2>
+        </div>
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3">
         <button
           type="button"
-          onClick={toggleTheme}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          onClick={() => user && toggleThemeForAccount(user.id)}
+          className="icon-button"
           title={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
           aria-label={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
 
+        <button
+          type="button"
+          onClick={toggleAssistant}
+          aria-pressed={assistantOpen}
+          aria-label={t('chatbot.title')}
+          title={t('chatbot.title')}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${
+            assistantOpen
+              ? 'border-primary-700 bg-primary-700 text-white'
+              : 'border-gray-200 bg-white text-gray-600 hover:bg-primary-50 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-200 dark:hover:bg-[#192a33]'
+          }`}
+        >
+          <Bot className="h-4 w-4" />
+        </button>
+
         {/* Language */}
         <div className="relative" ref={langRef}>
           <button
             onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-gray-600 hover:bg-primary-50 dark:text-slate-200 dark:hover:bg-[#192a33]"
           >
             <Globe className="w-4 h-4" />
-            <span className="text-sm font-medium">{LANGUAGES.find(l => l.code === language)?.name}</span>
+            <span className="hidden text-sm font-medium md:inline">{LANGUAGES.find(l => l.code === language)?.name}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {langOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute end-0 z-50 mt-2 w-44 rounded-xl border bg-white py-1.5 shadow-xl dark:bg-[#132129]">
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => handleLanguageChange(lang.code)}
-                  className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  className="flex min-h-10 w-full items-center gap-2 px-4 py-2 text-start text-sm text-gray-700 hover:bg-gray-50 dark:text-slate-200"
                 >
                   <span>{lang.name}</span>
                 </button>
@@ -375,14 +444,14 @@ export default function Header() {
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-danger-500 text-white text-[10px] rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute end-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] text-white">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+            <div className="absolute end-0 z-50 mt-2 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border bg-white shadow-xl dark:bg-[#132129]">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">{t('navigation.notifications')}</h3>
@@ -409,30 +478,24 @@ export default function Header() {
                   </div>
                 ) : (
                   notifications.map((notification) => (
-                    <button
+                    <div
                       key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                      className={`flex items-start border-b border-gray-100 ${
                         notification.isRead ? 'bg-white' : 'bg-primary-50/60'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleNotificationClick(notification)}
+                        className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-start hover:bg-gray-50"
+                      >
                         <span className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${
                           notification.isRead ? 'bg-gray-300' : 'bg-primary-700'
                         }`} />
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                              {getNotificationTitle(notification)}
-                            </p>
-                            <button
-                              onClick={(event) => handleDeleteNotification(event, notification.id)}
-                              className="p-1 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50"
-                              title={t('common.delete')}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                            {getNotificationTitle(notification)}
+                          </p>
                           <p className="mt-1 text-xs text-gray-600 line-clamp-2">
                             {getNotificationMessage(notification)}
                           </p>
@@ -440,8 +503,17 @@ export default function Header() {
                             {formatNotificationDate(notification.createdAt)}
                           </p>
                         </div>
-                      </div>
-                    </button>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => handleDeleteNotification(event, notification.id)}
+                        className="m-2 rounded p-2 text-gray-400 hover:bg-danger-50 hover:text-danger-600"
+                        title={t('common.delete')}
+                        aria-label={t('common.delete')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -449,7 +521,7 @@ export default function Header() {
           )}
 
           {selectedNotification && (
-            <div className="fixed top-20 right-4 z-[60] w-[min(560px,calc(100vw-2rem))] max-h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
+            <div className="fixed end-4 top-20 z-[60] max-h-[calc(100vh-6rem)] w-[min(560px,calc(100vw-2rem))] overflow-hidden rounded-xl border bg-white shadow-2xl dark:bg-[#132129]">
               <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4">
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wide text-primary-700">
@@ -510,14 +582,14 @@ export default function Header() {
             <ChevronDown className="w-3 h-3" />
           </button>
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute end-0 z-50 mt-2 w-56 rounded-xl border bg-white py-1.5 shadow-xl dark:bg-[#132129]">
               <div className="px-4 py-2 border-b border-gray-100">
                 <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full px-4 py-2 text-sm text-left text-danger-600 hover:bg-gray-50 flex items-center gap-2"
+                className="flex min-h-10 w-full items-center gap-2 px-4 py-2 text-start text-sm text-danger-600 hover:bg-gray-50"
               >
                 <LogOut className="w-4 h-4" />
                 {t('auth.logout')}

@@ -16,7 +16,9 @@ public class OrganismeResponse {
     private String address;
     private String email;
     private String phone;
+    private String fax;
     private String website;
+    private String logoUrl;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private Long usersCount;

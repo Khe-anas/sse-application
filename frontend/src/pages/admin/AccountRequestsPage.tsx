@@ -6,8 +6,10 @@ import {
   Eye,
   FileText,
   Lock,
+  Maximize2,
   Search,
   ShieldCheck,
+  X,
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,6 +33,7 @@ export default function AccountRequestsPage() {
   const [queuedEmailJobId, setQueuedEmailJobId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [claimingRequestId, setClaimingRequestId] = useState<string | null>(null);
+  const [logoZoom, setLogoZoom] = useState<{ url: string; alt: string } | null>(null);
 
   const loadRequests = useCallback(async () => {
     setIsLoading(true);
@@ -121,14 +124,6 @@ export default function AccountRequestsPage() {
     }
   };
 
-  const handleDownloadFile = async (fileUrl: string) => {
-    try {
-      await fileService.download(fileUrl);
-    } catch (error) {
-      toast.error(t('accountRequests.downloadError'));
-    }
-  };
-
   const formatDate = (value: string) => {
     return formatBackendDateTime(value);
   };
@@ -145,10 +140,10 @@ export default function AccountRequestsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('accountRequests.title')}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('accountRequests.title')}</h1>
           <p className="mt-1 text-sm text-gray-500">{t('accountRequests.subtitle')}</p>
         </div>
       </div>
@@ -159,7 +154,7 @@ export default function AccountRequestsPage() {
         <KPICard title={t('accountRequests.kpiPageSize')} value={requests?.pageSize || 20} icon={CheckCircle2} color="success" />
       </div>
 
-      <div className="card p-4">
+      <div className="filter-panel">
         <div className="grid gap-3 md:grid-cols-[1fr_220px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -261,37 +256,25 @@ export default function AccountRequestsPage() {
                 <Info label={t('accountRequests.companyType')} value={getTypeLabel(selectedRequest.type) || selectedRequest.type || '-'} />
                 <Info label={t('common.email')} value={selectedRequest.companyEmail} />
                 <Info label={t('common.phone')} value={selectedRequest.phone || '-'} />
+                <Info label={t('requestAccount.fax')} value={selectedRequest.fax || '-'} />
+                <Info label={t('accountRequests.companyRole')} value={selectedRequest.companyRole || '-'} />
+                <Info label={t('accountRequests.position')} value={selectedRequest.position || '-'} />
                 <Info label={t('common.sector')} value={selectedRequest.sector || '-'} />
                 <Info label={t('accountRequests.address')} value={selectedRequest.address || '-'} className="md:col-span-2" />
               </div>
 
-              {selectedRequest.message && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">{t('common.message')}</h3>
-                  <p className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm leading-6 text-gray-700">
-                    {selectedRequest.message}
-                  </p>
-                </div>
-              )}
-
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">{t('accountRequests.verificationFiles')}</h3>
-                {selectedRequest.verificationFiles.length === 0 ? (
-                  <p className="mt-2 text-sm text-gray-500">{t('accountRequests.noFiles')}</p>
+                <h3 className="text-sm font-semibold text-gray-900">{t('accountRequests.companyLogo')}</h3>
+                {selectedRequest.logoUrl ? (
+                  <LogoPreview
+                    fileUrl={selectedRequest.logoUrl}
+                    alt={selectedRequest.companyName}
+                    fallback={t('accountRequests.logoLoadError')}
+                    zoomLabel={t('accountRequests.zoomLogo')}
+                    onZoom={(url, alt) => setLogoZoom({ url, alt })}
+                  />
                 ) : (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedRequest.verificationFiles.map((fileUrl) => (
-                      <button
-                        key={fileUrl}
-                        type="button"
-                        onClick={() => handleDownloadFile(fileUrl)}
-                        className="btn-outline btn-sm gap-2"
-                      >
-                        <FileText className="h-4 w-4" />
-                        {fileUrl.split('/').pop()}
-                      </button>
-                    ))}
-                  </div>
+                  <p className="mt-2 text-sm text-gray-500">{t('accountRequests.noLogo')}</p>
                 )}
               </div>
 
@@ -359,6 +342,28 @@ export default function AccountRequestsPage() {
           </div>
         </div>
       )}
+
+      {logoZoom && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLogoZoom(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLogoZoom(null)}
+            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            aria-label={t('accountRequests.closeZoom')}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={logoZoom.url}
+            alt={logoZoom.alt}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -368,6 +373,54 @@ function Info({ label, value, className = '' }: { label: string; value: string; 
     <div className={className}>
       <p className="text-xs font-medium uppercase text-gray-500">{label}</p>
       <p className="mt-1 break-words text-sm font-medium text-gray-900">{value}</p>
+    </div>
+  );
+}
+
+function LogoPreview({ fileUrl, alt, fallback, zoomLabel, onZoom }: { fileUrl: string; alt: string; fallback: string; zoomLabel?: string; onZoom?: (url: string, alt: string) => void }) {
+  const [objectUrl, setObjectUrl] = useState('');
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let loadedUrl = '';
+    setObjectUrl('');
+    setHasError(false);
+
+    fileService.getObjectUrl(fileUrl)
+      .then((url) => {
+        loadedUrl = url;
+        if (active) setObjectUrl(url);
+      })
+      .catch(() => {
+        if (active) setHasError(true);
+      });
+
+    return () => {
+      active = false;
+      if (loadedUrl) window.URL.revokeObjectURL(loadedUrl);
+    };
+  }, [fileUrl]);
+
+  if (hasError) return <p className="mt-2 text-sm text-red-600">{fallback}</p>;
+  if (!objectUrl) return <div className="mt-2 h-24 w-40 animate-pulse bg-gray-100" />;
+
+  return (
+    <div className="group relative mt-2 inline-block">
+      <div className="flex h-28 w-44 items-center justify-center border border-gray-200 bg-white p-3">
+        <img src={objectUrl} alt={alt} className="max-h-full max-w-full object-contain" />
+      </div>
+      {onZoom && (
+        <button
+          type="button"
+          onClick={() => onZoom(objectUrl, alt)}
+          className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-md bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover:opacity-100"
+          title={zoomLabel}
+          aria-label={zoomLabel}
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }

@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import { Building2, Globe2, Mail, MapPin, Phone, Send, Settings } from 'lucide-react';
+import { Building2, Globe2, Languages, Mail, MapPin, Moon, Phone, Send, Settings, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { organismeService } from '@/services/organismeService';
 import { reclamationService } from '@/services/reclamationService';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
+import { changeLanguage, LANGUAGES } from '@/i18n';
 import type { Organisme } from '@/types';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const { language, theme, toggleThemeForAccount } = useUIStore();
   const [organisme, setOrganisme] = useState<Organisme | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingContact, setIsSavingContact] = useState(false);
@@ -89,7 +92,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('settingsPage.title')}</h1>
@@ -98,6 +101,62 @@ export default function SettingsPage() {
         <div className="hidden h-11 w-11 items-center justify-center rounded-lg bg-primary-50 text-primary-700 sm:flex">
           <Settings className="h-5 w-5" />
         </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
+        <section className="card p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium uppercase text-primary-700">{t('settingsPage.interfaceTitle')}</p>
+              <h2 className="mt-1 text-xl font-bold text-gray-900 dark:text-slate-100">{t('settingsPage.interfaceHeading')}</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{t('settingsPage.interfaceHint')}</p>
+            </div>
+            <Languages className="h-6 w-6 text-gray-400" />
+          </div>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <div>
+              <span className="label">{t('settingsPage.language')}</span>
+              <div className="grid grid-cols-3 gap-2">
+                {LANGUAGES.map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    onClick={() => changeLanguage(item.code)}
+                    className={language === item.code ? 'btn-primary justify-center px-3' : 'btn-outline justify-center px-3'}
+                    aria-pressed={language === item.code}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="label">{t('settingsPage.appearance')}</span>
+              <button type="button" onClick={() => user && toggleThemeForAccount(user.id)} className="btn-outline w-full justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                  {theme === 'dark' ? t('settingsPage.darkMode') : t('settingsPage.lightMode')}
+                </span>
+                <span className="text-xs text-gray-500">{t('settingsPage.change')}</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="card p-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-primary-50 p-2 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300"><UserRound className="h-5 w-5" /></div>
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500">{t('settingsPage.currentAccount')}</p>
+              <h2 className="truncate text-lg font-bold text-gray-900 dark:text-slate-100">{user?.fullName || '-'}</h2>
+            </div>
+          </div>
+          <dl className="mt-5 space-y-3 text-sm">
+            <div><dt className="text-gray-500">{t('common.email')}</dt><dd className="break-all font-medium text-gray-900 dark:text-slate-100">{user?.email || '-'}</dd></div>
+            <div><dt className="text-gray-500">{t('common.role')}</dt><dd className="font-medium text-gray-900 dark:text-slate-100">{user?.role ? t(`user.role.${user.role}`) : '-'}</dd></div>
+          </dl>
+        </section>
       </div>
 
       {!user?.organismeId ? (
@@ -129,10 +188,10 @@ export default function SettingsPage() {
               <div>
                 <label className="label">{t('common.address')}</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <MapPin className="absolute start-3 top-3 h-4 w-4 text-gray-400" />
                   <textarea
                     rows={3}
-                    className="input pl-10"
+                    className="input ps-10"
                     value={contactForm.address}
                     onChange={(event) => setContactForm({ ...contactForm, address: event.target.value })}
                   />
@@ -143,10 +202,10 @@ export default function SettingsPage() {
                 <div>
                   <label className="label">{t('common.phone')}</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="tel"
-                      className="input pl-10"
+                      className="input ps-10"
                       value={contactForm.phone}
                       onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })}
                     />
@@ -155,10 +214,10 @@ export default function SettingsPage() {
                 <div>
                   <label className="label">{t('common.email')}</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="email"
-                      className="input pl-10"
+                      className="input ps-10"
                       value={contactForm.email}
                       onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })}
                     />
@@ -169,10 +228,10 @@ export default function SettingsPage() {
               <div>
                 <label className="label">{t('settingsPage.website')}</label>
                 <div className="relative">
-                  <Globe2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Globe2 className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     type="url"
-                    className="input pl-10"
+                    className="input ps-10"
                     value={contactForm.website}
                     onChange={(event) => setContactForm({ ...contactForm, website: event.target.value })}
                   />

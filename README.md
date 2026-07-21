@@ -100,8 +100,11 @@ Accès :
 | Email | Mot de passe | Rôle |
 |-------|-------------|------|
 | admin@sse.tn | password | ADMIN |
-| resp@sse.tn | password | RESPONSABLE |
+| user@sse.tn | password | RESPONSABLE |
+| evaluateur@sse.tn | password | ÉVALUATEUR |
 | gouv@sse.tn | password | GOUVERNEMENT |
+
+Ces comptes sont créés uniquement lorsque `SSE_DEMO_DATA_ENABLED=true` (activé par défaut dans `docker-compose.yml`, désactivé en production).
 
 ### Développement local
 

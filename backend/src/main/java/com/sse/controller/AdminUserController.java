@@ -2,12 +2,14 @@ package com.sse.controller;
 
 import com.sse.dto.*;
 import com.sse.enums.Role;
+import com.sse.enums.UserStatus;
 import com.sse.service.UserService;
 import com.sse.util.PageableUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +21,6 @@ import java.util.UUID;
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "*")
 public class AdminUserController {
     
     private final UserService userService;
@@ -27,6 +28,7 @@ public class AdminUserController {
     @GetMapping
     public ResponseEntity<PageResponse<UserResponse>> getAllUsers(
             @RequestParam(required = false) Role role,
+            @RequestParam(required = false) UserStatus status,
             @RequestParam(required = false) UUID organismeId,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
@@ -42,7 +44,7 @@ public class AdminUserController {
             Set.of("email", "firstName", "lastName", "role", "createdAt", "lastLoginAt")
         );
         
-        var result = userService.getAllUsers(role, organismeId, search, pageable);
+        var result = userService.getAllUsers(role, status, organismeId, search, pageable);
         return ResponseEntity.ok(new PageResponse<>(
             result.getContent(), result.getNumber(), result.getSize(),
             result.getTotalElements(), result.getTotalPages(), result.isLast(), result.isFirst()
@@ -52,6 +54,12 @@ public class AdminUserController {
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.ok(userService.createUser(request));
+    }
+
+    @PostMapping(value = "/with-organisme", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> createUserWithOrganisme(
+            @Valid @ModelAttribute CreateUserWithOrganismeRequest request) {
+        return ResponseEntity.ok(userService.createUserWithOrganisme(request));
     }
     
     @GetMapping("/{id}")

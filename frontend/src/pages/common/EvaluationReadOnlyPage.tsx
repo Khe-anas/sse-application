@@ -7,9 +7,17 @@ import { evaluationService, reponseService } from '@/services/evaluationService'
 import { fileService } from '@/services/fileService';
 import { reportService } from '@/services/reportService';
 import api from '@/services/api';
-import { Role, type Evaluation, type Principe, type Reponse } from '@/types';
+import {
+  Role,
+  type BonnePratique,
+  type Critere,
+  type Evaluation,
+  type Principe,
+  type Reponse,
+} from '@/types';
 import { getLocalizedField } from '@/utils/localization';
 import { useAuthStore } from '@/stores/authStore';
+import { getNiveauTranslationKey } from '@/utils/niveau';
 
 export default function EvaluationReadOnlyPage() {
   const { t, i18n } = useTranslation();
@@ -81,7 +89,7 @@ export default function EvaluationReadOnlyPage() {
   const getAllCriteres = () => {
     const active = principes.find(p => p.id === activePrincipe);
     if (!active) return [];
-    const rows: { principe: Principe; bp: any; critere: any }[] = [];
+    const rows: { principe: Principe; bp: BonnePratique; critere: Critere }[] = [];
     active.bonnesPratiques.forEach(bp => {
       bp.criteres.forEach(critere => rows.push({ principe: active, bp, critere }));
     });
@@ -133,7 +141,7 @@ export default function EvaluationReadOnlyPage() {
                 activePrincipe === principe.id ? 'bg-primary-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}>
               {principe.number}. {getLocalizedField(principe, 'name', language)}
-              <span className="ml-1 opacity-70">({answered}/{criteria.length})</span>
+              <span className="ms-1 opacity-70">({answered}/{criteria.length})</span>
             </button>
           );
         })}
@@ -144,16 +152,16 @@ export default function EvaluationReadOnlyPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 w-10">N°</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">BP</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Critère</th>
+              <th className="w-10 px-3 py-2.5 text-start font-semibold text-gray-700">N°</th>
+              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">BP</th>
+              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">Critère</th>
               <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">Niveau</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-700 min-w-[160px]">Commentaire & Preuves</th>
+              <th className="min-w-[160px] px-3 py-2.5 text-start font-semibold text-gray-700">Commentaire & Preuves</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {(() => {
-              const groups: { bp: any; criteres: { critere: any }[] }[] = [];
+              const groups: { bp: BonnePratique; criteres: { critere: Critere }[] }[] = [];
               rows.forEach((row) => {
                 let g = groups.find(x => x.bp.id === row.bp.id);
                 if (!g) { g = { bp: row.bp, criteres: [] }; groups.push(g); }
@@ -178,7 +186,9 @@ export default function EvaluationReadOnlyPage() {
                       </td>
                       <td className="px-3 py-2 text-center align-top">
                         {reponse?.niveau && (
-                          <span className={`badge ${levelColors[reponse.niveau]}`}>{reponse.niveau}</span>
+                          <span className={`badge ${levelColors[reponse.niveau]}`}>
+                            {t(getNiveauTranslationKey(reponse.niveau))}
+                          </span>
                         )}
                       </td>
                       <td className="px-3 py-2 align-top">

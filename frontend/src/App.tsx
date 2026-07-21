@@ -1,54 +1,58 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { changeLanguage } from '@/i18n';
 import { Role } from '@/types';
 
-// Layout
 import AppLayout from '@/components/layout/AppLayout';
-
-// Auth
-import LoginPage from '@/pages/auth/LoginPage';
-import AccountRequestPage from '@/pages/auth/AccountRequestPage';
-import ActivateAccountPage from '@/pages/auth/ActivateAccountPage';
-import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
-import EvaluationReadOnlyPage from '@/pages/common/EvaluationReadOnlyPage';
-import SettingsPage from '@/pages/common/SettingsPage';
-
-// Admin pages
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import UsersPage from '@/pages/admin/UsersPage';
-import AccountRequestsPage from '@/pages/admin/AccountRequestsPage';
-import OrganismesPage from '@/pages/admin/OrganismesPage';
-import EvaluationsPage from '@/pages/admin/EvaluationsPage';
-import PrincipesPage from '@/pages/admin/PrincipesPage';
-import NotificationsPage from '@/pages/admin/NotificationsPage';
-import AuditLogsPage from '@/pages/admin/AuditLogsPage';
-import ReclamationsPage from '@/pages/admin/ReclamationsPage';
-import EmailJobsPage from '@/pages/admin/EmailJobsPage';
-
-// User pages
-import ResponsableDashboard from '@/pages/responsable/ResponsableDashboard';
-import EvaluationFillPage from '@/pages/responsable/EvaluationFillPage';
-
-// Evaluateure pages
-import EvaluationValidatePage from '@/pages/gouvernement/EvaluationValidatePage';
-
-// Gouvernement pages
-import GouvernementDashboard from '@/pages/gouvernement/GouvernementDashboard';
-import RankingPage from '@/pages/gouvernement/RankingPage';
-
-// Components
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const AccountRequestPage = lazy(() => import('@/pages/auth/AccountRequestPage'));
+const ActivateAccountPage = lazy(() => import('@/pages/auth/ActivateAccountPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
+const EvaluationReadOnlyPage = lazy(() => import('@/pages/common/EvaluationReadOnlyPage'));
+const SettingsPage = lazy(() => import('@/pages/common/SettingsPage'));
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const UsersPage = lazy(() => import('@/pages/admin/UsersPage'));
+const AccountRequestsPage = lazy(() => import('@/pages/admin/AccountRequestsPage'));
+const OrganismesPage = lazy(() => import('@/pages/admin/OrganismesPage'));
+const EvaluationsPage = lazy(() => import('@/pages/admin/EvaluationsPage'));
+const PrincipesPage = lazy(() => import('@/pages/admin/PrincipesPage'));
+const NotificationsPage = lazy(() => import('@/pages/admin/NotificationsPage'));
+const AuditLogsPage = lazy(() => import('@/pages/admin/AuditLogsPage'));
+const ReclamationsPage = lazy(() => import('@/pages/admin/ReclamationsPage'));
+const EmailJobsPage = lazy(() => import('@/pages/admin/EmailJobsPage'));
+const ResponsableDashboard = lazy(() => import('@/pages/responsable/ResponsableDashboard'));
+const EvaluationFillPage = lazy(() => import('@/pages/responsable/EvaluationFillPage'));
+const EvaluateurDashboard = lazy(() => import('@/pages/evaluateur/EvaluateurDashboard'));
+const EvaluationValidatePage = lazy(() => import('@/pages/gouvernement/EvaluationValidatePage'));
+const GouvernementDashboard = lazy(() => import('@/pages/gouvernement/GouvernementDashboard'));
+const RankingPage = lazy(() => import('@/pages/gouvernement/RankingPage'));
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700" />
+    </div>
+  );
+}
+
 function App() {
-  const { isAuthenticated, isLoading } = useAuthStore();
-  const { language, theme, direction } = useUIStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const { language, theme, direction, activeAccountId, loadThemeForAccount, loadLanguageForAccount } = useUIStore();
+  const accountId = isAuthenticated && user ? user.id : null;
 
   useEffect(() => {
+    if (activeAccountId !== accountId) return;
     changeLanguage(language);
-  }, [language]);
+  }, [accountId, activeAccountId, language]);
+
+  useEffect(() => {
+    loadThemeForAccount(accountId);
+    loadLanguageForAccount(accountId);
+  }, [accountId, loadLanguageForAccount, loadThemeForAccount]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -58,15 +62,12 @@ function App() {
   }, [direction, theme]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
       <Route path="/request-account" element={!isAuthenticated ? <AccountRequestPage /> : <Navigate to="/" />} />
       <Route path="/activate-account" element={!isAuthenticated ? <ActivateAccountPage /> : <Navigate to="/" />} />
@@ -101,7 +102,7 @@ function App() {
 
           {/* Evaluateure routes */}
           <Route element={<ProtectedRoute requiredRole={Role.EVALUATEUR} />}>
-            <Route path="/evaluateur/dashboard" element={<AdminDashboard />} />
+            <Route path="/evaluateur/dashboard" element={<EvaluateurDashboard />} />
             <Route path="/evaluateur/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluateur/evaluations/:id/validate" element={<EvaluationValidatePage />} />
           </Route>
@@ -109,7 +110,7 @@ function App() {
           {/* Gouvernement routes */}
           <Route element={<ProtectedRoute requiredRole={Role.GOUVERNEMENT} />}>
             <Route path="/gouvernement/dashboard" element={<GouvernementDashboard />} />
-            <Route path="/gouvernement/evaluations" element={<EvaluationsPage />} />
+            <Route path="/gouvernement/evaluations" element={<Navigate to="/gouvernement/dashboard" replace />} />
             <Route path="/gouvernement/ranking" element={<RankingPage />} />
           </Route>
 
@@ -119,7 +120,8 @@ function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/login" />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

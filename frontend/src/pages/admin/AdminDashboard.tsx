@@ -19,11 +19,13 @@ import {
   ClipboardList,
   CheckCircle,
   AlertCircle,
+  LayoutDashboard,
 } from 'lucide-react';
 import { dashboardService } from '@/services/dashboardService';
 import type { DashboardKPIs } from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
 import { formatTodayLong } from '@/utils/date';
+import PageHeader from '@/components/ui/PageHeader';
 
 export default function AdminDashboard() {
   const { t, i18n } = useTranslation();
@@ -96,57 +98,65 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('navigation.dashboard')}</h1>
-        <span className="text-sm text-gray-500">
-          {formatTodayLong(i18n.resolvedLanguage || i18n.language)}
-        </span>
-      </div>
+    <div className="page-shell">
+      <PageHeader
+        eyebrow="SSE · CNI"
+        title={t('navigation.adminDashboard')}
+        description={t('dashboard.adminSubtitle')}
+        icon={LayoutDashboard}
+        meta={formatTodayLong(i18n.resolvedLanguage || i18n.language)}
+      />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <KPICard
           title={t('dashboard.totalOrganismes')}
           value={kpis?.totalOrganismes || 0}
           icon={Building2}
           color="primary"
+          to="/admin/organismes"
         />
         <KPICard
           title={t('dashboard.totalUsers')}
           value={kpis?.totalUsers || 0}
           icon={Users}
           color="secondary"
+          to="/admin/users"
         />
         <KPICard
           title={t('dashboard.evaluationsEnCours')}
           value={kpis?.evaluationsEnCours || 0}
           icon={ClipboardList}
           color="warning"
+          to="/admin/evaluations"
         />
         <KPICard
           title={t('dashboard.evaluationsSoumises')}
           value={kpis?.evaluationsSoumises || 0}
           icon={AlertCircle}
           color="info"
+          to="/admin/evaluations"
         />
         <KPICard
           title={t('dashboard.evaluationsValidees')}
           value={kpis?.evaluationsValidees || 0}
           icon={CheckCircle}
           color="success"
+          to="/admin/evaluations"
         />
         <KPICard
           title={t('dashboard.pendingValidations')}
           value={kpis?.pendingValidations || 0}
           icon={ClipboardList}
           color="danger"
+          to="/admin/evaluations"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('charts.byType')}</h3>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <section className="card p-5 sm:p-6" aria-labelledby="organism-type-chart">
+          <p className="page-eyebrow">{t('navigation.organismes')}</p>
+          <h2 id="organism-type-chart" className="mt-1 section-heading">{t('charts.byType')}</h2>
           {typeData.length === 0 ? (
             <ChartEmpty label={t('common.noData')} />
           ) : (
@@ -171,9 +181,10 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             </div>
           )}
-        </div>
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('charts.byStatus')}</h3>
+        </section>
+        <section className="card p-5 sm:p-6" aria-labelledby="evaluation-status-chart">
+          <p className="page-eyebrow">{t('navigation.evaluations')}</p>
+          <h2 id="evaluation-status-chart" className="mt-1 section-heading">{t('charts.byStatus')}</h2>
           {statusData.every((item) => item.count === 0) ? (
             <ChartEmpty label={t('common.noData')} />
           ) : (
@@ -193,7 +204,7 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
