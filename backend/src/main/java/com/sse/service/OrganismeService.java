@@ -21,13 +21,14 @@ public class OrganismeService {
     private final OrganismeRepository organismeRepository;
     private final EvaluationRepository evaluationRepository;
     private final UserRepository userRepository;
+    private final SecteurCatalogService secteurCatalogService;
     
     @Transactional
     public OrganismeResponse createOrganisme(CreateOrganismeRequest request) {
         Organisme org = new Organisme();
         org.setName(request.getName());
         org.setType(request.getType());
-        org.setSector(request.getSector());
+        org.setSector(secteurCatalogService.normalizeAndEnsure(request.getSector()));
         org.setAddress(request.getAddress());
         org.setEmail(request.getEmail());
         org.setPhone(request.getPhone());
@@ -57,7 +58,7 @@ public class OrganismeService {
         
         org.setName(request.getName());
         org.setType(request.getType());
-        org.setSector(request.getSector());
+        org.setSector(secteurCatalogService.normalizeAndEnsure(request.getSector()));
         org.setAddress(request.getAddress());
         org.setEmail(request.getEmail());
         org.setPhone(request.getPhone());

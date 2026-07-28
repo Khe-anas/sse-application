@@ -24,6 +24,7 @@ public class DemoDataService {
     private final OrganismeRepository organismeRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SecteurCatalogService secteurCatalogService;
 
     @Transactional
     public void seedDemoData() {
@@ -46,7 +47,7 @@ public class DemoDataService {
         Organisme organisme = new Organisme();
         organisme.setName("Organisme de démonstration");
         organisme.setType(TypeOrganisme.PUBLIC);
-        organisme.setSector("Administration publique");
+        organisme.setSector(secteurCatalogService.normalizeAndEnsure("Administration publique"));
         organisme.setEmail("contact@sse.tn");
         organisme.setIsActive(true);
         Organisme saved = organismeRepository.save(organisme);

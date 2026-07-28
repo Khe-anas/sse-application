@@ -44,6 +44,7 @@ public class UserService {
     private final EmailJobRepository emailJobRepository;
     private final NotificationRepository notificationRepository;
     private final FileStorageService fileStorageService;
+    private final SecteurCatalogService secteurCatalogService;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -118,7 +119,7 @@ public class UserService {
             Organisme organisme = new Organisme();
             organisme.setName(organisationName);
             organisme.setType(request.getOrganisationType());
-            organisme.setSector(normalizeNullable(request.getSector()));
+            organisme.setSector(secteurCatalogService.normalizeAndEnsure(request.getSector()));
             organisme.setAddress(normalizeNullable(request.getAddress()));
             organisme.setEmail(normalizeNullable(request.getOrganisationEmail()));
             organisme.setPhone(normalizeNullable(request.getOrganisationPhone()));

@@ -30,6 +30,14 @@ Spring Boot 3.2.5 + Java 17 + Spring Security/JWT
 
 Le front-end utilise React Router, Zustand, React Hook Form, Zod, Recharts, Axios, Lucide et i18next. Le back-end est organisé en contrôleurs REST, services métier, dépôts Spring Data JPA, DTO, contrôles d’accès et gestion centralisée des erreurs.
 
+### Modèle relationnel et migrations
+
+La base PostgreSQL est normalisée autour de catalogues dédiés pour les rôles, les types d’organisme et les secteurs. Les colonnes métier existantes restent lisibles (`ADMIN`, `PUBLIC`, `HEALTH`, etc.), mais elles sont désormais protégées par de véritables clés étrangères. Cette approche évite une rupture des API et des données historiques tout en garantissant l’intégrité référentielle.
+
+Les preuves attendues et les références d’un critère sont stockées dans les tables enfants `preuves` et `references_sse`. Un critère peut ainsi posséder plusieurs éléments ordonnés. Les anciens champs textuels agrégés restent exposés par l’API pour assurer la compatibilité avec l’interface actuelle.
+
+Flyway exécute automatiquement les scripts de `backend/src/main/resources/db/migration` avant la mise à jour du schéma Hibernate. La migration initiale crée les catalogues, rattache les clés étrangères et transfère les preuves/références historiques sans supprimer les anciennes colonnes, ce qui facilite un retour arrière.
+
 ## Fonctions livrées
 
 - authentification JWT, renouvellement, déconnexion, activation et récupération de compte ;

@@ -1,10 +1,13 @@
 package com.sse.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sse.enums.TypeOrganisme;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -30,8 +33,22 @@ public class Organisme {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TypeOrganisme type;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "type", referencedColumnName = "code", insertable = false, updatable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private TypeOrganismeDefinition typeDefinition;
     
     private String sector;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sector", referencedColumnName = "code", insertable = false, updatable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Secteur secteurDefinition;
     
     private String address;
     
@@ -55,11 +72,17 @@ public class Organisme {
     private Boolean isActive = true;
     
     @OneToMany(mappedBy = "organisme", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<User> users = new ArrayList<>();
     
     @OneToMany(mappedBy = "organisme", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Evaluation> evaluations = new ArrayList<>();
     
     @OneToMany(mappedBy = "organisme", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<GlobalScore> globalScores = new ArrayList<>();
 }

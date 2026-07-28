@@ -3,6 +3,7 @@ package com.sse.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sse.dto.BonnePratiqueResponse;
+import com.sse.dto.CritereContenuResponse;
 import com.sse.dto.CritereResponse;
 import com.sse.dto.PrincipeResponse;
 import com.sse.entity.BonnePratique;
@@ -309,7 +310,10 @@ public class PrincipeService {
     }
 
     private void initializeCriteres(Principe principe) {
-        principe.getBonnesPratiques().forEach(bp -> bp.getCriteres().size());
+        principe.getBonnesPratiques().forEach(bp -> bp.getCriteres().forEach(critere -> {
+            critere.getPreuves().size();
+            critere.getReferences().size();
+        }));
     }
 
     private PrincipeResponse mapToResponse(Principe principe) {
@@ -360,6 +364,24 @@ public class PrincipeService {
         response.setReferencesFr(critere.getReferencesFr());
         response.setReferencesAr(critere.getReferencesAr());
         response.setReferencesEn(critere.getReferencesEn());
+        response.setPreuves(critere.getPreuves().stream()
+            .map(preuve -> new CritereContenuResponse(
+                preuve.getId(),
+                preuve.getTexteFr(),
+                preuve.getTexteAr(),
+                preuve.getTexteEn(),
+                preuve.getDisplayOrder()
+            ))
+            .toList());
+        response.setReferences(critere.getReferences().stream()
+            .map(reference -> new CritereContenuResponse(
+                reference.getId(),
+                reference.getTexteFr(),
+                reference.getTexteAr(),
+                reference.getTexteEn(),
+                reference.getDisplayOrder()
+            ))
+            .toList());
         response.setBonnePratiqueId(critere.getBonnePratique().getId());
         return response;
     }

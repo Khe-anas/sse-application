@@ -164,7 +164,17 @@ export interface Critere {
   referencesFr?: string;
   referencesAr?: string;
   referencesEn?: string;
+  preuves?: CritereContenu[];
+  references?: CritereContenu[];
   bonnePratiqueId: string;
+}
+
+export interface CritereContenu {
+  id: string;
+  texteFr?: string;
+  texteAr?: string;
+  texteEn?: string;
+  displayOrder: number;
 }
 
 export interface Evaluation {

@@ -1,5 +1,6 @@
 package com.sse.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sse.enums.AccountRequestStatus;
 import com.sse.enums.TypeOrganisme;
 import jakarta.persistence.Column;
@@ -15,7 +16,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -38,6 +41,13 @@ public class AccountRequest {
 
     @Enumerated(EnumType.STRING)
     private TypeOrganisme type = TypeOrganisme.PRIVE;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "type", referencedColumnName = "code", insertable = false, updatable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private TypeOrganismeDefinition typeDefinition;
 
     @Column(nullable = false)
     private String responsibleFirstName;

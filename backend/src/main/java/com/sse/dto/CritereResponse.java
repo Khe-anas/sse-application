@@ -2,6 +2,8 @@ package com.sse.dto;
 
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -18,5 +20,7 @@ public class CritereResponse {
     private String referencesFr;
     private String referencesAr;
     private String referencesEn;
+    private List<CritereContenuResponse> preuves = new ArrayList<>();
+    private List<CritereContenuResponse> references = new ArrayList<>();
     private UUID bonnePratiqueId;
 }

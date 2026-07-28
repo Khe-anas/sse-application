@@ -43,6 +43,7 @@ public class AccountRequestService {
     private final AccountRequestEmailService accountRequestEmailService;
     private final CurrentUserService currentUserService;
     private final AuditLogService auditLogService;
+    private final SecteurCatalogService secteurCatalogService;
 
     @Transactional
     public AccountRequestResponse submit(AccountRequestSubmitRequest request) {
@@ -180,7 +181,7 @@ public class AccountRequestService {
         Organisme organisme = new Organisme();
         organisme.setName(accountRequest.getCompanyName());
         organisme.setType(accountRequest.getType() != null ? accountRequest.getType() : TypeOrganisme.PRIVE);
-        organisme.setSector(accountRequest.getSector());
+        organisme.setSector(secteurCatalogService.normalizeAndEnsure(accountRequest.getSector()));
         organisme.setAddress(accountRequest.getAddress());
         organisme.setEmail(accountRequest.getCompanyEmail());
         organisme.setPhone(accountRequest.getPhone());
@@ -192,7 +193,10 @@ public class AccountRequestService {
 
     private Organisme updateOrganisme(Organisme organisme, AccountRequest accountRequest) {
         organisme.setType(accountRequest.getType() != null ? accountRequest.getType() : organisme.getType());
-        organisme.setSector(accountRequest.getSector() != null ? accountRequest.getSector() : organisme.getSector());
+        String requestedSector = accountRequest.getSector() != null
+            ? accountRequest.getSector()
+            : organisme.getSector();
+        organisme.setSector(secteurCatalogService.normalizeAndEnsure(requestedSector));
         organisme.setAddress(accountRequest.getAddress() != null ? accountRequest.getAddress() : organisme.getAddress());
         organisme.setEmail(accountRequest.getCompanyEmail());
         organisme.setPhone(accountRequest.getPhone() != null ? accountRequest.getPhone() : organisme.getPhone());
