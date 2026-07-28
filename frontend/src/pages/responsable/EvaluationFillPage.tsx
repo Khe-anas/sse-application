@@ -694,7 +694,7 @@ export default function EvaluationFillPage() {
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="w-10 px-3 py-2.5 text-start font-semibold text-gray-700">N°</th>
               <th className="px-3 py-2.5 text-start font-semibold text-gray-700">BP</th>
-              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">Critère</th>
+              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">{t('evaluation.critere')}</th>
               {niveaux.map((niveau) => (
                 <th key={niveau.key} className="min-w-[112px] px-3 py-2.5 text-center font-semibold text-gray-700">
                   {t(niveau.label)}

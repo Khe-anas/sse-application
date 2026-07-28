@@ -25,3 +25,11 @@ yarn-error.log*
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Generated review/export artifacts
+outputs/
+rapport-stage/.build/
+rapport-stage/__pycache__/
+rapport-stage/*.tmp
+~$*.docx
+diagrams/diagramme-cas-utilisation.png

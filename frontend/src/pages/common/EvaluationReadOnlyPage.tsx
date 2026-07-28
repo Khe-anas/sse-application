@@ -154,7 +154,7 @@ export default function EvaluationReadOnlyPage() {
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="w-10 px-3 py-2.5 text-start font-semibold text-gray-700">N°</th>
               <th className="px-3 py-2.5 text-start font-semibold text-gray-700">BP</th>
-              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">Critère</th>
+              <th className="px-3 py-2.5 text-start font-semibold text-gray-700">{t('evaluation.critere')}</th>
               <th className="px-3 py-2.5 text-center font-semibold text-gray-700 w-12">Niveau</th>
               <th className="min-w-[160px] px-3 py-2.5 text-start font-semibold text-gray-700">Commentaire & Preuves</th>
             </tr>

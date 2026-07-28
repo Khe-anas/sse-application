@@ -1,0 +1,208 @@
+@startuml
+title Diagramme de classes — Plateforme d’évaluation SSE
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide circle
+
+package "Accès et organisation" {
+  class "Rôle" as Role <<Entité>> {
+    - id : UUID
+    - code : String <<unique>>
+    - libellé : String
+    - description : Text
+    - actif : Boolean
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+
+  class "Utilisateur" as Utilisateur <<Entité>> {
+    - id : UUID
+    - idRôle : UUID <<FK>>
+    - prénom : String
+    - nom : String
+    - email : String
+    - téléphone : String
+    - poste : String
+    - grade : String
+    - actif : Boolean
+    - statut : UserStatus
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+    --
+    + obtenirNomComplet() : String
+  }
+
+  class "Type d’organisme" as TypeOrganisme <<Entité>> {
+    - id : UUID
+    - code : String <<unique>>
+    - libellé : String
+    - description : Text
+    - actif : Boolean
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+
+  class "Secteur" as Secteur <<Entité>> {
+    - id : UUID
+    - code : String <<unique>>
+    - libellé : String
+    - description : Text
+    - actif : Boolean
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+
+  class "Organisme" as Organisme <<Entité>> {
+    - id : UUID
+    - idTypeOrganisme : UUID <<FK>>
+    - idSecteur : UUID <<FK>>
+    - nom : String
+    - adresse : String
+    - email : String
+    - téléphone : String
+    - fax : String
+    - siteWeb : String
+    - urlLogo : String
+    - actif : Boolean
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+
+  class "S’inscrire" as Inscription <<Table d’association>> {
+    - idUtilisateur : UUID <<FK>>
+    - idOrganisme : UUID <<FK>>
+    - email : String
+    - motDePasse : String
+    - actif : Boolean
+    - dernièreConnexion : LocalDateTime
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+}
+
+package "Référentiel SSE" {
+  class "Principe" as Principe <<Entité>> {
+    - id : UUID
+    - numéro : Integer
+    - nomFr : String
+    - nomAr : String
+    - nomEn : String
+    - descriptionFr : String
+    - descriptionAr : String
+    - descriptionEn : String
+    - pondération : Float
+    - fixe : Boolean
+    - ordre : Integer
+    - dateCréation : LocalDateTime
+  }
+
+  class "Bonne pratique" as BonnePratique <<Entité>> {
+    - id : UUID
+    - numéro : Integer
+    - libelléFr : String
+    - libelléAr : String
+    - libelléEn : String
+  }
+
+  class "Preuve" as Preuve <<Entité>> {
+    - id : UUID
+    - idCritère : UUID <<FK>>
+    - texte : String
+    - ordre : Integer
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+
+  class "Référence" as Reference <<Entité>> {
+    - id : UUID
+    - idCritère : UUID <<FK>>
+    - texte : String
+    - ordre : Integer
+    - dateCréation : LocalDateTime
+    - dateModification : LocalDateTime
+  }
+
+  class "Critère" as Critere <<Table d’association>> {
+    - id : UUID
+    - idBonnePratique : UUID <<FK>>
+    - numéro : Integer
+    - libelléFr : String
+    - libelléAr : String
+    - libelléEn : String
+  }
+}
+
+package "Évaluation et pilotage" {
+  class "Évaluation" as Evaluation <<Entité>> {
+    - id : UUID
+    - année : Integer
+    - statut : StatusEvaluation
+    - dateDébut : LocalDateTime
+    - dateSoumission : LocalDateTime
+    - dateValidation : LocalDateTime
+    - datePriseEnCharge : LocalDateTime
+    - scoreGlobal : Float
+    - niveauMaturité : MaturityLevel
+    - commentaires : String
+    --
+    + soumettre()
+    + demanderCorrection()
+    + valider()
+    + rejeter()
+  }
+
+  class "Score par principe" as ScorePrincipe <<Entité>> {
+    - id : UUID
+    - score : Float
+    - scoreMaximal : Float
+    - pondération : Float
+  }
+
+  class "Score global" as GlobalScore <<Entité>> {
+    - id : UUID
+    - année : Integer
+    - score : Float
+    - niveauMaturité : MaturityLevel
+    - classement : Integer
+  }
+
+  class "Notification" as Notification <<Entité>> {
+    - id : UUID
+    - type : TypeNotification
+    - titreFr : String
+    - titreAr : String
+    - titreEn : String
+    - messageFr : String
+    - messageAr : String
+    - messageEn : String
+    - lue : Boolean
+    - lien : String
+    - dateCréation : LocalDateTime
+  }
+}
+
+Role "1" -- "0..*" Utilisateur : idRôle
+TypeOrganisme "1" -- "0..*" Organisme : idTypeOrganisme
+Secteur "1" -- "0..*" Organisme : idSecteur
+Utilisateur "1" -- "0..*" Inscription : idUtilisateur
+Organisme "1" -- "0..*" Inscription : idOrganisme
+
+Principe "1" *-- "0..*" BonnePratique : contient
+BonnePratique "1" *-- "0..*" Critere : contient
+Critere "1" *-- "1..*" Preuve : contient
+Critere "1" *-- "1..*" Reference : contient
+
+Organisme "1" *-- "0..*" Evaluation : possède
+Evaluation "0..*" -- "0..*" Critere : évalue
+Evaluation "1" *-- "0..*" ScorePrincipe : produit
+Principe "1" -- "0..*" ScorePrincipe : pondère
+Organisme "1" *-- "0..*" GlobalScore : historise
+Utilisateur "0..1" -- "0..*" Evaluation : ouvre la validation
+Utilisateur "1" *-- "0..*" Notification : destinataire
+
+@enduml
