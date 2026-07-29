@@ -44,7 +44,7 @@ public class User {
     private Role role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role", referencedColumnName = "code", insertable = false, updatable = false)
+    @JoinColumn(name = "role_definition_id")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

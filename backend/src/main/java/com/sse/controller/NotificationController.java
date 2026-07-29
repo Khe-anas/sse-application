@@ -30,6 +30,7 @@ public class NotificationController {
     private final CurrentUserService currentUserService;
     
     @GetMapping
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
     public ResponseEntity<?> getMyNotifications(
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
@@ -48,6 +49,7 @@ public class NotificationController {
     }
     
     @GetMapping("/unread-count")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
     public ResponseEntity<Map<String, Long>> getUnreadCount(HttpServletRequest request) {
         UUID userId = currentUserService.getCurrentUserId(request);
         long count = notificationService.getUnreadCount(userId);
@@ -55,12 +57,14 @@ public class NotificationController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
     public SseEmitter streamNotifications(HttpServletRequest request) {
         UUID userId = currentUserService.getCurrentUserId(request);
         return notificationStreamService.subscribe(userId);
     }
     
     @PutMapping("/{id}/read")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
     public ResponseEntity<Void> markAsRead(@PathVariable UUID id, HttpServletRequest request) {
         UUID userId = currentUserService.getCurrentUserId(request);
         notificationService.markAsRead(id, userId);
@@ -68,6 +72,7 @@ public class NotificationController {
     }
     
     @PutMapping("/read-all")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
     public ResponseEntity<Void> markAllAsRead(HttpServletRequest request) {
         UUID userId = currentUserService.getCurrentUserId(request);
         notificationService.markAllAsRead(userId);
@@ -75,6 +80,7 @@ public class NotificationController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
     public ResponseEntity<Void> deleteNotification(@PathVariable UUID id, HttpServletRequest request) {
         UUID userId = currentUserService.getCurrentUserId(request);
         notificationService.deleteNotification(id, userId);
@@ -82,21 +88,21 @@ public class NotificationController {
     }
 
     @PostMapping("/admin/messages")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_NOTIFY')")
     public ResponseEntity<Map<String, Integer>> sendAdminMessage(@Valid @RequestBody AdminNotificationRequest request) {
         int sent = notificationService.sendAdminMessage(request);
         return ResponseEntity.ok(Map.of("sent", sent));
     }
 
     @PostMapping("/admin/announcements")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_NOTIFY')")
     public ResponseEntity<Map<String, Integer>> sendAnnouncement(@Valid @RequestBody AdminNotificationRequest request) {
         int sent = notificationService.sendAnnouncement(request);
         return ResponseEntity.ok(Map.of("sent", sent));
     }
 
     @PostMapping("/admin/reminders/run")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_NOTIFY')")
     public ResponseEntity<Map<String, Integer>> runIncompleteEvaluationReminders() {
         int sent = notificationService.sendDailyIncompleteEvaluationReminders();
         return ResponseEntity.ok(Map.of("sent", sent));

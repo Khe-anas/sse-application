@@ -16,6 +16,10 @@ public interface SecteurRepository extends JpaRepository<Secteur, UUID> {
 
     List<Secteur> findByActiveTrueOrderByLabelAsc();
 
+    List<Secteur> findAllByOrderByLabelAsc();
+
+    boolean existsByCodeIgnoreCase(String code);
+
     @Modifying
     @Query(value = """
         INSERT INTO secteurs (id, code, label, active, created_at, updated_at)

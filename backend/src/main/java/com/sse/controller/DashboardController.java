@@ -20,13 +20,13 @@ public class DashboardController {
     private final DashboardService dashboardService;
     
     @GetMapping("/global")
-    @PreAuthorize("hasAnyRole('ADMIN', 'GOUVERNEMENT')")
+    @PreAuthorize("@permissionAccess.has('DASHBOARD_READ')")
     public ResponseEntity<DashboardKPIs> getGlobalKPIs() {
         return ResponseEntity.ok(dashboardService.getGlobalKPIs());
     }
     
     @GetMapping("/ranking")
-    @PreAuthorize("hasAnyRole('ADMIN', 'GOUVERNEMENT')")
+    @PreAuthorize("@permissionAccess.has('DASHBOARD_READ')")
     public ResponseEntity<List<RankingItem>> getRanking(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) TypeOrganisme type) {
@@ -34,7 +34,7 @@ public class DashboardController {
     }
     
     @GetMapping("/gap-analysis")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('DASHBOARD_READ')")
     public ResponseEntity<List<GapAnalysisItem>> getGapAnalysis(
             @RequestParam UUID organismeId,
             @RequestParam(required = false) Integer year) {
@@ -42,7 +42,7 @@ public class DashboardController {
     }
     
     @GetMapping("/evolution")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('DASHBOARD_READ')")
     public ResponseEntity<List<GlobalScore>> getEvolution(@RequestParam UUID organismeId) {
         return ResponseEntity.ok(dashboardService.getEvolution(organismeId));
     }

@@ -11,7 +11,11 @@ export function useAuth() {
     isUser: user?.role === Role.USER,
     isEvaluateure: user?.role === Role.EVALUATEUR,
     isGouvernement: user?.role === Role.GOUVERNEMENT,
+    isSystemAdmin: Boolean(user?.systemAdmin),
     hasRole: (role: Role) => user?.role === role,
+    hasPermission: (permission: string) => Boolean(
+      user?.systemAdmin || user?.permissions?.includes(permission),
+    ),
     logout,
   };
 }

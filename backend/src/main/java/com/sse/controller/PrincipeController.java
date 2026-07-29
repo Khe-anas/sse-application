@@ -26,17 +26,19 @@ public class PrincipeController {
     private final ReferenceTranslationService referenceTranslationService;
     
     @GetMapping
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_READ')")
     public ResponseEntity<List<PrincipeResponse>> getAllPrincipes() {
         return ResponseEntity.ok(principeService.getAllPrincipes());
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_READ')")
     public ResponseEntity<PrincipeResponse> getPrincipeById(@PathVariable UUID id) {
         return ResponseEntity.ok(principeService.getPrincipeById(id));
     }
     
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Principe> createPrincipe(@RequestBody Map<String, String> request) {
         String nameFr = request.get("nameFr");
         String nameAr = request.get("nameAr");
@@ -50,7 +52,7 @@ public class PrincipeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Principe> updatePrincipe(@PathVariable UUID id, @RequestBody Map<String, String> request) {
         String nameFr = request.get("nameFr");
         String nameAr = request.get("nameAr");
@@ -65,14 +67,14 @@ public class PrincipeController {
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Void> deletePrincipe(@PathVariable UUID id) {
         principeService.deletePrincipe(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/bonnes-pratiques")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<BonnePratique> createBonnePratique(@RequestBody Map<String, String> request) {
         UUID principeId = UUID.fromString(request.get("principeId"));
         String labelFr = request.get("labelFr");
@@ -82,7 +84,7 @@ public class PrincipeController {
     }
 
     @PutMapping("/bonnes-pratiques/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<BonnePratique> updateBonnePratique(@PathVariable UUID id, @RequestBody Map<String, String> request) {
         String labelFr = request.get("labelFr");
         String labelAr = request.get("labelAr");
@@ -91,14 +93,14 @@ public class PrincipeController {
     }
 
     @DeleteMapping("/bonnes-pratiques/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Void> deleteBonnePratique(@PathVariable UUID id) {
         principeService.deleteBonnePratique(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/criteres")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Critere> createCritere(@RequestBody Map<String, String> request) {
         UUID bonnePratiqueId = UUID.fromString(request.get("bonnePratiqueId"));
         String labelFr = request.get("labelFr");
@@ -115,7 +117,7 @@ public class PrincipeController {
     }
 
     @PutMapping("/criteres/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Critere> updateCritere(@PathVariable UUID id, @RequestBody Map<String, String> request) {
         String labelFr = request.get("labelFr");
         String labelAr = request.get("labelAr");
@@ -131,19 +133,20 @@ public class PrincipeController {
     }
 
     @DeleteMapping("/criteres/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<Void> deleteCritere(@PathVariable UUID id) {
         principeService.deleteCritere(id);
         return ResponseEntity.ok().build();
     }
     
     @GetMapping("/count-criteres")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_READ')")
     public ResponseEntity<Long> countAllCriteres() {
         return ResponseEntity.ok(principeService.countAllCriteres());
     }
 
     @PostMapping("/translate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REFERENTIEL_WRITE')")
     public ResponseEntity<ReferenceTranslationResponse> translateReferenceFields(
         @RequestBody ReferenceTranslationRequest request
     ) {

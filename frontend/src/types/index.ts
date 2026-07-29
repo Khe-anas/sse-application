@@ -83,6 +83,8 @@ export enum EmailJobType {
   ACCOUNT_ACTIVATION = 'ACCOUNT_ACTIVATION',
 }
 
+export type PermissionAction = 'READ' | 'WRITE' | 'NOTIFY';
+
 // ==================== ENTITY TYPES ====================
 export interface User {
   id: string;
@@ -91,6 +93,12 @@ export interface User {
   lastName: string;
   fullName: string;
   role: Role;
+  roleDefinitionId?: string;
+  roleCode?: string;
+  roleLabel?: string;
+  systemRole?: boolean;
+  systemAdmin?: boolean;
+  permissions?: string[];
   phone?: string;
   position?: string;
   isActive: boolean;
@@ -100,6 +108,9 @@ export interface User {
   organismeId?: string;
   organismeName?: string;
   organismeType?: TypeOrganisme;
+  organismeTypeDefinitionId?: string;
+  organismeTypeCode?: string;
+  organismeTypeLabel?: string;
   organismeSector?: string;
   organismeAddress?: string;
   organismeEmail?: string;
@@ -113,6 +124,9 @@ export interface Organisme {
   id: string;
   name: string;
   type: TypeOrganisme;
+  typeDefinitionId?: string;
+  typeCode?: string;
+  typeLabel?: string;
   sector?: string;
   address?: string;
   email?: string;
@@ -124,6 +138,45 @@ export interface Organisme {
   createdAt: string;
   usersCount?: number;
   evaluationsCount?: number;
+}
+
+export interface PermissionDefinition {
+  id: string;
+  code: string;
+  resourceCode: string;
+  action: PermissionAction;
+  label: string;
+  description?: string;
+}
+
+export interface RoleDefinition {
+  id: string;
+  code: string;
+  label: string;
+  description?: string;
+  baseRole: Role;
+  systemRole: boolean;
+  active: boolean;
+  permissionCodes: string[];
+  usersCount: number;
+}
+
+export interface TypeOrganismeDefinition {
+  id: string;
+  code: string;
+  label: string;
+  description?: string;
+  baseType: TypeOrganisme;
+  systemType: boolean;
+  active: boolean;
+}
+
+export interface SecteurDefinition {
+  id: string;
+  code: string;
+  label: string;
+  description?: string;
+  active: boolean;
 }
 
 export interface Principe {

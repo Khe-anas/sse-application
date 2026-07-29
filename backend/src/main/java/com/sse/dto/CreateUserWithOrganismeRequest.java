@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @Data
 public class CreateUserWithOrganismeRequest {
 
@@ -30,6 +32,8 @@ public class CreateUserWithOrganismeRequest {
 
     @NotNull(message = "Organization type is required")
     private TypeOrganisme organisationType;
+
+    private UUID organisationTypeDefinitionId;
 
     private String sector;
     private String address;

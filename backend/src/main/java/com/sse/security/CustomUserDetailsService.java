@@ -32,6 +32,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (!Boolean.TRUE.equals(user.getIsActive()) || status != UserStatus.ACTIVE || user.getPassword() == null) {
             throw new UsernameNotFoundException("User account is disabled");
         }
+        if (user.getRoleDefinition() != null && !Boolean.TRUE.equals(user.getRoleDefinition().getActive())) {
+            throw new UsernameNotFoundException("User role is disabled");
+        }
         
         return new org.springframework.security.core.userdetails.User(
             user.getEmail(),

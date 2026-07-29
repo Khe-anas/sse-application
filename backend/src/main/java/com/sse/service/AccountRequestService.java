@@ -44,6 +44,7 @@ public class AccountRequestService {
     private final CurrentUserService currentUserService;
     private final AuditLogService auditLogService;
     private final SecteurCatalogService secteurCatalogService;
+    private final CatalogueLookupService catalogueLookupService;
 
     @Transactional
     public AccountRequestResponse submit(AccountRequestSubmitRequest request) {
@@ -181,6 +182,7 @@ public class AccountRequestService {
         Organisme organisme = new Organisme();
         organisme.setName(accountRequest.getCompanyName());
         organisme.setType(accountRequest.getType() != null ? accountRequest.getType() : TypeOrganisme.PRIVE);
+        organisme.setTypeDefinition(catalogueLookupService.resolveType(null, organisme.getType()));
         organisme.setSector(secteurCatalogService.normalizeAndEnsure(accountRequest.getSector()));
         organisme.setAddress(accountRequest.getAddress());
         organisme.setEmail(accountRequest.getCompanyEmail());
@@ -193,6 +195,7 @@ public class AccountRequestService {
 
     private Organisme updateOrganisme(Organisme organisme, AccountRequest accountRequest) {
         organisme.setType(accountRequest.getType() != null ? accountRequest.getType() : organisme.getType());
+        organisme.setTypeDefinition(catalogueLookupService.resolveType(null, organisme.getType()));
         String requestedSector = accountRequest.getSector() != null
             ? accountRequest.getSector()
             : organisme.getSector();

@@ -35,7 +35,7 @@ public class Organisme {
     private TypeOrganisme type;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type", referencedColumnName = "code", insertable = false, updatable = false)
+    @JoinColumn(name = "type_definition_id")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

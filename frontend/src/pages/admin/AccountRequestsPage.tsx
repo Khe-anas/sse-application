@@ -24,6 +24,7 @@ import KPICard from '@/components/dashboard/KPICard';
 export default function AccountRequestsPage() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const canWrite = Boolean(user?.systemAdmin || user?.permissions?.includes('ACCOUNT_REQUESTS_WRITE'));
   const [requests, setRequests] = useState<PageResponse<AccountRequest> | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<AccountRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,6 +57,10 @@ export default function AccountRequestsPage() {
   }, [loadRequests]);
 
   const openRequest = async (request: AccountRequest) => {
+    if (!canWrite) {
+      selectRequest(request);
+      return;
+    }
     if (request.status !== AccountRequestStatus.PENDING) {
       selectRequest(request);
       return;
@@ -221,7 +226,7 @@ export default function AccountRequestsPage() {
                     <td className="table-td">
                       <button
                         onClick={() => openRequest(request)}
-                        disabled={locked || claimingRequestId === request.id}
+                        disabled={(canWrite && locked) || claimingRequestId === request.id}
                         className="btn-outline btn-sm gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {locked ? <Lock className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -297,7 +302,7 @@ export default function AccountRequestsPage() {
                 )}
               </div>
 
-              {selectedRequest.status === AccountRequestStatus.PENDING && (
+              {selectedRequest.status === AccountRequestStatus.PENDING && canWrite && (
                 <div className="space-y-4 rounded-lg border border-primary-100 p-4">
                   <div>
                     <label className="label">{t('accountRequests.adminComment')}</label>

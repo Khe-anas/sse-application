@@ -39,7 +39,7 @@ public class ReclamationController {
     }
 
     @GetMapping("/admin/reclamations")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('RECLAMATIONS_READ')")
     public ResponseEntity<PageResponse<ReclamationResponse>> getAll(
             @RequestParam(required = false) ReclamationStatus status,
             @RequestParam(required = false) String search,
@@ -64,26 +64,26 @@ public class ReclamationController {
     }
 
     @GetMapping("/admin/reclamations/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('RECLAMATIONS_READ')")
     public ResponseEntity<ReclamationResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(reclamationService.getById(id));
     }
 
     @PutMapping("/admin/reclamations/{id}/claim")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('RECLAMATIONS_WRITE')")
     public ResponseEntity<ReclamationResponse> claim(@PathVariable UUID id) {
         return ResponseEntity.ok(reclamationService.claim(id));
     }
 
     @PutMapping("/admin/reclamations/{id}/release")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('RECLAMATIONS_WRITE')")
     public ResponseEntity<Void> release(@PathVariable UUID id) {
         reclamationService.release(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/admin/reclamations/{id}/resolve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('RECLAMATIONS_WRITE')")
     public ResponseEntity<ReclamationResponse> resolve(
             @PathVariable UUID id,
             @Valid @RequestBody ResolveReclamationRequest request) {

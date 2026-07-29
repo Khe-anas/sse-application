@@ -13,6 +13,7 @@ import type { PageResponse, Reclamation } from '@/types';
 export default function ReclamationsPage() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const canWrite = Boolean(user?.systemAdmin || user?.permissions?.includes('RECLAMATIONS_WRITE'));
   const [reclamations, setReclamations] = useState<PageResponse<Reclamation> | null>(null);
   const [selectedReclamation, setSelectedReclamation] = useState<Reclamation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +62,7 @@ export default function ReclamationsPage() {
   }, [loadReclamations]);
 
   useEffect(() => {
-    if (!selectedReclamation || selectedReclamation.status === ReclamationStatus.RESOLVED) return undefined;
+    if (!canWrite || !selectedReclamation || selectedReclamation.status === ReclamationStatus.RESOLVED) return undefined;
 
     const keepLockAlive = () => {
       if (!document.hidden) {
@@ -74,9 +75,14 @@ export default function ReclamationsPage() {
       window.clearInterval(interval);
       void reclamationService.release(selectedReclamation.id).catch(() => undefined);
     };
-  }, [selectedReclamation]);
+  }, [canWrite, selectedReclamation]);
 
   const openReclamation = async (reclamation: Reclamation) => {
+    if (!canWrite) {
+      setSelectedReclamation(reclamation);
+      setAdminResponse(reclamation.adminResponse || '');
+      return;
+    }
     if (isLockedByOther(reclamation, user?.id)) return;
 
     setClaimingId(reclamation.id);
@@ -111,7 +117,7 @@ export default function ReclamationsPage() {
 
   const closeSelectedReclamation = () => {
     const current = selectedReclamation;
-    if (current && current.status !== ReclamationStatus.RESOLVED) {
+    if (canWrite && current && current.status !== ReclamationStatus.RESOLVED) {
       void reclamationService.release(current.id).catch(() => undefined);
       void loadReclamations(false);
     }
@@ -125,7 +131,8 @@ export default function ReclamationsPage() {
   const pendingCount = reclamations?.content.filter((item) => item.status === ReclamationStatus.PENDING).length || 0;
   const lockedCount = reclamations?.content.filter((item) => isLockedByOther(item, user?.id)).length || 0;
   const canResolveSelected =
-    selectedReclamation?.status !== ReclamationStatus.RESOLVED
+    canWrite
+    && selectedReclamation?.status !== ReclamationStatus.RESOLVED
     && selectedReclamation?.openedById === user?.id;
 
   const statusClasses: Record<ReclamationStatus, string> = {
@@ -215,7 +222,7 @@ export default function ReclamationsPage() {
                       <button
                         type="button"
                         onClick={() => openReclamation(reclamation)}
-                        disabled={locked || claimingId === reclamation.id}
+                        disabled={(canWrite && locked) || claimingId === reclamation.id}
                         className="btn-outline btn-sm gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                         title={locked ? t('reclamationsPage.lockedBy', { name: reclamation.openedByName }) : undefined}
                       >

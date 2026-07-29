@@ -12,8 +12,9 @@ import {
   ChevronLeft,
   MessageSquareWarning,
   Settings,
-  Mail,
   History,
+  SlidersHorizontal,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
@@ -25,13 +26,15 @@ interface NavItem {
   icon: React.ElementType;
   path: string;
   roles: Role[];
+  permission?: string;
+  systemAdminOnly?: boolean;
 }
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'navigationGroups.overview',
     items: [
-      { label: 'navigation.adminDashboard', icon: LayoutDashboard, path: '/admin/dashboard', roles: [Role.ADMIN] },
+      { label: 'navigation.adminDashboard', icon: LayoutDashboard, path: '/admin/dashboard', roles: [Role.ADMIN], permission: 'DASHBOARD_READ' },
       { label: 'navigation.myEvaluations', icon: LayoutDashboard, path: '/user/dashboard', roles: [Role.USER] },
       { label: 'navigation.evaluateurDashboard', icon: LayoutDashboard, path: '/evaluateur/dashboard', roles: [Role.EVALUATEUR] },
       { label: 'navigation.governmentDashboard', icon: LayoutDashboard, path: '/gouvernement/dashboard', roles: [Role.GOUVERNEMENT] },
@@ -48,20 +51,21 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'navigationGroups.administration',
     items: [
-      { label: 'navigation.users', icon: Users, path: '/admin/users', roles: [Role.ADMIN] },
-      { label: 'navigation.accountRequests', icon: FileCheck2, path: '/admin/account-requests', roles: [Role.ADMIN] },
-      { label: 'navigation.organismes', icon: Building2, path: '/admin/organismes', roles: [Role.ADMIN] },
-      { label: 'navigation.evaluations', icon: ClipboardList, path: '/admin/evaluations', roles: [Role.ADMIN] },
-      { label: 'navigation.principes', icon: BookOpen, path: '/admin/principes', roles: [Role.ADMIN] },
-      { label: 'navigation.reclamations', icon: MessageSquareWarning, path: '/admin/reclamations', roles: [Role.ADMIN] },
+      { label: 'navigation.users', icon: Users, path: '/admin/users', roles: [Role.ADMIN], permission: 'USERS_READ' },
+      { label: 'navigation.accountRequests', icon: FileCheck2, path: '/admin/account-requests', roles: [Role.ADMIN], permission: 'ACCOUNT_REQUESTS_READ' },
+      { label: 'navigation.organismes', icon: Building2, path: '/admin/organismes', roles: [Role.ADMIN], permission: 'ORGANISMES_READ' },
+      { label: 'navigation.evaluations', icon: ClipboardList, path: '/admin/evaluations', roles: [Role.ADMIN], permission: 'EVALUATIONS_READ' },
+      { label: 'navigation.principes', icon: BookOpen, path: '/admin/principes', roles: [Role.ADMIN], permission: 'REFERENTIEL_READ' },
+      { label: 'navigation.reclamations', icon: MessageSquareWarning, path: '/admin/reclamations', roles: [Role.ADMIN], permission: 'RECLAMATIONS_READ' },
     ],
   },
   {
     label: 'navigationGroups.system',
     items: [
-      { label: 'navigation.emailJobs', icon: Mail, path: '/admin/email-jobs', roles: [Role.ADMIN] },
-      { label: 'navigation.notifications', icon: Bell, path: '/admin/notifications', roles: [Role.ADMIN] },
-      { label: 'navigation.auditLogs', icon: History, path: '/admin/audit-logs', roles: [Role.ADMIN] },
+      { label: 'navigation.catalogues', icon: SlidersHorizontal, path: '/admin/catalogues', roles: [Role.ADMIN], systemAdminOnly: true },
+      { label: 'navigation.accessControl', icon: ShieldCheck, path: '/admin/access-control', roles: [Role.ADMIN], systemAdminOnly: true },
+      { label: 'navigation.notifications', icon: Bell, path: '/admin/notifications', roles: [Role.ADMIN], permission: 'NOTIFICATIONS_NOTIFY' },
+      { label: 'navigation.auditLogs', icon: History, path: '/admin/audit-logs', roles: [Role.ADMIN], permission: 'AUDIT_READ' },
       { label: 'navigation.settings', icon: Settings, path: '/settings', roles: [Role.ADMIN, Role.USER, Role.EVALUATEUR, Role.GOUVERNEMENT] },
     ],
   },
@@ -73,11 +77,20 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toggleSidebar } = useUIStore();
+  const legacyAdminSession = user?.role === Role.ADMIN
+    && user.systemAdmin == null
+    && user.permissions == null;
+  const hasSystemAccess = Boolean(user?.systemAdmin || legacyAdminSession);
 
   const filteredGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => user?.role && item.roles.includes(user.role)),
+      items: group.items.filter((item) => {
+        if (!user?.role || !item.roles.includes(user.role)) return false;
+        if (item.systemAdminOnly && !hasSystemAccess) return false;
+        if (item.permission && !hasSystemAccess && !user.permissions?.includes(item.permission)) return false;
+        return true;
+      }),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -110,7 +123,7 @@ export default function Sidebar() {
 
       <div className="px-5 pt-4">
         <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-blue-50">
-          {user?.role ? t(`user.role.${user.role}`) : ''}
+          {user?.roleLabel || (user?.role ? t(`user.role.${user.role}`) : '')}
         </span>
       </div>
 

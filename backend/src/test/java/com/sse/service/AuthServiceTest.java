@@ -3,6 +3,7 @@ package com.sse.service;
 import com.sse.entity.User;
 import com.sse.repository.UserRepository;
 import com.sse.security.JwtUtil;
+import com.sse.security.PermissionAccessService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,6 +36,9 @@ class AuthServiceTest {
 
     @Mock
     private AccountActivationService accountActivationService;
+
+    @Mock
+    private PermissionAccessService permissionAccessService;
 
     @InjectMocks
     private AuthService authService;

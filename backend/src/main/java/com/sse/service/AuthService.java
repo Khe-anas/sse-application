@@ -6,6 +6,7 @@ import com.sse.enums.Role;
 import com.sse.enums.UserStatus;
 import com.sse.repository.UserRepository;
 import com.sse.security.JwtUtil;
+import com.sse.security.PermissionAccessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +29,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final AccountActivationService accountActivationService;
+    private final PermissionAccessService permissionAccessService;
     
     @Transactional
     public AuthResponse login(LoginRequest request) {
@@ -56,6 +58,7 @@ public class AuthService {
         }
     }
     
+    @Transactional(readOnly = true)
     public AuthResponse refreshToken(String refreshToken) {
         if (!jwtUtil.isRefreshToken(refreshToken)) {
             throw new BadCredentialsException("Invalid refresh token");
@@ -91,6 +94,7 @@ public class AuthService {
         return mapToUserResponse(activated);
     }
     
+    @Transactional(readOnly = true)
     public UserResponse getCurrentUser(UUID userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
@@ -133,6 +137,18 @@ public class AuthService {
         response.setLastName(user.getLastName());
         response.setFullName(user.getFullName());
         response.setRole(user.getRole());
+        if (user.getRoleDefinition() != null) {
+            response.setRoleDefinitionId(user.getRoleDefinition().getId());
+            response.setRoleCode(user.getRoleDefinition().getCode());
+            response.setRoleLabel(user.getRoleDefinition().getLabel());
+            response.setSystemRole(Boolean.TRUE.equals(user.getRoleDefinition().getSystemRole()));
+        } else {
+            response.setRoleCode(user.getRole().name());
+            response.setRoleLabel(user.getRole().name());
+            response.setSystemRole(true);
+        }
+        response.setSystemAdmin(permissionAccessService.isSystemAdmin(user));
+        response.setPermissions(permissionAccessService.permissionsFor(user));
         response.setPhone(user.getPhone());
         response.setPosition(user.getPosition());
         response.setIsActive(user.getIsActive());
@@ -143,6 +159,11 @@ public class AuthService {
             response.setOrganismeId(user.getOrganisme().getId());
             response.setOrganismeName(user.getOrganisme().getName());
             response.setOrganismeType(user.getOrganisme().getType());
+            if (user.getOrganisme().getTypeDefinition() != null) {
+                response.setOrganismeTypeDefinitionId(user.getOrganisme().getTypeDefinition().getId());
+                response.setOrganismeTypeCode(user.getOrganisme().getTypeDefinition().getCode());
+                response.setOrganismeTypeLabel(user.getOrganisme().getTypeDefinition().getLabel());
+            }
             response.setOrganismeSector(user.getOrganisme().getSector());
             response.setOrganismeAddress(user.getOrganisme().getAddress());
             response.setOrganismeEmail(user.getOrganisme().getEmail());

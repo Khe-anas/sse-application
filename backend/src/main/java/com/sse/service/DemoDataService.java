@@ -5,6 +5,7 @@ import com.sse.entity.User;
 import com.sse.enums.Role;
 import com.sse.enums.TypeOrganisme;
 import com.sse.repository.OrganismeRepository;
+import com.sse.repository.RoleDefinitionRepository;
 import com.sse.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,8 @@ public class DemoDataService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SecteurCatalogService secteurCatalogService;
+    private final CatalogueLookupService catalogueLookupService;
+    private final RoleDefinitionRepository roleDefinitionRepository;
 
     @Transactional
     public void seedDemoData() {
@@ -47,6 +50,7 @@ public class DemoDataService {
         Organisme organisme = new Organisme();
         organisme.setName("Organisme de démonstration");
         organisme.setType(TypeOrganisme.PUBLIC);
+        organisme.setTypeDefinition(catalogueLookupService.resolveType(null, TypeOrganisme.PUBLIC));
         organisme.setSector(secteurCatalogService.normalizeAndEnsure("Administration publique"));
         organisme.setEmail("contact@sse.tn");
         organisme.setIsActive(true);
@@ -66,6 +70,10 @@ public class DemoDataService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setRole(role);
+        user.setRoleDefinition(
+            roleDefinitionRepository.findBySystemRoleTrueAndBaseRole(role)
+                .orElseThrow(() -> new IllegalStateException("System role definition not found: " + role))
+        );
         user.setOrganisme(organisme);
         user.setIsActive(true);
         userRepository.save(user);

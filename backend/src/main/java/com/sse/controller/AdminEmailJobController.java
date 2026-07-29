@@ -24,7 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/admin/email-jobs")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@permissionAccess.isSystemAdmin()")
 public class AdminEmailJobController {
 
     private final EmailJobService emailJobService;

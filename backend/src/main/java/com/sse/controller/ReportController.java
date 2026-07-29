@@ -60,7 +60,7 @@ public class ReportController {
     private final ReponseService reponseService;
     
     @GetMapping("/{evaluationId}/pdf")
-    @PreAuthorize("@accessControl.canReadEvaluation(#p0)")
+    @PreAuthorize("@permissionAccess.has('REPORTS_READ') and @accessControl.canReadEvaluation(#p0)")
     public ResponseEntity<byte[]> generateEvaluationPdf(@PathVariable UUID evaluationId) {
         EvaluationResponse evaluation = evaluationService.getEvaluationById(evaluationId);
         List<ReponseResponse> reponses = reponseService.getReponsesByEvaluation(evaluationId);
@@ -73,7 +73,7 @@ public class ReportController {
     }
     
     @GetMapping("/{evaluationId}/excel")
-    @PreAuthorize("@accessControl.canReadEvaluation(#p0)")
+    @PreAuthorize("@permissionAccess.has('REPORTS_READ') and @accessControl.canReadEvaluation(#p0)")
     public ResponseEntity<byte[]> generateEvaluationExcel(@PathVariable UUID evaluationId) {
         EvaluationResponse evaluation = evaluationService.getEvaluationById(evaluationId);
         List<ReponseResponse> reponses = reponseService.getReponsesByEvaluation(evaluationId);
@@ -86,7 +86,7 @@ public class ReportController {
     }
     
     @GetMapping("/global/excel")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('REPORTS_READ')")
     public ResponseEntity<byte[]> generateGlobalExcel(@RequestParam(required = false) Integer year) {
         // TODO: Implement global Excel export
         String placeholder = "Global Excel report will be generated here for year: " + year;

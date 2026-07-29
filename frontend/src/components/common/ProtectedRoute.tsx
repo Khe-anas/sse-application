@@ -4,10 +4,16 @@ import { Role } from '@/types';
 
 interface ProtectedRouteProps {
   requiredRole?: Role;
+  requiredPermission?: string;
+  systemAdminOnly?: boolean;
 }
 
-export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
+export default function ProtectedRoute({ requiredRole, requiredPermission, systemAdminOnly = false }: ProtectedRouteProps) {
   const { isAuthenticated, user, isLoading } = useAuthStore();
+  const legacyAdminSession = user?.role === Role.ADMIN
+    && user.systemAdmin == null
+    && user.permissions == null;
+  const hasSystemAccess = Boolean(user?.systemAdmin || legacyAdminSession);
 
   if (isLoading) {
     return (
@@ -21,7 +27,15 @@ export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole && user?.role !== Role.ADMIN) {
+  if (requiredRole && user?.role !== requiredRole && !hasSystemAccess) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (systemAdminOnly && !hasSystemAccess) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requiredPermission && !hasSystemAccess && !user?.permissions?.includes(requiredPermission)) {
     return <Navigate to="/" replace />;
   }
 

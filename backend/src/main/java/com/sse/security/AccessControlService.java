@@ -23,48 +23,51 @@ public class AccessControlService {
     private final ReponseRepository reponseRepository;
     private final UserRepository userRepository;
     private final RoleHierarchy roleHierarchy;
+    private final PermissionAccessService permissionAccess;
 
     public boolean canListOrganismes() {
-        return hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR");
+        return permissionAccess.has("ORGANISMES_READ");
     }
 
     public boolean canReadOrganisme(UUID organismeId) {
-        return hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR") || ownsOrganisme(organismeId);
+        return permissionAccess.has("ORGANISMES_READ") || ownsOrganisme(organismeId);
     }
 
     public boolean canUpdateOrganismeContact(UUID organismeId) {
-        return hasRole("ADMIN");
+        return permissionAccess.has("ORGANISMES_WRITE")
+            && (!hasRole("USER") || ownsOrganisme(organismeId));
     }
 
     public boolean canListEvaluations(UUID organismeId) {
-        if (hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR")) {
+        if (permissionAccess.has("EVALUATIONS_READ") && !hasRole("USER")) {
             return true;
         }
 
-        return hasRole("USER") && ownsOrganisme(organismeId);
+        return permissionAccess.has("EVALUATIONS_READ") && ownsOrganisme(organismeId);
     }
 
     public boolean canCreateEvaluation(UUID organismeId) {
-        return hasRole("ADMIN") || (hasRole("USER") && ownsOrganisme(organismeId));
+        return permissionAccess.has("EVALUATIONS_WRITE")
+            && (!hasRole("USER") || ownsOrganisme(organismeId));
     }
 
     public boolean canReadEvaluation(UUID evaluationId) {
-        if (hasRole("ADMIN") || hasRole("GOUVERNEMENT") || hasRole("EVALUATEUR")) {
+        if (permissionAccess.has("EVALUATIONS_READ") && !hasRole("USER")) {
             return true;
         }
 
-        return hasRole("USER")
+        return permissionAccess.has("EVALUATIONS_READ")
             && evaluationRepository.findOrganismeIdByEvaluationId(evaluationId)
                 .map(this::ownsOrganisme)
                 .orElse(false);
     }
 
     public boolean canWriteEvaluation(UUID evaluationId) {
-        if (hasRole("ADMIN")) {
+        if (permissionAccess.has("EVALUATIONS_WRITE") && !hasRole("USER")) {
             return true;
         }
 
-        return hasRole("USER")
+        return permissionAccess.has("EVALUATIONS_WRITE")
             && evaluationRepository.findOrganismeIdByEvaluationId(evaluationId)
                 .map(this::ownsOrganisme)
                 .orElse(false);
@@ -79,18 +82,18 @@ public class AccessControlService {
     }
 
     public boolean canUploadProof(UUID reponseId) {
-        if (hasRole("ADMIN")) {
+        if (permissionAccess.has("EVALUATIONS_WRITE") && !hasRole("USER")) {
             return true;
         }
 
-        return hasRole("USER")
+        return permissionAccess.has("EVALUATIONS_WRITE")
             && reponseRepository.findOrganismeIdByReponseId(reponseId)
                 .map(this::ownsOrganisme)
                 .orElse(false);
     }
 
     public boolean canValidate() {
-        return hasRole("ADMIN") || hasRole("EVALUATEUR");
+        return permissionAccess.has("EVALUATIONS_VALIDATE");
     }
 
     private boolean ownsOrganisme(UUID organismeId) {

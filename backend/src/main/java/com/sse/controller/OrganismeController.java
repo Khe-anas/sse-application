@@ -51,7 +51,7 @@ public class OrganismeController {
     }
     
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('ORGANISMES_WRITE')")
     public ResponseEntity<OrganismeResponse> createOrganisme(@Valid @RequestBody CreateOrganismeRequest request) {
         return ResponseEntity.ok(organismeService.createOrganisme(request));
     }
@@ -63,7 +63,7 @@ public class OrganismeController {
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('ORGANISMES_WRITE')")
     public ResponseEntity<OrganismeResponse> updateOrganisme(@PathVariable UUID id, 
                                                               @Valid @RequestBody CreateOrganismeRequest request) {
         return ResponseEntity.ok(organismeService.updateOrganisme(id, request));
@@ -78,7 +78,7 @@ public class OrganismeController {
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionAccess.has('ORGANISMES_WRITE')")
     public ResponseEntity<Void> deleteOrganisme(@PathVariable UUID id) {
         organismeService.deleteOrganisme(id);
         return ResponseEntity.ok().build();

@@ -12,6 +12,9 @@ public class OrganismeResponse {
     private UUID id;
     private String name;
     private TypeOrganisme type;
+    private UUID typeDefinitionId;
+    private String typeCode;
+    private String typeLabel;
     private String sector;
     private String address;
     private String email;

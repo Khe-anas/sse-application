@@ -29,12 +29,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/admin/account-requests")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminAccountRequestController {
 
     private final AccountRequestService accountRequestService;
 
     @GetMapping
+    @PreAuthorize("@permissionAccess.has('ACCOUNT_REQUESTS_READ')")
     public ResponseEntity<PageResponse<AccountRequestResponse>> getAll(
             @RequestParam(required = false) AccountRequestStatus status,
             @RequestParam(required = false) String search,
@@ -59,16 +59,19 @@ public class AdminAccountRequestController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionAccess.has('ACCOUNT_REQUESTS_READ')")
     public ResponseEntity<AccountRequestResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(accountRequestService.getById(id));
     }
 
     @PutMapping("/{id}/claim")
+    @PreAuthorize("@permissionAccess.has('ACCOUNT_REQUESTS_WRITE')")
     public ResponseEntity<AccountRequestResponse> claim(@PathVariable UUID id) {
         return ResponseEntity.ok(accountRequestService.claimForReview(id));
     }
 
     @PutMapping("/{id}/approve")
+    @PreAuthorize("@permissionAccess.has('ACCOUNT_REQUESTS_WRITE')")
     public ResponseEntity<ApproveAccountRequestResponse> approve(
             @PathVariable UUID id,
             @Valid @RequestBody ApproveAccountRequest request) {
@@ -76,6 +79,7 @@ public class AdminAccountRequestController {
     }
 
     @PutMapping("/{id}/reject")
+    @PreAuthorize("@permissionAccess.has('ACCOUNT_REQUESTS_WRITE')")
     public ResponseEntity<AccountRequestResponse> reject(
             @PathVariable UUID id,
             @Valid @RequestBody RejectAccountRequest request) {

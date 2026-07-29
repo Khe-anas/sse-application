@@ -29,9 +29,15 @@ public class TypeOrganismeDefinition {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true, length = 32)
-    private TypeOrganisme code;
+    private String code;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private TypeOrganisme baseType;
+
+    @Column(nullable = false)
+    private Boolean systemType = false;
 
     @Column(nullable = false, length = 120)
     private String label;

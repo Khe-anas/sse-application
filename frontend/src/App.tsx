@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { changeLanguage } from '@/i18n';
 import { Role } from '@/types';
+import { authService } from '@/services/authService';
 
 import AppLayout from '@/components/layout/AppLayout';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
@@ -23,7 +24,8 @@ const PrincipesPage = lazy(() => import('@/pages/admin/PrincipesPage'));
 const NotificationsPage = lazy(() => import('@/pages/admin/NotificationsPage'));
 const AuditLogsPage = lazy(() => import('@/pages/admin/AuditLogsPage'));
 const ReclamationsPage = lazy(() => import('@/pages/admin/ReclamationsPage'));
-const EmailJobsPage = lazy(() => import('@/pages/admin/EmailJobsPage'));
+const CataloguesPage = lazy(() => import('@/pages/admin/CataloguesPage'));
+const AccessControlPage = lazy(() => import('@/pages/admin/AccessControlPage'));
 const ResponsableDashboard = lazy(() => import('@/pages/responsable/ResponsableDashboard'));
 const EvaluationFillPage = lazy(() => import('@/pages/responsable/EvaluationFillPage'));
 const EvaluateurDashboard = lazy(() => import('@/pages/evaluateur/EvaluateurDashboard'));
@@ -40,7 +42,7 @@ function LoadingScreen() {
 }
 
 function App() {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const { isAuthenticated, isLoading, user, token, setUser } = useAuthStore();
   const { language, theme, direction, activeAccountId, loadThemeForAccount, loadLanguageForAccount } = useUIStore();
   const accountId = isAuthenticated && user ? user.id : null;
 
@@ -53,6 +55,21 @@ function App() {
     loadThemeForAccount(accountId);
     loadLanguageForAccount(accountId);
   }, [accountId, loadLanguageForAccount, loadThemeForAccount]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+    let active = true;
+    authService.getMe()
+      .then((currentUser) => {
+        if (active) setUser(currentUser);
+      })
+      .catch(() => {
+        // The API interceptor handles an expired session.
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, setUser, token]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -77,17 +94,40 @@ function App() {
         <Route element={<AppLayout />}>
           {/* Admin routes */}
           <Route element={<ProtectedRoute requiredRole={Role.ADMIN} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<UsersPage />} />
-            <Route path="/admin/account-requests" element={<AccountRequestsPage />} />
-            <Route path="/admin/organismes" element={<OrganismesPage />} />
-            <Route path="/admin/evaluations" element={<EvaluationsPage />} />
-            <Route path="/admin/evaluations/:id/validate" element={<EvaluationValidatePage />} />
-            <Route path="/admin/principes" element={<PrincipesPage />} />
-            <Route path="/admin/notifications" element={<NotificationsPage />} />
-            <Route path="/admin/reclamations" element={<ReclamationsPage />} />
-            <Route path="/admin/email-jobs" element={<EmailJobsPage />} />
-            <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+            <Route element={<ProtectedRoute requiredPermission="DASHBOARD_READ" />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="USERS_READ" />}>
+              <Route path="/admin/users" element={<UsersPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="ACCOUNT_REQUESTS_READ" />}>
+              <Route path="/admin/account-requests" element={<AccountRequestsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="ORGANISMES_READ" />}>
+              <Route path="/admin/organismes" element={<OrganismesPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="EVALUATIONS_READ" />}>
+              <Route path="/admin/evaluations" element={<EvaluationsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="EVALUATIONS_VALIDATE" />}>
+              <Route path="/admin/evaluations/:id/validate" element={<EvaluationValidatePage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="REFERENTIEL_READ" />}>
+              <Route path="/admin/principes" element={<PrincipesPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="NOTIFICATIONS_NOTIFY" />}>
+              <Route path="/admin/notifications" element={<NotificationsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="RECLAMATIONS_READ" />}>
+              <Route path="/admin/reclamations" element={<ReclamationsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermission="AUDIT_READ" />}>
+              <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute systemAdminOnly />}>
+              <Route path="/admin/catalogues" element={<CataloguesPage />} />
+              <Route path="/admin/access-control" element={<AccessControlPage />} />
+            </Route>
           </Route>
 
           <Route path="/evaluations/:id/view" element={<EvaluationReadOnlyPage />} />
@@ -132,7 +172,16 @@ function RoleRedirect() {
   
   switch (user.role) {
     case Role.ADMIN:
-      return <Navigate to="/admin/dashboard" replace />;
+      if (user.systemAdmin || user.permissions == null || user.permissions.includes('DASHBOARD_READ')) return <Navigate to="/admin/dashboard" replace />;
+      if (user.permissions?.includes('USERS_READ')) return <Navigate to="/admin/users" replace />;
+      if (user.permissions?.includes('ACCOUNT_REQUESTS_READ')) return <Navigate to="/admin/account-requests" replace />;
+      if (user.permissions?.includes('ORGANISMES_READ')) return <Navigate to="/admin/organismes" replace />;
+      if (user.permissions?.includes('EVALUATIONS_READ')) return <Navigate to="/admin/evaluations" replace />;
+      if (user.permissions?.includes('REFERENTIEL_READ')) return <Navigate to="/admin/principes" replace />;
+      if (user.permissions?.includes('RECLAMATIONS_READ')) return <Navigate to="/admin/reclamations" replace />;
+      if (user.permissions?.includes('NOTIFICATIONS_NOTIFY')) return <Navigate to="/admin/notifications" replace />;
+      if (user.permissions?.includes('AUDIT_READ')) return <Navigate to="/admin/audit-logs" replace />;
+      return <Navigate to="/settings" replace />;
     case Role.USER:
       return <Navigate to="/user/dashboard" replace />;
     case Role.EVALUATEUR:

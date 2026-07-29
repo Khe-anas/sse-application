@@ -4,6 +4,7 @@ import com.sse.dto.*;
 import com.sse.entity.EmailJob;
 import com.sse.entity.Notification;
 import com.sse.entity.Organisme;
+import com.sse.entity.RoleDefinition;
 import com.sse.entity.User;
 import com.sse.enums.EmailJobStatus;
 import com.sse.enums.EmailJobType;
@@ -14,8 +15,9 @@ import com.sse.enums.TypeOrganisme;
 import com.sse.repository.EmailJobRepository;
 import com.sse.repository.NotificationRepository;
 import com.sse.repository.OrganismeRepository;
+import com.sse.repository.RoleDefinitionRepository;
 import com.sse.repository.UserRepository;
-import com.sse.security.CurrentUserService;
+import com.sse.security.PermissionAccessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,12 +41,14 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
     private final AccountActivationService accountActivationService;
-    private final CurrentUserService currentUserService;
     private final AuditLogService auditLogService;
     private final EmailJobRepository emailJobRepository;
     private final NotificationRepository notificationRepository;
     private final FileStorageService fileStorageService;
     private final SecteurCatalogService secteurCatalogService;
+    private final RoleDefinitionRepository roleDefinitionRepository;
+    private final PermissionAccessService permissionAccessService;
+    private final CatalogueLookupService catalogueLookupService;
     
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -53,11 +57,15 @@ public class UserService {
 
     @Transactional
     public UserCreationResult createUserWithResult(CreateUserRequest request) {
-        if (request.getRole() == Role.ADMIN) {
-            User currentUser = currentUserService.getCurrentUser();
-            if (currentUser.getRole() != Role.ADMIN) {
-                throw new RuntimeException("Only ADMIN can create users with ADMIN role");
-            }
+        RoleDefinition roleDefinition = resolveRoleDefinition(
+            request.getRoleDefinitionId(),
+            request.getRole()
+        );
+        if (request.getRoleDefinitionId() != null && !permissionAccessService.isSystemAdmin()) {
+            throw new RuntimeException("Seul l'administrateur système peut attribuer un rôle fonctionnel");
+        }
+        if (isSystemAdminRole(roleDefinition) && !permissionAccessService.isSystemAdmin()) {
+            throw new RuntimeException("Seul l'administrateur système peut attribuer ce rôle");
         }
         String email = normalizeEmail(request.getEmail());
         if (userRepository.existsByEmailIgnoreCase(email)) {
@@ -68,11 +76,12 @@ public class UserService {
         user.setEmail(email);
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setRole(request.getRole());
+        user.setRole(roleDefinition.getBaseRole());
+        user.setRoleDefinition(roleDefinition);
         user.setPhone(normalizeNullable(request.getPhone()));
         user.setPosition(normalizeNullable(request.getPosition()));
 
-        if (request.getRole() == Role.USER) {
+        if (user.getRole() == Role.USER) {
             user.setOrganisme(resolveUserOrganisme(request.getOrganismeId(), request.getEntrepriseName()));
         }
 
@@ -119,6 +128,12 @@ public class UserService {
             Organisme organisme = new Organisme();
             organisme.setName(organisationName);
             organisme.setType(request.getOrganisationType());
+            var organisationTypeDefinition = catalogueLookupService.resolveType(
+                request.getOrganisationTypeDefinitionId(),
+                request.getOrganisationType()
+            );
+            organisme.setType(organisationTypeDefinition.getBaseType());
+            organisme.setTypeDefinition(organisationTypeDefinition);
             organisme.setSector(secteurCatalogService.normalizeAndEnsure(request.getSector()));
             organisme.setAddress(normalizeNullable(request.getAddress()));
             organisme.setEmail(normalizeNullable(request.getOrganisationEmail()));
@@ -145,6 +160,7 @@ public class UserService {
         }
     }
     
+    @Transactional(readOnly = true)
     public Page<UserResponse> getAllUsers(Role role, UserStatus status, UUID organismeId, String search, Pageable pageable) {
         String normalizedSearch = search != null && !search.isBlank() ? search.trim() : null;
         Page<User> users = normalizedSearch == null
@@ -154,6 +170,7 @@ public class UserService {
         return users.map(authService::mapToUserResponse);
     }
     
+    @Transactional(readOnly = true)
     public UserResponse getUserById(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
@@ -164,17 +181,28 @@ public class UserService {
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureCanManageUser(user);
 
-        User currentUser = currentUserService.getCurrentUser();
-        
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName().trim());
         if (request.getLastName() != null) user.setLastName(request.getLastName().trim());
-        if (request.getRole() != null) {
-            if (request.getRole() == Role.ADMIN && currentUser.getRole() != Role.ADMIN) {
-                throw new RuntimeException("Only ADMIN can assign ADMIN role");
+        if (request.getRole() != null || request.getRoleDefinitionId() != null) {
+            if (request.getRoleDefinitionId() != null && !permissionAccessService.isSystemAdmin()) {
+                throw new RuntimeException("Seul l'administrateur système peut modifier un rôle fonctionnel");
             }
-            user.setRole(request.getRole());
-            if (request.getRole() != Role.USER) {
+            Role fallbackRole = request.getRole() != null ? request.getRole() : user.getRole();
+            RoleDefinition roleDefinition = resolveRoleDefinition(
+                request.getRoleDefinitionId(),
+                fallbackRole
+            );
+            if (isSystemAdminRole(roleDefinition) && !permissionAccessService.isSystemAdmin()) {
+                throw new RuntimeException("Seul l'administrateur système peut attribuer ce rôle");
+            }
+            if (isSystemAdminUser(user) && !isSystemAdminRole(roleDefinition)) {
+                ensureAnotherSystemAdminExists(user);
+            }
+            user.setRole(roleDefinition.getBaseRole());
+            user.setRoleDefinition(roleDefinition);
+            if (roleDefinition.getBaseRole() != Role.USER) {
                 user.setOrganisme(null);
             }
         }
@@ -187,6 +215,9 @@ public class UserService {
         }
         if (request.getIsActive() != null) {
             if (!request.getIsActive()) {
+                if (isSystemAdminUser(user)) {
+                    ensureAnotherSystemAdminExists(user);
+                }
                 user.setIsActive(false);
                 user.setStatus(UserStatus.DISABLED);
             } else if (user.getPassword() == null || user.getPassword().isBlank()) {
@@ -217,6 +248,10 @@ public class UserService {
     public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureCanManageUser(user);
+        if (isSystemAdminUser(user)) {
+            ensureAnotherSystemAdminExists(user);
+        }
         user.setIsActive(false);
         user.setStatus(UserStatus.DISABLED);
         userRepository.save(user);
@@ -227,6 +262,7 @@ public class UserService {
     public UserCreationResult resetPassword(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureCanManageUser(user);
 
         user.setPassword(null);
         user.setIsActive(false);
@@ -250,7 +286,7 @@ public class UserService {
             return;
         }
 
-        List<User> admins = userRepository.findByRoleInAndIsActiveTrue(List.of(Role.ADMIN));
+        List<User> admins = userRepository.findActiveSystemAdmins();
         for (User admin : admins) {
             Notification notif = new Notification();
             notif.setUser(admin);
@@ -273,6 +309,7 @@ public class UserService {
     public void generatePassword(UUID id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureCanManageUser(user);
 
         String rawPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         user.setPassword(passwordEncoder.encode(rawPassword));
@@ -329,6 +366,50 @@ public class UserService {
         return email.trim().toLowerCase(Locale.ROOT);
     }
 
+    private RoleDefinition resolveRoleDefinition(UUID definitionId, Role fallbackRole) {
+        RoleDefinition definition;
+        if (definitionId != null) {
+            definition = roleDefinitionRepository.findById(definitionId)
+                .orElseThrow(() -> new RuntimeException("Rôle introuvable"));
+        } else {
+            definition = roleDefinitionRepository.findBySystemRoleTrueAndBaseRole(fallbackRole)
+                .orElseThrow(() -> new RuntimeException("Rôle système introuvable"));
+        }
+        if (!Boolean.TRUE.equals(definition.getActive())) {
+            throw new RuntimeException("Ce rôle est désactivé");
+        }
+        return definition;
+    }
+
+    private boolean isSystemAdminRole(RoleDefinition definition) {
+        return Boolean.TRUE.equals(definition.getSystemRole())
+            && "ADMIN".equals(definition.getCode());
+    }
+
+    private boolean isSystemAdminUser(User user) {
+        return user.getRole() == Role.ADMIN
+            && (
+                user.getRoleDefinition() == null
+                || isSystemAdminRole(user.getRoleDefinition())
+            );
+    }
+
+    private void ensureCanManageUser(User user) {
+        if (isSystemAdminUser(user) && !permissionAccessService.isSystemAdmin()) {
+            throw new RuntimeException("Seul un administrateur système peut modifier ce compte");
+        }
+    }
+
+    private void ensureAnotherSystemAdminExists(User user) {
+        RoleDefinition definition = user.getRoleDefinition();
+        if (definition == null) {
+            throw new RuntimeException("Le compte administrateur historique ne peut pas être désactivé");
+        }
+        if (userRepository.countByRoleDefinitionIdAndIsActiveTrue(definition.getId()) <= 1) {
+            throw new RuntimeException("Au moins un administrateur système actif doit être conservé");
+        }
+    }
+
     private Organisme resolveUserOrganisme(UUID organismeId, String entrepriseName) {
         if (organismeId != null) {
             return organismeRepository.findById(organismeId)
@@ -345,6 +426,9 @@ public class UserService {
                 Organisme organisme = new Organisme();
                 organisme.setName(normalizedName);
                 organisme.setType(TypeOrganisme.PRIVE);
+                organisme.setTypeDefinition(
+                    catalogueLookupService.resolveType(null, TypeOrganisme.PRIVE)
+                );
                 return organismeRepository.save(organisme);
             });
     }

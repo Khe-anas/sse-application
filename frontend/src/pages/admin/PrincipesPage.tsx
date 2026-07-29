@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { BonnePratique, Critere, Principe } from '@/types';
-import { Role } from '@/types';
 import { getLocalizedField } from '@/utils/localization';
 import { referenceDataService } from '@/services/referenceDataService';
 import { useAuthStore } from '@/stores/authStore';
@@ -290,7 +289,7 @@ export default function PrincipesPage() {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language;
   const { user } = useAuthStore();
-  const canManage = user?.role === Role.ADMIN;
+  const canManage = Boolean(user?.systemAdmin || user?.permissions?.includes('REFERENTIEL_WRITE'));
   const [principes, setPrincipes] = useState<Principe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedPrincipe, setExpandedPrincipe] = useState<string | null>(null);

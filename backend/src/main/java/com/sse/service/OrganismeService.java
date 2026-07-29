@@ -2,6 +2,7 @@ package com.sse.service;
 
 import com.sse.dto.*;
 import com.sse.entity.Organisme;
+import com.sse.entity.TypeOrganismeDefinition;
 import com.sse.enums.TypeOrganisme;
 import com.sse.repository.EvaluationRepository;
 import com.sse.repository.OrganismeRepository;
@@ -22,12 +23,16 @@ public class OrganismeService {
     private final EvaluationRepository evaluationRepository;
     private final UserRepository userRepository;
     private final SecteurCatalogService secteurCatalogService;
+    private final CatalogueLookupService catalogueLookupService;
     
     @Transactional
     public OrganismeResponse createOrganisme(CreateOrganismeRequest request) {
         Organisme org = new Organisme();
         org.setName(request.getName());
-        org.setType(request.getType());
+        TypeOrganismeDefinition typeDefinition =
+            catalogueLookupService.resolveType(request.getTypeDefinitionId(), request.getType());
+        org.setType(typeDefinition.getBaseType());
+        org.setTypeDefinition(typeDefinition);
         org.setSector(secteurCatalogService.normalizeAndEnsure(request.getSector()));
         org.setAddress(request.getAddress());
         org.setEmail(request.getEmail());
@@ -36,6 +41,7 @@ public class OrganismeService {
         return mapToResponse(organismeRepository.save(org));
     }
     
+    @Transactional(readOnly = true)
     public Page<OrganismeResponse> getAllOrganismes(TypeOrganisme type, String search, Pageable pageable) {
         String normalizedSearch = search != null && !search.isBlank() ? search.trim() : null;
         Page<Organisme> organismes = normalizedSearch == null
@@ -45,6 +51,7 @@ public class OrganismeService {
         return organismes.map(this::mapToResponse);
     }
     
+    @Transactional(readOnly = true)
     public OrganismeResponse getOrganismeById(UUID id) {
         Organisme org = organismeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Organisme not found"));
@@ -57,7 +64,10 @@ public class OrganismeService {
             .orElseThrow(() -> new RuntimeException("Organisme not found"));
         
         org.setName(request.getName());
-        org.setType(request.getType());
+        TypeOrganismeDefinition typeDefinition =
+            catalogueLookupService.resolveType(request.getTypeDefinitionId(), request.getType());
+        org.setType(typeDefinition.getBaseType());
+        org.setTypeDefinition(typeDefinition);
         org.setSector(secteurCatalogService.normalizeAndEnsure(request.getSector()));
         org.setAddress(request.getAddress());
         org.setEmail(request.getEmail());
@@ -101,6 +111,14 @@ public class OrganismeService {
         response.setId(org.getId());
         response.setName(org.getName());
         response.setType(org.getType());
+        if (org.getTypeDefinition() != null) {
+            response.setTypeDefinitionId(org.getTypeDefinition().getId());
+            response.setTypeCode(org.getTypeDefinition().getCode());
+            response.setTypeLabel(org.getTypeDefinition().getLabel());
+        } else {
+            response.setTypeCode(org.getType().name());
+            response.setTypeLabel(org.getType().name());
+        }
         response.setSector(org.getSector());
         response.setAddress(org.getAddress());
         response.setEmail(org.getEmail());

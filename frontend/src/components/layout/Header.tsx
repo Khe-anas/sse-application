@@ -33,6 +33,7 @@ export default function Header() {
   const location = useLocation();
   const { toggleSidebar, language, theme, toggleThemeForAccount, loadLanguageForAccount, sidebarOpen, assistantOpen, toggleAssistant } = useUIStore();
   const { user, token, logout } = useAuthStore();
+  const canReadNotifications = Boolean(user?.systemAdmin || user?.permissions?.includes('NOTIFICATIONS_READ'));
   const {
     notifications,
     unreadCount,
@@ -61,7 +62,8 @@ export default function Header() {
     ['/admin/evaluations', 'navigation.evaluations'],
     ['/admin/principes', 'navigation.principes'],
     ['/admin/reclamations', 'navigation.reclamations'],
-    ['/admin/email-jobs', 'navigation.emailJobs'],
+    ['/admin/catalogues', 'navigation.catalogues'],
+    ['/admin/access-control', 'navigation.accessControl'],
     ['/admin/notifications', 'navigation.notifications'],
     ['/admin/audit-logs', 'navigation.auditLogs'],
     ['/evaluateur/evaluations', 'navigation.evaluations'],
@@ -103,7 +105,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !canReadNotifications) return;
 
     const refreshUnreadCount = () => {
       void fetchUnreadCount();
@@ -124,10 +126,10 @@ export default function Header() {
       window.removeEventListener('focus', refreshUnreadCount);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
-  }, [fetchUnreadCount, user]);
+  }, [canReadNotifications, fetchUnreadCount, user]);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !canReadNotifications) {
       unreadReadyRef.current = false;
       previousUnreadCountRef.current = 0;
       return;
@@ -153,10 +155,10 @@ export default function Header() {
       }
 
     previousUnreadCountRef.current = unreadCount;
-  }, [fetchNotifications, t, unreadCount, user]);
+  }, [canReadNotifications, fetchNotifications, t, unreadCount, user]);
 
   useEffect(() => {
-    if (!user || !token) return;
+    if (!user || !token || !canReadNotifications) return;
 
     const controller = new AbortController();
     let reconnectTimer: number | undefined;
@@ -257,7 +259,7 @@ export default function Header() {
         window.clearTimeout(reconnectTimer);
       }
     };
-  }, [fetchNotifications, fetchUnreadCount, language, t, token, user]);
+  }, [canReadNotifications, fetchNotifications, fetchUnreadCount, language, t, token, user]);
 
   const handleLogout = async () => {
     try {
@@ -436,7 +438,7 @@ export default function Header() {
         </div>
 
         {/* Notifications */}
-        <div className="relative" ref={notificationsRef}>
+        {canReadNotifications && <div className="relative" ref={notificationsRef}>
           <button
             onClick={openNotifications}
             className="relative p-2 rounded-lg text-gray-600 hover:bg-gray-100"
@@ -568,7 +570,7 @@ export default function Header() {
               </div>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Profile */}
         <div className="relative" ref={profileRef}>

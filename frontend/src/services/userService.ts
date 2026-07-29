@@ -19,6 +19,9 @@ export const userService = {
     formData.append('lastName', data.lastName);
     formData.append('organisationName', data.organisationName);
     formData.append('organisationType', data.organisationType);
+    if (data.organisationTypeDefinitionId) {
+      formData.append('organisationTypeDefinitionId', data.organisationTypeDefinitionId);
+    }
     formData.append('logo', data.logo);
 
     if (data.password) formData.append('password', data.password);
@@ -53,6 +56,7 @@ export interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
   role?: Role;
+  roleDefinitionId?: string;
   password?: string;
   phone?: string;
   position?: string;
@@ -65,6 +69,7 @@ export interface CreateUserRequest {
   firstName: string;
   lastName: string;
   role?: Role;
+  roleDefinitionId?: string;
   password?: string;
   phone?: string;
   position?: string;
@@ -80,6 +85,7 @@ export interface CreateUserWithOrganismeRequest {
   position?: string;
   organisationName: string;
   organisationType: TypeOrganisme;
+  organisationTypeDefinitionId?: string;
   sector?: string;
   address?: string;
   organisationEmail?: string;

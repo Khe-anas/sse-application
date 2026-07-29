@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/admin/audit-logs")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@permissionAccess.has('AUDIT_READ')")
 public class AuditLogController {
 
     private final AuditLogService auditLogService;

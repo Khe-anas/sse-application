@@ -25,6 +25,9 @@ export default function EvaluationsPage() {
   const isAdmin = user?.role === Role.ADMIN;
   const isEvaluateur = user?.role === Role.EVALUATEUR;
   const isGovernment = user?.role === Role.GOUVERNEMENT;
+  const canWrite = Boolean(user?.systemAdmin || user?.permissions?.includes('EVALUATIONS_WRITE'));
+  const canValidate = Boolean(user?.systemAdmin || user?.permissions?.includes('EVALUATIONS_VALIDATE'));
+  const canDownloadReports = Boolean(user?.systemAdmin || user?.permissions?.includes('REPORTS_READ'));
 
   const loadData = useCallback(async (showError = true) => {
     try {
@@ -110,7 +113,7 @@ export default function EvaluationsPage() {
     <div className="page-shell">
       <div className="flex items-center justify-between">
         <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.evaluations')}</h1>
-        {isAdmin && (
+        {isAdmin && canWrite && (
           <button onClick={() => setShowModal(true)} className="btn-primary gap-2">
             <Plus className="w-4 h-4" /> {t('evaluations.new')}
           </button>
@@ -139,7 +142,7 @@ export default function EvaluationsPage() {
                 <td className="table-td">{ev.globalScore != null ? `${ev.globalScore.toFixed(1)}%` : '-'}</td>
                 <td className="table-td">
                   {(() => {
-                    const canExamine = (isAdmin || isEvaluateur) && (ev.status === StatusEvaluation.SOUMISE || ev.status === StatusEvaluation.EN_VALIDATION);
+                    const canExamine = canValidate && (isAdmin || isEvaluateur) && (ev.status === StatusEvaluation.SOUMISE || ev.status === StatusEvaluation.EN_VALIDATION);
                     const canReadOnly = ev.status === StatusEvaluation.VALIDEE && (isAdmin || isGovernment || isEvaluateur);
 
                     if (!canExamine && !canReadOnly) {
@@ -171,12 +174,14 @@ export default function EvaluationsPage() {
                             >
                               <Eye className="w-4 h-4" /> {t('common.details')}
                             </button>
-                            <button
-                              onClick={() => handleDownloadPdf(ev.id)}
-                              className="btn-outline btn-sm gap-2"
-                            >
-                              <Download className="w-4 h-4" /> PDF
-                            </button>
+                            {canDownloadReports && (
+                              <button
+                                onClick={() => handleDownloadPdf(ev.id)}
+                                className="btn-outline btn-sm gap-2"
+                              >
+                                <Download className="w-4 h-4" /> PDF
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

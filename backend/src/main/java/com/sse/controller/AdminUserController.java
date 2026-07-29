@@ -20,12 +20,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
     
     private final UserService userService;
     
     @GetMapping
+    @PreAuthorize("@permissionAccess.has('USERS_READ')")
     public ResponseEntity<PageResponse<UserResponse>> getAllUsers(
             @RequestParam(required = false) Role role,
             @RequestParam(required = false) UserStatus status,
@@ -52,38 +52,45 @@ public class AdminUserController {
     }
     
     @PostMapping
+    @PreAuthorize("@permissionAccess.has('USERS_WRITE')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.ok(userService.createUser(request));
     }
 
     @PostMapping(value = "/with-organisme", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@permissionAccess.has('USERS_WRITE')")
     public ResponseEntity<UserResponse> createUserWithOrganisme(
             @Valid @ModelAttribute CreateUserWithOrganismeRequest request) {
         return ResponseEntity.ok(userService.createUserWithOrganisme(request));
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionAccess.has('USERS_READ')")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("@permissionAccess.has('USERS_WRITE')")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionAccess.has('USERS_WRITE')")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
     
     @PutMapping("/{id}/reset-password")
+    @PreAuthorize("@permissionAccess.has('USERS_WRITE')")
     public ResponseEntity<UserCreationResult> resetPassword(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.resetPassword(id));
     }
 
     @PutMapping("/{id}/generate-password")
+    @PreAuthorize("@permissionAccess.has('USERS_WRITE')")
     public ResponseEntity<Void> generatePassword(@PathVariable UUID id) {
         userService.generatePassword(id);
         return ResponseEntity.ok().build();

@@ -12,6 +12,7 @@ public class UpdateUserRequest {
     private String firstName;
     private String lastName;
     private Role role;
+    private UUID roleDefinitionId;
     private String phone;
     private String position;
     private String password;

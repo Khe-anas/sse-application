@@ -7,9 +7,19 @@ import axios from 'axios';
 import { userService, type CreateUserRequest, type CreateUserWithOrganismeRequest } from '@/services/userService';
 import { organismeService } from '@/services/organismeService';
 import { fileService } from '@/services/fileService';
+import { adminAccessService } from '@/services/adminAccessService';
+import { catalogueService } from '@/services/adminCatalogueService';
+import { useAuthStore } from '@/stores/authStore';
 import { Role, TypeOrganisme, UserStatus } from '@/types';
 import { formatBackendDateTime } from '@/utils/date';
-import type { User, PageResponse, Organisme } from '@/types';
+import type {
+  User,
+  PageResponse,
+  Organisme,
+  RoleDefinition,
+  SecteurDefinition,
+  TypeOrganismeDefinition,
+} from '@/types';
 import KPICard from '@/components/dashboard/KPICard';
 import { Users } from 'lucide-react';
 import useConfirmDialog from '@/components/ui/useConfirmDialog';
@@ -17,12 +27,6 @@ import useConfirmDialog from '@/components/ui/useConfirmDialog';
 const MAX_LOGO_SIZE_MB = 5;
 const MAX_LOGO_SIZE = MAX_LOGO_SIZE_MB * 1024 * 1024;
 const ALLOWED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
-const SECTOR_VALUES = [
-  'AGRICULTURE', 'INDUSTRY', 'ENERGY', 'CONSTRUCTION', 'COMMERCE', 'TRANSPORT',
-  'TECHNOLOGY', 'FINANCE', 'HEALTH', 'EDUCATION', 'TOURISM', 'PUBLIC_ADMINISTRATION',
-  'SERVICES', 'CIVIL_SOCIETY', 'OTHER',
-] as const;
-
 type NewOrganismeForm = Omit<CreateUserWithOrganismeRequest, 'email' | 'firstName' | 'lastName' | 'password' | 'phone' | 'position'> & {
   otherSector?: string;
 };
@@ -30,6 +34,7 @@ type NewOrganismeForm = Omit<CreateUserWithOrganismeRequest, 'email' | 'firstNam
 const emptyNewOrganisme: Partial<NewOrganismeForm> = {
   organisationName: '',
   organisationType: TypeOrganisme.PRIVE,
+  organisationTypeDefinitionId: undefined,
   sector: '',
   otherSector: '',
   address: '',
@@ -41,7 +46,12 @@ const emptyNewOrganisme: Partial<NewOrganismeForm> = {
 
 export default function UsersPage() {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
+  const canWriteUsers = Boolean(currentUser?.systemAdmin || currentUser?.permissions?.includes('USERS_WRITE'));
   const [users, setUsers] = useState<PageResponse<User> | null>(null);
+  const [roleDefinitions, setRoleDefinitions] = useState<RoleDefinition[]>([]);
+  const [organisationTypes, setOrganisationTypes] = useState<TypeOrganismeDefinition[]>([]);
+  const [sectorDefinitions, setSectorDefinitions] = useState<SecteurDefinition[]>([]);
   const [organismes, setOrganismes] = useState<Organisme[]>([]);
   const [organismeSearch, setOrganismeSearch] = useState('');
   const [isLoadingOrganismes, setIsLoadingOrganismes] = useState(false);
@@ -108,6 +118,22 @@ export default function UsersPage() {
     const timeoutId = window.setTimeout(loadUsers, 250);
     return () => window.clearTimeout(timeoutId);
   }, [loadUsers]);
+
+  useEffect(() => {
+    if (!currentUser?.systemAdmin) return;
+    adminAccessService.getRoles()
+      .then((roles) => setRoleDefinitions(roles.filter((role) => role.active)))
+      .catch(() => toast.error(t('users.rolesLoadError')));
+  }, [currentUser?.systemAdmin, t]);
+
+  useEffect(() => {
+    Promise.all([catalogueService.getTypes(), catalogueService.getSectors()])
+      .then(([loadedTypes, loadedSectors]) => {
+        setOrganisationTypes(loadedTypes);
+        setSectorDefinitions(loadedSectors);
+      })
+      .catch(() => toast.error(t('organismesPage.catalogueLoadError')));
+  }, [t]);
 
   useEffect(() => {
     if (!showModal || formData.role !== Role.USER || organisationMode !== 'existing') return;
@@ -194,6 +220,7 @@ export default function UsersPage() {
       firstName,
       lastName,
       role: formData.role,
+      roleDefinitionId: formData.roleDefinitionId,
     };
     if (phone) payload.phone = phone;
     if (position) payload.position = position;
@@ -224,6 +251,7 @@ export default function UsersPage() {
           position,
           organisationName: newOrganisme.organisationName!.trim(),
           organisationType: newOrganisme.organisationType!,
+          organisationTypeDefinitionId: newOrganisme.organisationTypeDefinitionId,
           sector: newOrganisme.sector === 'OTHER'
             ? newOrganisme.otherSector?.trim()
             : newOrganisme.sector?.trim(),
@@ -321,11 +349,46 @@ export default function UsersPage() {
     setFormData({
       ...formData,
       role,
+      roleDefinitionId: undefined,
       organismeId: role === Role.USER ? formData.organismeId : undefined,
     });
     if (role !== Role.USER) {
       setOrganismeSearch('');
       setOrganismes([]);
+    }
+  };
+
+  const handleRoleDefinitionChange = (roleDefinitionId: string | undefined) => {
+    const definition = roleDefinitions.find((role) => role.id === roleDefinitionId);
+    setFormData({
+      ...formData,
+      roleDefinitionId,
+      role: definition?.baseRole,
+      organismeId: definition?.baseRole === Role.USER ? formData.organismeId : undefined,
+    });
+    if (definition?.baseRole !== Role.USER) {
+      setOrganismeSearch('');
+      setOrganismes([]);
+    }
+  };
+
+  const handleUserRoleUpdate = async (target: User, roleDefinitionId: string) => {
+    const definition = roleDefinitions.find((role) => role.id === roleDefinitionId);
+    if (!definition) return;
+    try {
+      const updated = await userService.update(target.id, {
+        roleDefinitionId,
+        role: definition.baseRole,
+      });
+      setViewingUser(updated);
+      toast.success(t('users.roleUpdated'));
+      await loadUsers();
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || t('users.roleUpdateError')
+        : t('users.roleUpdateError');
+      toast.error(message);
+      throw error;
     }
   };
 
@@ -370,13 +433,12 @@ export default function UsersPage() {
     <div className="page-shell">
       <div className="flex items-center justify-between">
         <h1 className="text-[28px] font-bold tracking-tight text-gray-900 dark:text-slate-100">{t('navigation.users')}</h1>
-        <button
-          onClick={openCreateModal}
-          className="btn-primary gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          {t('users.new')}
-        </button>
+        {canWriteUsers && (
+          <button onClick={openCreateModal} className="btn-primary gap-2">
+            <Plus className="w-4 h-4" />
+            {t('users.new')}
+          </button>
+        )}
       </div>
 
       <KPICard title={t('users.total')} value={users?.totalElements || 0} icon={Users} color="primary" />
@@ -454,7 +516,7 @@ export default function UsersPage() {
                       user.role === Role.GOUVERNEMENT ? 'bg-blue-100 text-blue-700' :
                       'bg-green-100 text-green-700'
                     }`}>
-                      {t(`user.role.${user.role}`)}
+                      {user.roleLabel || t(`user.role.${user.role}`)}
                     </span>
                   </td>
                   <td className="table-td text-gray-500">{user.organismeName || '-'}</td>
@@ -483,29 +545,33 @@ export default function UsersPage() {
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleGeneratePassword(user.id)}
-                        disabled={isGeneratingPassword}
-                        className="rounded-lg p-1.5 text-amber-600 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        title={t('users.generatePassword')}
-                        aria-label={t('users.generatePassword')}
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleToggleActive(user)}
-                        disabled={resolveUserStatus(user.status, user.isActive) === UserStatus.PENDING_ACTIVATION}
-                        className={`rounded-md p-1.5 transition-colors ${accountToggleButtonClass(user.status, user.isActive)}`}
-                        title={accountToggleButtonTitle(user.status, user.isActive, t)}
-                        aria-label={accountToggleButtonTitle(user.status, user.isActive, t)}
-                      >
-                        {resolveUserStatus(user.status, user.isActive) === UserStatus.DISABLED
-                          ? <ToggleRight className="w-4 h-4" />
-                          : <ToggleLeft className="w-4 h-4" />}
-                      </button>
-                      <button onClick={() => handleDelete(user.id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50" title={t('common.delete')} aria-label={t('common.delete')}>
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canWriteUsers && (!user.systemAdmin || currentUser?.systemAdmin) && (
+                        <>
+                          <button
+                            onClick={() => handleGeneratePassword(user.id)}
+                            disabled={isGeneratingPassword}
+                            className="rounded-lg p-1.5 text-amber-600 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            title={t('users.generatePassword')}
+                            aria-label={t('users.generatePassword')}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            disabled={resolveUserStatus(user.status, user.isActive) === UserStatus.PENDING_ACTIVATION}
+                            className={`rounded-md p-1.5 transition-colors ${accountToggleButtonClass(user.status, user.isActive)}`}
+                            title={accountToggleButtonTitle(user.status, user.isActive, t)}
+                            aria-label={accountToggleButtonTitle(user.status, user.isActive, t)}
+                          >
+                            {resolveUserStatus(user.status, user.isActive) === UserStatus.DISABLED
+                              ? <ToggleRight className="w-4 h-4" />
+                              : <ToggleLeft className="w-4 h-4" />}
+                          </button>
+                          <button onClick={() => handleDelete(user.id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50" title={t('common.delete')} aria-label={t('common.delete')}>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -559,13 +625,21 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <label htmlFor="new-user-role" className="label">{t('users.roleLabel')} *</label>
-                  <select id="new-user-role" required className="select" value={formData.role || ''} onChange={(e) => handleRoleChange(e.target.value ? e.target.value as Role : undefined)}>
-                    <option value="">{t('users.selectRole')}</option>
-                    <option value={Role.ADMIN}>{t('user.role.ADMIN')}</option>
-                    <option value={Role.USER}>{t('user.role.USER')}</option>
-                    <option value={Role.EVALUATEUR}>{t('user.role.EVALUATEUR')}</option>
-                    <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
-                  </select>
+                  {currentUser?.systemAdmin && roleDefinitions.length > 0 ? (
+                    <select id="new-user-role" required className="select" value={formData.roleDefinitionId || ''} onChange={(event) => handleRoleDefinitionChange(event.target.value || undefined)}>
+                      <option value="">{t('users.selectRole')}</option>
+                      {roleDefinitions.map((role) => (
+                        <option key={role.id} value={role.id}>{role.label} — {t(`user.role.${role.baseRole}`)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select id="new-user-role" required className="select" value={formData.role || ''} onChange={(e) => handleRoleChange(e.target.value ? e.target.value as Role : undefined)}>
+                      <option value="">{t('users.selectRole')}</option>
+                      <option value={Role.USER}>{t('user.role.USER')}</option>
+                      <option value={Role.EVALUATEUR}>{t('user.role.EVALUATEUR')}</option>
+                      <option value={Role.GOUVERNEMENT}>{t('user.role.GOUVERNEMENT')}</option>
+                    </select>
+                  )}
                 </div>
               </fieldset>
 
@@ -595,7 +669,7 @@ export default function UsersPage() {
                         <select id="new-user-organisme" required className="select" value={formData.organismeId || ''} onChange={(e) => setFormData({ ...formData, organismeId: e.target.value || undefined })}>
                           <option value="">{isLoadingOrganismes ? t('common.loading') : t('common.selectPlaceholder')}</option>
                           {organismes.map((organisme) => (
-                            <option key={organisme.id} value={organisme.id}>{organisme.name} — {t(`organisme.type.${organisme.type}`)}{organisme.sector ? ` — ${organisme.sector}` : ''}</option>
+                            <option key={organisme.id} value={organisme.id}>{organisme.name} — {organisme.typeLabel || t(`organisme.type.${organisme.type}`)}{organisme.sector ? ` — ${organisme.sector}` : ''}</option>
                           ))}
                         </select>
                       </div>
@@ -604,7 +678,7 @@ export default function UsersPage() {
                         return selected ? (
                           <div className="rounded-md bg-gray-50 p-3 text-sm text-gray-700 dark:bg-slate-800 dark:text-slate-200">
                             <strong>{selected.name}</strong><br />
-                            {t(`organisme.type.${selected.type}`)}{selected.sector ? ` · ${selected.sector}` : ''}
+                            {selected.typeLabel || t(`organisme.type.${selected.type}`)}{selected.sector ? ` · ${selected.sector}` : ''}
                           </div>
                         ) : null;
                       })()}
@@ -618,17 +692,29 @@ export default function UsersPage() {
                       </div>
                       <div>
                         <label htmlFor="new-organisme-type" className="label">{t('requestAccount.companyType')} *</label>
-                        <select id="new-organisme-type" required className="select" value={newOrganisme.organisationType || TypeOrganisme.PRIVE} onChange={(e) => setNewOrganisme({ ...newOrganisme, organisationType: e.target.value as TypeOrganisme })}>
-                          <option value={TypeOrganisme.PRIVE}>{t('requestAccount.typePrive')}</option>
-                          <option value={TypeOrganisme.PUBLIC}>{t('requestAccount.typePublic')}</option>
-                          <option value={TypeOrganisme.SOCIETE_CIVILE}>{t('requestAccount.typeCivil')}</option>
+                        <select
+                          id="new-organisme-type"
+                          required
+                          className="select"
+                          value={newOrganisme.organisationTypeDefinitionId || ''}
+                          onChange={(event) => {
+                            const definition = organisationTypes.find((type) => type.id === event.target.value);
+                            setNewOrganisme({
+                              ...newOrganisme,
+                              organisationTypeDefinitionId: definition?.id,
+                              organisationType: definition?.baseType || TypeOrganisme.PRIVE,
+                            });
+                          }}
+                        >
+                          <option value="">{t('common.selectPlaceholder')}</option>
+                          {organisationTypes.map((type) => <option key={type.id} value={type.id}>{type.label}</option>)}
                         </select>
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="new-organisme-sector" className="label">{t('requestAccount.sector')}</label>
                         <select id="new-organisme-sector" className="select" value={newOrganisme.sector || ''} onChange={(e) => setNewOrganisme({ ...newOrganisme, sector: e.target.value, otherSector: e.target.value === 'OTHER' ? newOrganisme.otherSector : '' })}>
                           <option value="">{t('requestAccount.sectorPlaceholder')}</option>
-                          {SECTOR_VALUES.map((sector) => <option key={sector} value={sector}>{t(`requestAccount.sectorOptions.${sector}`)}</option>)}
+                          {sectorDefinitions.map((sector) => <option key={sector.id} value={sector.code}>{sector.label}</option>)}
                         </select>
                       </div>
                       {newOrganisme.sector === 'OTHER' && (
@@ -720,6 +806,9 @@ export default function UsersPage() {
           logoObjectUrl={viewingUser.organismeLogoUrl ? logoObjectUrls[viewingUser.organismeLogoUrl] : undefined}
           logoHasError={viewingUser.organismeLogoUrl ? failedLogoUrls.has(viewingUser.organismeLogoUrl) : false}
           onLogoPreview={(src, alt) => setLogoPreview({ src, alt })}
+          roleDefinitions={roleDefinitions}
+          canManageRoles={Boolean(currentUser?.systemAdmin)}
+          onRoleUpdate={handleUserRoleUpdate}
           onClose={() => setViewingUser(null)}
           t={t}
         />
@@ -742,6 +831,9 @@ function UserDetailsDialog({
   logoObjectUrl,
   logoHasError,
   onLogoPreview,
+  roleDefinitions,
+  canManageRoles,
+  onRoleUpdate,
   onClose,
   t,
 }: {
@@ -749,10 +841,25 @@ function UserDetailsDialog({
   logoObjectUrl?: string;
   logoHasError: boolean;
   onLogoPreview: (src: string, alt: string) => void;
+  roleDefinitions: RoleDefinition[];
+  canManageRoles: boolean;
+  onRoleUpdate: (user: User, roleDefinitionId: string) => Promise<void>;
   onClose: () => void;
   t: (key: string) => string;
 }) {
   const resolvedStatus = user.status || (user.isActive ? UserStatus.ACTIVE : UserStatus.DISABLED);
+  const [selectedRoleId, setSelectedRoleId] = useState(user.roleDefinitionId || '');
+  const [isSavingRole, setIsSavingRole] = useState(false);
+
+  const saveRole = async () => {
+    if (!selectedRoleId || selectedRoleId === user.roleDefinitionId) return;
+    setIsSavingRole(true);
+    try {
+      await onRoleUpdate(user, selectedRoleId);
+    } finally {
+      setIsSavingRole(false);
+    }
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto overscroll-contain bg-slate-950/60 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="user-details-title">
@@ -772,11 +879,29 @@ function UserDetailsDialog({
               <Info label={t('users.firstName')} value={user.firstName} />
               <Info label={t('users.lastName')} value={user.lastName} />
               <Info label={t('users.position')} value={user.position || '-'} />
-              <Info label={t('users.roleLabel')} value={t(`user.role.${user.role}`)} />
+              <Info label={t('users.roleLabel')} value={user.roleLabel || t(`user.role.${user.role}`)} />
               <Info label={t('common.status')} value={t(`userStatus.${resolvedStatus}`)} />
               <Info label={t('users.createdAt')} value={formatBackendDateTime(user.createdAt)} />
               <Info label={t('users.lastLoginAt')} value={formatBackendDateTime(user.lastLoginAt)} />
             </div>
+            {canManageRoles && (
+              <div className="mt-4 rounded-lg border border-primary-100 bg-primary-50/50 p-4">
+                <label htmlFor="details-user-role" className="label">{t('users.changeFunctionalRole')}</label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select id="details-user-role" className="select flex-1" value={selectedRoleId} onChange={(event) => setSelectedRoleId(event.target.value)}>
+                    {roleDefinitions.map((role) => (
+                      <option key={role.id} value={role.id} disabled={role.baseRole === Role.USER && !user.organismeId}>
+                        {role.label} — {t(`user.role.${role.baseRole}`)}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => void saveRole()} disabled={isSavingRole || !selectedRoleId || selectedRoleId === user.roleDefinitionId} className="btn-primary disabled:cursor-not-allowed disabled:opacity-50">
+                    {isSavingRole ? t('common.loading') : t('common.save')}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">{t('users.changeFunctionalRoleHint')}</p>
+              </div>
+            )}
           </section>
 
           <section>
@@ -784,7 +909,7 @@ function UserDetailsDialog({
             {user.organismeId ? (
               <div className="grid gap-4 rounded-lg border border-gray-200 p-4 sm:grid-cols-2">
                 <Info label={t('common.name')} value={user.organismeName || '-'} />
-                <Info label={t('common.type')} value={user.organismeType ? t(`organisme.type.${user.organismeType}`) : '-'} />
+                <Info label={t('common.type')} value={user.organismeTypeLabel || (user.organismeType ? t(`organisme.type.${user.organismeType}`) : '-')} />
                 <Info label={t('common.sector')} value={user.organismeSector || '-'} />
                 <Info label={t('common.address')} value={user.organismeAddress || '-'} />
                 <Info label={t('common.email')} value={user.organismeEmail || '-'} />

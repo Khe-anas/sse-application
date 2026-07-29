@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class CreateOrganismeRequest {
     
@@ -13,6 +15,8 @@ public class CreateOrganismeRequest {
     
     @NotNull(message = "Type is required")
     private TypeOrganisme type;
+
+    private UUID typeDefinitionId;
     
     private String sector;
     private String address;

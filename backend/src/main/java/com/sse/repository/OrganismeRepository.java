@@ -40,6 +40,8 @@ public interface OrganismeRepository extends JpaRepository<Organisme, UUID> {
     
     @Query("SELECT COUNT(o) FROM Organisme o WHERE o.type = :type AND o.isActive = true")
     long countByType(@Param("type") TypeOrganisme type);
+
+    long countByTypeDefinitionId(UUID typeDefinitionId);
     
     @Query("SELECT o FROM Organisme o LEFT JOIN FETCH o.users WHERE o.id = :id")
     Optional<Organisme> findByIdWithUsers(@Param("id") UUID id);
