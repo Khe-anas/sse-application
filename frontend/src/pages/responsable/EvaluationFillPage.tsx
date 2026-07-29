@@ -4,7 +4,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ChevronLeft,
-  ChevronRight,
   ExternalLink,
   FileText,
   Link,
@@ -18,11 +17,16 @@ import api from '@/services/api';
 import { evaluationService, reponseService } from '@/services/evaluationService';
 import { fileService } from '@/services/fileService';
 import { Niveau, StatusEvaluation, StatusReponse } from '@/types';
-import type { BonnePratique, Evaluation, Principe, Reponse } from '@/types';
+import type { Evaluation, Principe, Reponse } from '@/types';
 import { getLocalizedField } from '@/utils/localization';
 import { getNiveauTranslationKey } from '@/utils/niveau';
 
-const niveaux = [Niveau.N0, Niveau.N1, Niveau.N2, Niveau.N3];
+const niveaux = [
+  { key: Niveau.N0, labelKey: getNiveauTranslationKey(Niveau.N0) },
+  { key: Niveau.N1, labelKey: getNiveauTranslationKey(Niveau.N1) },
+  { key: Niveau.N2, labelKey: getNiveauTranslationKey(Niveau.N2) },
+  { key: Niveau.N3, labelKey: getNiveauTranslationKey(Niveau.N3) },
+];
 
 export default function EvaluationFillPage() {
   const { t, i18n } = useTranslation();
@@ -34,8 +38,6 @@ export default function EvaluationFillPage() {
   const [principes, setPrincipes] = useState<Principe[]>([]);
   const [reponses, setReponses] = useState<Record<string, Reponse>>({});
   const [activePrincipeId, setActivePrincipeId] = useState('');
-  const [activeBonnePratiqueId, setActiveBonnePratiqueId] = useState('');
-  const [activeCriterionId, setActiveCriterionId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -62,13 +64,7 @@ export default function EvaluationFillPage() {
       setPrincipes(principeData);
       setReponses(reponseMap);
       setTouchedCorrectionIds(new Set());
-
-      const firstPrincipe = principeData[0];
-      const firstBonnePratique = firstPrincipe?.bonnesPratiques.find((bp) => bp.criteres.length > 0)
-        || firstPrincipe?.bonnesPratiques[0];
-      setActivePrincipeId(firstPrincipe?.id || '');
-      setActiveBonnePratiqueId(firstBonnePratique?.id || '');
-      setActiveCriterionId(firstBonnePratique?.criteres[0]?.id || '');
+      setActivePrincipeId(principeData[0]?.id || '');
     } catch {
       toast.error(t('evaluationFill.loadError'));
     } finally {
@@ -84,15 +80,6 @@ export default function EvaluationFillPage() {
     () => principes.find((principe) => principe.id === activePrincipeId),
     [activePrincipeId, principes],
   );
-
-  const bonnesPratiques = activePrincipe?.bonnesPratiques || [];
-  const activeBonnePratique = bonnesPratiques.find((bp) => bp.id === activeBonnePratiqueId);
-  const criteres = activeBonnePratique?.criteres || [];
-  const activeCritere = criteres.find((critere) => critere.id === activeCriterionId) || criteres[0];
-  const activeCriterionIndex = activeCritere
-    ? criteres.findIndex((critere) => critere.id === activeCritere.id)
-    : -1;
-  const activeReponse = activeCritere ? reponses[activeCritere.id] : undefined;
 
   const isCorrectionStatus = (status: StatusReponse | undefined) =>
     status === StatusReponse.A_CORRIGER || status === StatusReponse.REJETEE;
@@ -116,25 +103,6 @@ export default function EvaluationFillPage() {
   const completedCriteria = Object.values(reponses).filter(isReponseComplete).length;
   const incompleteCriteria = Math.max(0, totalCriteria - completedCriteria);
   const progress = totalCriteria > 0 ? Math.round((completedCriteria / totalCriteria) * 100) : 0;
-
-  const selectPrincipe = (principe: Principe) => {
-    const firstBonnePratique = principe.bonnesPratiques.find((bp) => bp.criteres.length > 0)
-      || principe.bonnesPratiques[0];
-    setActivePrincipeId(principe.id);
-    setActiveBonnePratiqueId(firstBonnePratique?.id || '');
-    setActiveCriterionId(firstBonnePratique?.criteres[0]?.id || '');
-  };
-
-  const selectBonnePratique = (bonnePratique: BonnePratique) => {
-    setActiveBonnePratiqueId(bonnePratique.id);
-    setActiveCriterionId(bonnePratique.criteres[0]?.id || '');
-  };
-
-  const moveCriterion = (direction: number) => {
-    if (activeCriterionIndex < 0) return;
-    const nextIndex = Math.max(0, Math.min(criteres.length - 1, activeCriterionIndex + direction));
-    setActiveCriterionId(criteres[nextIndex]?.id || '');
-  };
 
   const saveReponseDraft = async (reponse: Reponse) => {
     if (!id) return;
@@ -347,14 +315,6 @@ export default function EvaluationFillPage() {
     );
   }
 
-  const canEdit = canEditReponse(activeReponse);
-  const expectedEvidence = activeCritere
-    ? getLocalizedField(activeCritere, 'preuves', language)
-    : '';
-  const references = activeCritere
-    ? getLocalizedField(activeCritere, 'references', language)
-    : '';
-  const correctionReason = activeReponse?.validatorComment || activeReponse?.rejectionReason;
   const saveLabel = saveState === 'saving'
     ? t('evaluationFill.saving')
     : saveState === 'saved'
@@ -410,276 +370,299 @@ export default function EvaluationFillPage() {
         </div>
       </section>
 
-      <nav className="flex gap-2 overflow-x-auto pb-1" aria-label={t('evaluationFill.principlesNavigation')}>
-        {principes.map((principe) => {
-          const principeCriteres = principe.bonnesPratiques.flatMap((bp) => bp.criteres);
-          const completed = principeCriteres.filter((critere) => isReponseComplete(reponses[critere.id])).length;
-          const selected = principe.id === activePrincipeId;
-          return (
-            <button
-              key={principe.id}
-              type="button"
-              onClick={() => selectPrincipe(principe)}
-              className={`flex-shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
-                selected
-                  ? 'border-primary-700 bg-primary-700 text-white'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-200'
-              }`}
-            >
-              {principe.number}. {getLocalizedField(principe, 'name', language)}
-              <span className="ms-2 opacity-70">({completed}/{principeCriteres.length})</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-[#132129]">
-        <div className="border-b border-gray-200 bg-gray-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-800/40">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-            {t('principesPage.bonnesPratiquesList')}
-          </h2>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {bonnesPratiques.map((bonnePratique) => {
-              const selected = bonnePratique.id === activeBonnePratiqueId;
+      <div className="grid items-start gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="card overflow-hidden xl:sticky xl:top-24">
+          <div className="border-b border-gray-200 px-4 py-4 dark:border-slate-700">
+            <p className="page-eyebrow">{t('evaluationFill.principles')}</p>
+            <h2 className="mt-1 section-heading">{t('evaluationFill.choosePrinciple')}</h2>
+          </div>
+          <nav
+            className="flex gap-2 overflow-x-auto p-3 xl:block xl:space-y-2 xl:overflow-visible"
+            aria-label={t('evaluationFill.principlesNavigation')}
+          >
+            {principes.map((principe) => {
+              const principeCriteres = principe.bonnesPratiques.flatMap((bp) => bp.criteres);
+              const completed = principeCriteres.filter(
+                (critere) => isReponseComplete(reponses[critere.id]),
+              ).length;
+              const selected = principe.id === activePrincipeId;
               return (
                 <button
-                  key={bonnePratique.id}
+                  key={principe.id}
                   type="button"
-                  onClick={() => selectBonnePratique(bonnePratique)}
-                  className={`min-w-[220px] flex-shrink-0 rounded-lg border px-3 py-2 text-start text-sm transition-colors ${
+                  onClick={() => setActivePrincipeId(principe.id)}
+                  className={`min-w-[220px] rounded-lg border px-3 py-3 text-start transition-colors xl:w-full xl:min-w-0 ${
                     selected
-                      ? 'border-primary-300 bg-primary-50 font-semibold text-primary-800 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-100'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-300'
+                      ? 'border-primary-300 bg-primary-50 text-primary-900 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-100'
+                      : 'border-transparent text-gray-600 hover:border-gray-200 hover:bg-gray-50 dark:text-slate-300 dark:hover:bg-slate-800'
                   }`}
+                  aria-current={selected ? 'step' : undefined}
                 >
-                  <span className="me-2 font-bold">{bonnePratique.number}.</span>
-                  {getLocalizedField(bonnePratique, 'label', language)}
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-primary-700 dark:text-primary-300">
+                      {t('evaluation.principe')} {principe.number}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-gray-500 dark:text-slate-400">
+                      {completed}/{principeCriteres.length}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-sm font-semibold leading-5">
+                    {getLocalizedField(principe, 'name', language)}
+                  </span>
                 </button>
               );
             })}
+          </nav>
+        </aside>
+
+        <main className="min-w-0 space-y-5">
+          <div className="flex flex-col gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900 sm:flex-row sm:items-center sm:justify-between dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-100">
+            <p className="font-medium">{t('evaluationFill.chooseLevelHint')}</p>
+            <span
+              className={`flex-shrink-0 text-xs font-semibold ${
+                saveState === 'error'
+                  ? 'text-red-600'
+                  : saveState === 'saving'
+                    ? 'text-amber-600'
+                    : 'text-blue-700 dark:text-blue-200'
+              }`}
+              aria-live="polite"
+            >
+              {saveLabel}
+            </span>
           </div>
-        </div>
 
-        <div className="border-b border-gray-200 px-3 py-3 dark:border-slate-700">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => moveCriterion(-1)}
-              disabled={activeCriterionIndex <= 0}
-              className="icon-button h-9 w-9 flex-shrink-0 rounded-full"
-              aria-label={t('common.previous')}
-            >
-              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-            </button>
-            <nav
-              className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1"
-              aria-label={t('evaluationFill.criteriaNavigation')}
-            >
-              {criteres.map((critere, index) => {
-                const selected = critere.id === activeCritere?.id;
-                const complete = isReponseComplete(reponses[critere.id]);
-                return (
-                  <button
-                    key={critere.id}
-                    type="button"
-                    onClick={() => setActiveCriterionId(critere.id)}
-                    className={`min-w-[190px] max-w-[300px] flex-shrink-0 rounded-full border px-4 py-2 text-start text-sm transition-colors ${
-                      selected
-                        ? 'border-primary-700 bg-primary-700 font-semibold text-white'
-                        : complete
-                          ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-primary-300 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-300'
-                    }`}
-                    title={getLocalizedField(critere, 'label', language)}
-                  >
-                    <span className="me-1 font-bold">{index + 1}.</span>
-                    <span className="line-clamp-1">{getLocalizedField(critere, 'label', language)}</span>
-                  </button>
-                );
-              })}
-            </nav>
-            <button
-              type="button"
-              onClick={() => moveCriterion(1)}
-              disabled={activeCriterionIndex < 0 || activeCriterionIndex >= criteres.length - 1}
-              className="icon-button h-9 w-9 flex-shrink-0 rounded-full"
-              aria-label={t('common.next')}
-            >
-              <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-            </button>
-          </div>
-        </div>
+          {activePrincipe?.bonnesPratiques.map((bonnePratique) => {
+            const completed = bonnePratique.criteres.filter(
+              (critere) => isReponseComplete(reponses[critere.id]),
+            ).length;
 
-        {activeCritere && activeReponse ? (
-          <>
-            {isCorrectionStatus(activeReponse.status) && (
-              <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-100">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">{t('evaluationFill.correctionRequested')}</p>
-                  {correctionReason && <p className="mt-1">{correctionReason}</p>}
-                </div>
-              </div>
-            )}
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/40">
-                    <th className="w-[34%] px-4 py-3 text-start font-semibold text-gray-700 dark:text-slate-200">
-                      {t('evaluation.critere')}
-                    </th>
-                    {niveaux.map((niveau) => (
-                      <th key={niveau} className="w-[10%] px-2 py-3 text-center font-semibold text-gray-700 dark:text-slate-200">
-                        <span className="block font-bold">{niveau}</span>
-                        <span className="mt-1 block text-[11px] font-normal text-gray-500 dark:text-slate-400">
-                          {t(getNiveauTranslationKey(niveau))}
-                        </span>
-                      </th>
-                    ))}
-                    <th className="w-[26%] px-4 py-3 text-start font-semibold text-gray-700 dark:text-slate-200">
-                      {t('evaluation.preuves')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="px-4 py-5 align-top font-medium leading-6 text-gray-900 dark:text-slate-100">
-                      {getLocalizedField(activeCritere, 'label', language)}
-                      {expectedEvidence && (
-                        <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs font-normal text-blue-900 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-100">
-                          <p className="font-semibold">{t('evaluationFill.preuvesAttendues')}</p>
-                          <p className="mt-1 whitespace-pre-wrap leading-5">{expectedEvidence}</p>
-                        </div>
-                      )}
-                      {references && (
-                        <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs font-normal text-gray-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
-                          <p className="font-semibold">{t('evaluationFill.references')}</p>
-                          <p className="mt-1 whitespace-pre-wrap leading-5">{references}</p>
-                        </div>
-                      )}
-                    </td>
-                    {niveaux.map((niveau) => (
-                      <td key={niveau} className="px-2 py-5 text-center align-top">
-                        <input
-                          type="radio"
-                          name={`niveau-${activeCritere.id}`}
-                          checked={activeReponse.niveau === niveau}
-                          onChange={() => handleNiveauChange(activeCritere.id, niveau)}
-                          disabled={!canEdit}
-                          aria-label={t(getNiveauTranslationKey(niveau))}
-                          className="h-5 w-5 cursor-pointer accent-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
-                        />
-                      </td>
-                    ))}
-                    <td className="px-4 py-5 align-top">
-                      {canEdit && (
-                        <div className="flex flex-wrap gap-2">
-                          <label className="btn-outline btn-sm cursor-pointer gap-1.5">
-                            <Upload className="h-3.5 w-3.5" />
-                            {t('evaluationFill.attachFile')}
-                            <input
-                              type="file"
-                              multiple
-                              className="sr-only"
-                              onChange={(event) => {
-                                void handleFileUpload(activeCritere.id, event.target.files || undefined);
-                                event.target.value = '';
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => handleAddLink(activeCritere.id)}
-                            className="btn-outline btn-sm gap-1.5"
-                          >
-                            <Link className="h-3.5 w-3.5" />
-                            {t('evaluationFill.addLink')}
-                          </button>
-                        </div>
-                      )}
-
-                      {(activeReponse.preuveFiles?.length || 0) === 0
-                        && (activeReponse.preuveLinks?.length || 0) === 0 && (
-                        <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
-                          {t('evaluationFill.noEvidence')}
-                        </p>
-                      )}
-
-                      <div className="mt-3 space-y-2">
-                        {activeReponse.preuveFiles?.map((fileUrl) => (
-                          <div key={fileUrl} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-slate-800/50">
-                            <FileText className="h-3.5 w-3.5 flex-shrink-0 text-primary-700" />
-                            <button
-                              type="button"
-                              onClick={() => fileService.download(fileUrl)}
-                              className="min-w-0 flex-1 truncate text-start text-xs font-medium text-primary-700 hover:underline"
-                            >
-                              {fileUrl.split('/').pop()}
-                            </button>
-                            {canEdit && (
-                              <button
-                                type="button"
-                                onClick={() => void handleRemoveFile(activeCritere.id, fileUrl)}
-                                className="text-red-500 hover:text-red-700"
-                                aria-label={t('common.delete')}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        {activeReponse.preuveLinks?.map((proofLink) => (
-                          <div key={proofLink} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-slate-800/50">
-                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-primary-700" />
-                            <a
-                              href={proofLink}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="min-w-0 flex-1 truncate text-xs font-medium text-primary-700 hover:underline"
-                            >
-                              {proofLink}
-                            </a>
-                            {canEdit && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveLink(activeCritere.id, proofLink)}
-                                className="text-red-500 hover:text-red-700"
-                                aria-label={t('common.delete')}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <footer className="flex items-center justify-end border-t border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
-              <span
-                className={`text-xs font-medium ${
-                  saveState === 'error'
-                    ? 'text-red-600'
-                    : saveState === 'saving'
-                      ? 'text-amber-600'
-                      : 'text-gray-500 dark:text-slate-400'
-                }`}
-                aria-live="polite"
+            return (
+              <section
+                key={bonnePratique.id}
+                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-[#132129]"
               >
-                {saveLabel}
-              </span>
-            </footer>
-          </>
-        ) : (
-          <div className="p-10 text-center text-sm text-gray-500">
-            {t('evaluationFill.noEditableResponses')}
-          </div>
-        )}
-      </section>
+                <header className="border-b border-primary-200 bg-primary-50 px-5 py-4 dark:border-primary-800 dark:bg-primary-900/20">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-primary-700 dark:text-primary-300">
+                        {t('validation.goodPractice')} {bonnePratique.number}
+                      </p>
+                      <h2 className="mt-1 text-base font-bold leading-6 text-gray-900 dark:text-slate-100">
+                        {getLocalizedField(bonnePratique, 'label', language)}
+                      </h2>
+                    </div>
+                    <span className="badge flex-shrink-0 bg-white text-primary-700 dark:bg-slate-800 dark:text-primary-200">
+                      {completed}/{bonnePratique.criteres.length}
+                    </span>
+                  </div>
+                </header>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[680px] table-fixed text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/50">
+                        <th
+                          scope="col"
+                          className="w-[42%] px-5 py-4 text-start text-sm font-bold text-gray-800 dark:text-slate-100"
+                        >
+                          {t('evaluation.critere')}
+                        </th>
+                        {niveaux.map((niveau) => (
+                          <th
+                            key={niveau.key}
+                            scope="col"
+                            className="w-[14.5%] px-2 py-4 text-center text-sm font-bold leading-5 text-gray-800 dark:text-slate-100"
+                          >
+                            {t(niveau.labelKey)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                      {bonnePratique.criteres.map((critere, critereIndex) => {
+                        const reponse = reponses[critere.id];
+                        const canEdit = canEditReponse(reponse);
+                        const expectedEvidence = getLocalizedField(critere, 'preuves', language);
+                        const references = getLocalizedField(critere, 'references', language);
+                        const correctionReason = reponse?.validatorComment || reponse?.rejectionReason;
+
+                        return (
+                          <tr
+                            key={critere.id}
+                            className={isCorrectionStatus(reponse?.status) ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}
+                          >
+                            <th
+                              scope="row"
+                              className="px-5 py-5 text-start align-top font-normal"
+                            >
+                              <div className="flex items-start gap-3">
+                                <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary-100 px-2 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-200">
+                                  {critereIndex + 1}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="font-semibold leading-6 text-gray-900 dark:text-slate-100">
+                                    {getLocalizedField(critere, 'label', language)}
+                                  </p>
+
+                                  {isCorrectionStatus(reponse?.status) && (
+                                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-900/20 dark:text-amber-100">
+                                      <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                                      <div>
+                                        <p className="font-bold">{t('evaluationFill.correctionRequested')}</p>
+                                        {correctionReason && <p className="mt-1 leading-5">{correctionReason}</p>}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {expectedEvidence && (
+                                    <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-100">
+                                      <p className="font-bold">{t('evaluationFill.preuvesAttendues')}</p>
+                                      <p className="mt-1 whitespace-pre-wrap leading-5">{expectedEvidence}</p>
+                                    </div>
+                                  )}
+
+                                  {references && (
+                                    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
+                                      <p className="font-bold">{t('evaluationFill.references')}</p>
+                                      <p className="mt-1 whitespace-pre-wrap leading-5">{references}</p>
+                                    </div>
+                                  )}
+
+                                  <div className="mt-3 border-t border-gray-200 pt-3 dark:border-slate-700">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-slate-200">
+                                      {t('evaluation.preuves')}
+                                    </p>
+
+                                    {canEdit && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        <label className="btn-outline btn-sm cursor-pointer justify-center gap-1.5 text-xs">
+                                          <Upload className="h-3.5 w-3.5" />
+                                          {t('evaluationFill.attachFile')}
+                                          <input
+                                            type="file"
+                                            multiple
+                                            className="sr-only"
+                                            onChange={(event) => {
+                                              void handleFileUpload(critere.id, event.target.files || undefined);
+                                              event.target.value = '';
+                                            }}
+                                          />
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAddLink(critere.id)}
+                                          className="btn-outline btn-sm justify-center gap-1.5 text-xs"
+                                        >
+                                          <Link className="h-3.5 w-3.5" />
+                                          {t('evaluationFill.addLink')}
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {(reponse?.preuveFiles?.length || 0) === 0
+                                      && (reponse?.preuveLinks?.length || 0) === 0 && (
+                                      <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-slate-400">
+                                        {t('evaluationFill.noEvidence')}
+                                      </p>
+                                    )}
+
+                                    <div className="mt-3 space-y-2">
+                                      {reponse?.preuveFiles?.map((fileUrl) => (
+                                        <div key={fileUrl} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-slate-800/50">
+                                          <FileText className="h-3.5 w-3.5 flex-shrink-0 text-primary-700" />
+                                          <button
+                                            type="button"
+                                            onClick={() => fileService.download(fileUrl)}
+                                            className="min-w-0 flex-1 truncate text-start text-xs font-medium text-primary-700 hover:underline"
+                                          >
+                                            {fileUrl.split('/').pop()}
+                                          </button>
+                                          {canEdit && (
+                                            <button
+                                              type="button"
+                                              onClick={() => void handleRemoveFile(critere.id, fileUrl)}
+                                              className="text-red-500 hover:text-red-700"
+                                              aria-label={t('common.delete')}
+                                            >
+                                              <X className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))}
+                                      {reponse?.preuveLinks?.map((proofLink) => (
+                                        <div key={proofLink} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-slate-800/50">
+                                          <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-primary-700" />
+                                          <a
+                                            href={proofLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="min-w-0 flex-1 truncate text-xs font-medium text-primary-700 hover:underline"
+                                          >
+                                            {proofLink}
+                                          </a>
+                                          {canEdit && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemoveLink(critere.id, proofLink)}
+                                              className="text-red-500 hover:text-red-700"
+                                              aria-label={t('common.delete')}
+                                            >
+                                              <X className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </th>
+
+                            {niveaux.map((niveau) => {
+                              const selected = reponse?.niveau === niveau.key;
+                              const levelLabel = t(niveau.labelKey);
+                              return (
+                                <td key={niveau.key} className="px-2 py-5 text-center align-top">
+                                  <label
+                                    className={`inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-lg border transition-colors ${
+                                      selected
+                                        ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-100 dark:bg-primary-900/30 dark:ring-primary-900'
+                                        : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50/50 dark:border-slate-700 dark:bg-[#132129]'
+                                    } ${!canEdit ? 'cursor-not-allowed opacity-60' : ''}`}
+                                    title={levelLabel}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`niveau-${critere.id}`}
+                                      checked={selected}
+                                      onChange={() => handleNiveauChange(critere.id, niveau.key)}
+                                      disabled={!canEdit}
+                                      aria-label={`${getLocalizedField(critere, 'label', language)} — ${levelLabel}`}
+                                      className="h-5 w-5 accent-primary-700"
+                                    />
+                                  </label>
+                                </td>
+                              );
+                            })}
+
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            );
+          })}
+
+          {!activePrincipe && (
+            <div className="card p-10 text-center text-sm text-gray-500">
+              {t('evaluationFill.noEditableResponses')}
+            </div>
+          )}
+        </main>
+      </div>
 
       <ConfirmDialog
         open={submitDialogOpen}
