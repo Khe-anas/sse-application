@@ -332,8 +332,8 @@ export default function EvaluationFillPage() {
         : t('evaluationFill.draftReady');
 
   return (
-    <div className="page-shell space-y-5 pb-10">
-      <header className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+    <div className="page-shell space-y-4 pb-10">
+      <header className="card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -356,14 +356,14 @@ export default function EvaluationFillPage() {
           type="button"
           onClick={handleSubmit}
           disabled={isSaving || evaluation.status !== StatusEvaluation.EN_COURS}
-          className="btn-success gap-2"
+          className="btn-success w-full gap-2 sm:w-auto"
         >
           <Send className="h-4 w-4" />
           {t('evaluationFill.submit')}
         </button>
       </header>
 
-      <section className="card p-4">
+      <section className="card px-4 py-3.5">
         <div className="flex items-center justify-between gap-4 text-sm">
           <span className="font-semibold text-gray-700 dark:text-slate-200">
             {t('evaluationFill.completedCount', { completed: completedCriteria, total: totalCriteria })}
@@ -378,7 +378,7 @@ export default function EvaluationFillPage() {
         </div>
       </section>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 xl:grid-cols-[230px_minmax(0,1fr)]">
         <aside className="card overflow-hidden xl:sticky xl:top-24">
           <div className="border-b border-gray-200 px-4 py-4 dark:border-slate-700">
             <p className="page-eyebrow">{t('evaluationFill.principles')}</p>
@@ -426,8 +426,8 @@ export default function EvaluationFillPage() {
           </nav>
         </aside>
 
-        <main className="min-w-0 space-y-5">
-          <div className="flex flex-col gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900 sm:flex-row sm:items-center sm:justify-between dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-100">
+        <main className="min-w-0 space-y-4">
+          <div className="flex flex-col gap-2 rounded-lg border border-blue-100 bg-blue-50/80 px-4 py-3 text-sm text-blue-900 sm:flex-row sm:items-center sm:justify-between dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-100">
             <p className="font-medium">{t('evaluationFill.chooseLevelHint')}</p>
             <span
               className={`flex-shrink-0 text-xs font-semibold ${
@@ -444,20 +444,9 @@ export default function EvaluationFillPage() {
           </div>
 
           {activePrincipe && activePrincipe.bonnesPratiques.length > 0 && (
-            <section className="card p-3 sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-3 px-1">
-                <div>
-                  <p className="page-eyebrow">{t('validation.goodPractice')}</p>
-                  <h2 className="mt-1 text-sm font-bold text-gray-900 dark:text-slate-100">
-                    {getLocalizedField(activePrincipe, 'name', language)}
-                  </h2>
-                </div>
-                <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
-                  {activePrincipe.bonnesPratiques.length}
-                </span>
-              </div>
+            <section className="sticky top-20 z-20 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-[#132129]/95">
               <nav
-                className="flex gap-2 overflow-x-auto pb-1"
+                className="flex gap-1.5 overflow-x-auto"
                 role="tablist"
                 aria-label={t('validation.goodPractice')}
               >
@@ -473,30 +462,32 @@ export default function EvaluationFillPage() {
                       type="button"
                       role="tab"
                       aria-selected={selected}
+                      aria-controls={`bonne-pratique-panel-${bonnePratique.id}`}
+                      id={`bonne-pratique-tab-${bonnePratique.id}`}
                       onClick={() => setActiveBonnePratiqueId(bonnePratique.id)}
-                      className={`min-w-[230px] rounded-full border px-4 py-3 text-start transition-all ${
+                      className={`min-w-[210px] max-w-[280px] flex-1 rounded-lg border px-3.5 py-3 text-start transition-colors ${
                         selected
-                          ? 'border-primary-600 bg-primary-700 text-white shadow-sm'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-200 dark:hover:border-primary-700 dark:hover:bg-primary-900/20'
+                          ? 'border-primary-300 bg-primary-50 text-primary-950 shadow-sm dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-100'
+                          : 'border-transparent bg-transparent text-gray-700 hover:border-gray-200 hover:bg-gray-50 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800/70'
                       }`}
                     >
                       <span className="flex items-center justify-between gap-3">
-                        <span className={`text-xs font-bold ${
-                          selected ? 'text-white' : 'text-primary-700 dark:text-primary-300'
-                        }`}
-                        >
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-primary-700 dark:text-primary-300">
                           {t('validation.goodPractice')} {bonnePratique.number}
                         </span>
-                        <span className={`text-[11px] font-semibold tabular-nums ${
-                          selected ? 'text-primary-100' : 'text-gray-500 dark:text-slate-400'
-                        }`}
-                        >
+                        <span className="rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-500 ring-1 ring-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
                           {completed}/{bonnePratique.criteres.length}
                         </span>
                       </span>
-                      <span className="mt-1 block truncate text-sm font-semibold">
+                      <span className="mt-1.5 block whitespace-normal text-sm font-semibold leading-5">
                         {getLocalizedField(bonnePratique, 'label', language)}
                       </span>
+                      <span
+                        aria-hidden="true"
+                        className={`mt-2 block h-0.5 rounded-full transition-colors ${
+                          selected ? 'bg-primary-700' : 'bg-transparent'
+                        }`}
+                      />
                     </button>
                   );
                 })}
@@ -514,9 +505,12 @@ export default function EvaluationFillPage() {
             return (
               <section
                 key={bonnePratique.id}
+                id={`bonne-pratique-panel-${bonnePratique.id}`}
+                role="tabpanel"
+                aria-labelledby={`bonne-pratique-tab-${bonnePratique.id}`}
                 className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-[#132129]"
               >
-                <header className="border-b border-primary-200 bg-primary-50 px-5 py-4 dark:border-primary-800 dark:bg-primary-900/20">
+                <header className="border-b border-primary-100 bg-primary-50/70 px-5 py-3.5 dark:border-primary-800 dark:bg-primary-900/20">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wide text-primary-700 dark:text-primary-300">
@@ -535,10 +529,10 @@ export default function EvaluationFillPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[680px] table-fixed text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/50">
+                      <tr className="border-b border-gray-200 bg-gray-50/90 dark:border-slate-700 dark:bg-slate-800/70">
                         <th
                           scope="col"
-                          className="w-[42%] px-5 py-4 text-start text-sm font-bold text-gray-800 dark:text-slate-100"
+                          className="w-[42%] px-5 py-3.5 text-start text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-slate-200"
                         >
                           {t('evaluation.critere')}
                         </th>
@@ -546,7 +540,7 @@ export default function EvaluationFillPage() {
                           <th
                             key={niveau.key}
                             scope="col"
-                            className="w-[14.5%] px-2 py-4 text-center text-sm font-bold leading-5 text-gray-800 dark:text-slate-100"
+                            className="w-[14.5%] px-2 py-3.5 text-center text-xs font-bold leading-5 text-gray-700 dark:text-slate-200"
                           >
                             {t(niveau.labelKey)}
                           </th>
@@ -564,7 +558,9 @@ export default function EvaluationFillPage() {
                         return (
                           <tr
                             key={critere.id}
-                            className={isCorrectionStatus(reponse?.status) ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}
+                            className={`transition-colors hover:bg-gray-50/60 dark:hover:bg-slate-800/20 ${
+                              isCorrectionStatus(reponse?.status) ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''
+                            }`}
                           >
                             <th
                               scope="row"
@@ -697,11 +693,11 @@ export default function EvaluationFillPage() {
                               const selected = reponse?.niveau === niveau.key;
                               const levelLabel = t(niveau.labelKey);
                               return (
-                                <td key={niveau.key} className="px-2 py-5 text-center align-top">
+                                <td key={niveau.key} className="px-1.5 py-5 text-center align-top">
                                   <label
-                                    className={`inline-flex min-h-[76px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border px-1.5 py-2 transition-colors ${
+                                    className={`inline-flex min-h-[72px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border px-1.5 py-2 transition-colors ${
                                       selected
-                                        ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-100 dark:bg-primary-900/30 dark:ring-primary-900'
+                                        ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-200 dark:bg-primary-900/30 dark:ring-primary-800'
                                         : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50/50 dark:border-slate-700 dark:bg-[#132129]'
                                     } ${!canEdit ? 'cursor-not-allowed opacity-60' : ''}`}
                                     title={levelLabel}
