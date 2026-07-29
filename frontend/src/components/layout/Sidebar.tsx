@@ -36,14 +36,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: 'navigation.adminDashboard', icon: LayoutDashboard, path: '/admin/dashboard', roles: [Role.ADMIN], permission: 'DASHBOARD_READ' },
       { label: 'navigation.myEvaluations', icon: LayoutDashboard, path: '/user/dashboard', roles: [Role.USER] },
-      { label: 'navigation.evaluateurDashboard', icon: LayoutDashboard, path: '/evaluateur/dashboard', roles: [Role.EVALUATEUR] },
+      { label: 'navigation.evaluations', icon: ClipboardList, path: '/evaluateur/dashboard', roles: [Role.EVALUATEUR] },
       { label: 'navigation.governmentDashboard', icon: LayoutDashboard, path: '/gouvernement/dashboard', roles: [Role.GOUVERNEMENT] },
     ],
   },
   {
     label: 'navigationGroups.work',
     items: [
-      { label: 'navigation.evaluations', icon: ClipboardList, path: '/evaluateur/evaluations', roles: [Role.EVALUATEUR] },
       { label: 'navigation.principes', icon: BookOpen, path: '/user/principes', roles: [Role.USER] },
       { label: 'navigation.ranking', icon: Trophy, path: '/gouvernement/ranking', roles: [Role.GOUVERNEMENT] },
     ],

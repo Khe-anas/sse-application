@@ -57,6 +57,7 @@ export default function EvaluationValidatePage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const isAdmin = user?.role === Role.ADMIN;
+  const isEvaluator = user?.role === Role.EVALUATEUR;
   const basePath = isAdmin ? '/admin/evaluations' : '/evaluateur/evaluations';
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [principes, setPrincipes] = useState<Principe[]>([]);
@@ -64,7 +65,7 @@ export default function EvaluationValidatePage() {
   const [activePrincipe, setActivePrincipe] = useState<string>('');
   const [activeBonnePratiqueId, setActiveBonnePratiqueId] = useState<string>('');
   const [activeCriterionId, setActiveCriterionId] = useState<string>('');
-  const [filter, setFilter] = useState<ReviewFilter>('ALL');
+  const [filter, setFilter] = useState<ReviewFilter>(isEvaluator ? 'PENDING' : 'ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [busyResponseId, setBusyResponseId] = useState<string | null>(null);
@@ -212,6 +213,9 @@ export default function EvaluationValidatePage() {
     try {
       const response = await api.put<Reponse>(`/reponses/${reponse.id}/${config.endpoint}`, config.payload);
       updateReponseInState(response.data);
+      if (isEvaluator) {
+        setFilter('PENDING');
+      }
       toast.success(config.successMessage);
     } catch (error) {
       toast.error(getErrorMessage(error, t('validation.error')));
@@ -372,9 +376,9 @@ export default function EvaluationValidatePage() {
     setActiveCriterionId(nextRow.critere.id);
   }, [activeBonnePratiqueId, activeCriterionId, filteredRows]);
 
-  const visibleCriterionRows = filteredRows.filter(
-    (row) => row.bonnePratique.id === activeBonnePratiqueId
-  );
+  const visibleCriterionRows = isEvaluator
+    ? filteredRows
+    : filteredRows.filter((row) => row.bonnePratique.id === activeBonnePratiqueId);
   const activeGoodPracticeIndex = filteredGoodPractices.findIndex(
     (bonnePratique) => bonnePratique.id === activeBonnePratiqueId
   );
@@ -426,17 +430,22 @@ export default function EvaluationValidatePage() {
     );
   }
 
-  const filters: { value: ReviewFilter; label: string }[] = [
-    { value: 'ALL', label: t('validation.filterAll') },
-    { value: 'PENDING', label: t('validation.filterPending') },
-    { value: StatusReponse.VALIDEE, label: t('validation.filterValidated') },
-    { value: StatusReponse.A_CORRIGER, label: t('validation.filterCorrection') },
-    { value: StatusReponse.REJETEE, label: t('validation.filterRejected') },
-  ];
+  const filters: { value: ReviewFilter; label: string }[] = isEvaluator
+    ? [
+        { value: 'PENDING', label: t('validation.filterPending') },
+        { value: 'ALL', label: t('validation.filterAll') },
+      ]
+    : [
+        { value: 'ALL', label: t('validation.filterAll') },
+        { value: 'PENDING', label: t('validation.filterPending') },
+        { value: StatusReponse.VALIDEE, label: t('validation.filterValidated') },
+        { value: StatusReponse.A_CORRIGER, label: t('validation.filterCorrection') },
+        { value: StatusReponse.REJETEE, label: t('validation.filterRejected') },
+      ];
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-5" style={{ overflowAnchor: 'none' }}>
-      <header className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
+      <header className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
@@ -447,19 +456,26 @@ export default function EvaluationValidatePage() {
             <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
           </button>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-primary-700">{t('validation.reviewWorkspace')}</p>
+            <p className="text-sm font-medium text-primary-700">
+              {isEvaluator ? t('validation.simpleEyebrow') : t('validation.reviewWorkspace')}
+            </p>
             <h1 className="truncate text-2xl font-bold text-gray-900">
               {evaluation.organismeName}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">{t('validation.year', { year: evaluation.year })}</p>
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+              {t('validation.year', { year: evaluation.year })}
+              {isEvaluator && ` · ${t('validation.simpleInstruction')}`}
+            </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={handleDownloadPdf} className="btn-outline btn-sm gap-2">
-            <Download className="h-4 w-4" />
-            PDF
-          </button>
+          {isAdmin && (
+            <button type="button" onClick={handleDownloadPdf} className="btn-outline btn-sm gap-2">
+              <Download className="h-4 w-4" />
+              PDF
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setGlobalCorrectionOpen(true)}
@@ -480,48 +496,70 @@ export default function EvaluationValidatePage() {
         </div>
       </header>
 
-      <section className="grid overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:grid-cols-3">
-        <div className="border-b border-gray-200 p-4 sm:border-b-0 sm:border-r">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary-50 text-primary-700">
-              <CircleDot className="h-5 w-5" />
-            </div>
+      {isEvaluator ? (
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">{t('validation.reviewProgress')}</p>
-              <p className="text-lg font-semibold text-gray-900">{reviewedCount} / {allReponses.length}</p>
+              <p className="text-sm font-semibold text-gray-900">{t('validation.reviewProgress')}</p>
+              <p className="mt-1 text-sm text-gray-500">{reviewedCount} / {allReponses.length}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
+                {pendingDecisionReponses.length} {t('validation.pendingLabel').toLocaleLowerCase(language)}
+              </span>
+              <span className="text-lg font-bold text-primary-700">{reviewPercentage}%</span>
             </div>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-200">
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-100">
             <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${reviewPercentage}%` }} />
           </div>
-        </div>
-        <div className="border-b border-gray-200 p-4 sm:border-b-0 sm:border-r">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-50 text-amber-700">
-              <AlertTriangle className="h-5 w-5" />
+        </section>
+      ) : (
+        <section className="grid overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:grid-cols-3">
+          <div className="border-b border-gray-200 p-4 sm:border-b-0 sm:border-r">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary-50 text-primary-700">
+                <CircleDot className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase text-gray-500">{t('validation.reviewProgress')}</p>
+                <p className="text-lg font-semibold text-gray-900">{reviewedCount} / {allReponses.length}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium uppercase text-gray-500">{t('validation.pendingLabel')}</p>
-              <p className="text-lg font-semibold text-gray-900">{pendingDecisionReponses.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-green-50 text-green-700">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase text-gray-500">{t('validation.readyLabel')}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {canValidateEvaluation ? t('common.yes') : t('common.no')}
-              </p>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-200">
+              <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${reviewPercentage}%` }} />
             </div>
           </div>
-        </div>
-      </section>
+          <div className="border-b border-gray-200 p-4 sm:border-b-0 sm:border-r">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-50 text-amber-700">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase text-gray-500">{t('validation.pendingLabel')}</p>
+                <p className="text-lg font-semibold text-gray-900">{pendingDecisionReponses.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-green-50 text-green-700">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase text-gray-500">{t('validation.readyLabel')}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {canValidateEvaluation ? t('common.yes') : t('common.no')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
-      <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className={`grid items-start gap-5 ${
+        isEvaluator ? 'lg:grid-cols-[230px_minmax(0,1fr)]' : 'lg:grid-cols-[280px_minmax(0,1fr)]'
+      }`}>
         <aside className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm lg:sticky lg:top-20">
           <div className="border-b border-gray-200 px-4 py-3">
             <h2 className="font-semibold text-gray-900">{t('validation.principles')}</h2>
@@ -579,16 +617,18 @@ export default function EvaluationValidatePage() {
                   {activePrincipeData ? getLocalizedField(activePrincipeData, 'name', language) : ''}
                 </h2>
               </div>
-              <label className="relative block w-full min-[1400px]:w-72">
-                <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={t('validation.searchPlaceholder')}
-                  className="input h-10 ps-9"
-                />
-              </label>
+              {isAdmin && (
+                <label className="relative block w-full min-[1400px]:w-72">
+                  <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder={t('validation.searchPlaceholder')}
+                    className="input h-10 ps-9"
+                  />
+                </label>
+              )}
             </div>
 
             <div className="mt-4 flex gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1">
@@ -612,13 +652,26 @@ export default function EvaluationValidatePage() {
 
           {filteredRows.length === 0 ? (
             <div className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-6 text-center">
-              <Search className="h-7 w-7 text-gray-400" />
-              <p className="mt-3 font-medium text-gray-900">{t('validation.noCriteria')}</p>
-              <p className="mt-1 text-sm text-gray-500">{t('validation.noCriteriaDetail')}</p>
+              {isEvaluator && filter === 'PENDING' ? (
+                <>
+                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  <p className="mt-3 font-medium text-gray-900">{t('validation.allCriteriaReviewed')}</p>
+                  <p className="mt-1 max-w-lg text-sm leading-6 text-gray-500">
+                    {t('validation.finalizeHint')}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Search className="h-7 w-7 text-gray-400" />
+                  <p className="mt-3 font-medium text-gray-900">{t('validation.noCriteria')}</p>
+                  <p className="mt-1 text-sm text-gray-500">{t('validation.noCriteriaDetail')}</p>
+                </>
+              )}
             </div>
           ) : activeReviewRow ? (
             <>
-              <nav className="flex items-center gap-3 border border-gray-200 bg-white p-2" aria-label={t('validation.goodPracticesNavigation')}>
+              {isAdmin && (
+                <nav className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-2" aria-label={t('validation.goodPracticesNavigation')}>
                 <button
                   type="button"
                   onClick={() => moveToGoodPractice(-1)}
@@ -665,11 +718,12 @@ export default function EvaluationValidatePage() {
                     title={t('validation.nextGoodPractice')}
                   >
                     <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-                  </button>
-                </div>
-              </nav>
+                    </button>
+                  </div>
+                </nav>
+              )}
 
-              <nav className="flex items-center gap-3 border border-gray-200 bg-white p-2" aria-label={t('validation.criteriaNavigation')}>
+              <nav className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-2 shadow-sm" aria-label={t('validation.criteriaNavigation')}>
                 <button
                   type="button"
                   onClick={() => moveToCriterion(-1)}
@@ -692,7 +746,7 @@ export default function EvaluationValidatePage() {
                         aria-label={t('validation.criterionPosition', { current: index + 1, total: visibleCriterionRows.length })}
                         aria-current={selected ? 'step' : undefined}
                       >
-                        {row.critere.number}
+                        {isEvaluator ? index + 1 : row.critere.number}
                       </button>
                     );
                   })}
@@ -718,6 +772,7 @@ export default function EvaluationValidatePage() {
                 language={language}
                 note={activeReviewRow.reponse ? reviewNotes[activeReviewRow.reponse.id] || '' : ''}
                 isBusy={activeReviewRow.reponse?.id === busyResponseId}
+                simpleMode={isEvaluator}
                 t={t}
                 onDownloadFile={handleDownloadFile}
                 onReviewAction={handleReviewAction}
@@ -815,6 +870,7 @@ function FocusedCriterionReview({
   language,
   note,
   isBusy,
+  simpleMode,
   t,
   onDownloadFile,
   onReviewAction,
@@ -823,6 +879,7 @@ function FocusedCriterionReview({
   language: string;
   note: string;
   isBusy: boolean;
+  simpleMode: boolean;
   t: TFunction;
   onDownloadFile: (fileUrl: string) => Promise<void>;
   onReviewAction: (reponse: Reponse, action: StatusReponse, reason?: string) => Promise<void>;
@@ -880,29 +937,38 @@ function FocusedCriterionReview({
       </header>
 
       <section className="border-b border-gray-200 bg-gray-50 px-4 py-5 sm:px-6" aria-labelledby={`submitted-level-${critere.id}`}>
-        <div className="flex items-center justify-between gap-3">
-          <h4 id={`submitted-level-${critere.id}`} className="text-sm font-semibold text-gray-900">
-            {t('validation.submittedLevel')}
-          </h4>
-          <span className="text-xs text-gray-500">{t('validation.levelScaleHint')}</span>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {LEVELS.map((level) => {
-            const selected = reponse?.niveau === level;
-            return (
-              <div
-                key={level}
-                aria-current={selected ? 'true' : undefined}
-                className={`relative min-w-0 border px-3 py-3 transition-colors ${levelScaleClasses(level, selected)}`}
-              >
-                <div className="flex min-h-8 items-center justify-between gap-2">
-                  <span className="text-sm font-semibold leading-5">{t(getNiveauTranslationKey(level))}</span>
-                  {selected && <CheckCircle2 className="h-4 w-4 flex-shrink-0" aria-hidden="true" />}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <h4 id={`submitted-level-${critere.id}`} className="text-sm font-semibold text-gray-900">
+          {t('validation.submittedLevel')}
+        </h4>
+        {simpleMode ? (
+          <div className="mt-3 flex items-center gap-3 rounded-lg border border-primary-200 bg-white p-3">
+            <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-primary-700" />
+            <span className="text-base font-bold text-gray-900">
+              {reponse?.niveau ? t(getNiveauTranslationKey(reponse.niveau)) : '-'}
+            </span>
+          </div>
+        ) : (
+          <>
+            <span className="mt-1 block text-xs text-gray-500">{t('validation.levelScaleHint')}</span>
+            <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+              {LEVELS.map((level) => {
+                const selected = reponse?.niveau === level;
+                return (
+                  <div
+                    key={level}
+                    aria-current={selected ? 'true' : undefined}
+                    className={`relative min-w-0 border px-3 py-3 transition-colors ${levelScaleClasses(level, selected)}`}
+                  >
+                    <div className="flex min-h-8 items-center justify-between gap-2">
+                      <span className="text-sm font-semibold leading-5">{t(getNiveauTranslationKey(level))}</span>
+                      {selected && <CheckCircle2 className="h-4 w-4 flex-shrink-0" aria-hidden="true" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </section>
 
       <div className="grid min-[1280px]:grid-cols-2">
@@ -964,7 +1030,9 @@ function FocusedCriterionReview({
                 <h4 className="text-sm font-semibold text-gray-900">{t('validation.decision')}</h4>
                 {isBusy && <Loader2 className="h-4 w-4 animate-spin text-primary-700" />}
               </div>
-              <p className="mt-1 text-xs leading-5 text-gray-500">{t('validation.decisionHint')}</p>
+              <p className="mt-1 text-xs leading-5 text-gray-500">
+                {simpleMode ? t('validation.simpleDecisionHint') : t('validation.decisionHint')}
+              </p>
             </div>
             <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:w-[520px]">
               <DecisionButton
