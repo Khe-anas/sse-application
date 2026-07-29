@@ -144,7 +144,7 @@ function App() {
           {/* Evaluateure routes */}
           <Route element={<ProtectedRoute requiredRole={Role.EVALUATEUR} />}>
             <Route path="/evaluateur/dashboard" element={<EvaluateurDashboard />} />
-            <Route path="/evaluateur/evaluations" element={<Navigate to="/evaluateur/dashboard" replace />} />
+            <Route path="/evaluateur/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluateur/evaluations/:id/validate" element={<EvaluationValidatePage />} />
           </Route>
 

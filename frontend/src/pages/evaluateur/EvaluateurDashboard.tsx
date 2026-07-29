@@ -2,18 +2,28 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowRight, CheckCircle2, ClipboardCheck, Lock, RefreshCcw } from 'lucide-react';
+import { CheckCircle, ClipboardCheck, Clock3, Eye, Lock, RefreshCcw, Gauge } from 'lucide-react';
 import { toast } from 'sonner';
+import KPICard from '@/components/dashboard/KPICard';
 import { evaluationService } from '@/services/evaluationService';
 import { useAuthStore } from '@/stores/authStore';
 import { StatusEvaluation, type Evaluation } from '@/types';
 import { formatBackendShortDateTime } from '@/utils/date';
 import PageHeader from '@/components/ui/PageHeader';
+import ProgressMeter from '@/components/ui/ProgressMeter';
 
 const REVIEW_STATUSES = new Set<StatusEvaluation>([
   StatusEvaluation.SOUMISE,
   StatusEvaluation.EN_VALIDATION,
 ]);
+
+const statusColors: Record<StatusEvaluation, string> = {
+  EN_COURS: 'bg-amber-100 text-amber-700',
+  SOUMISE: 'bg-blue-100 text-blue-700',
+  EN_VALIDATION: 'bg-purple-100 text-purple-700',
+  VALIDEE: 'bg-green-100 text-green-700',
+  REJETEE: 'bg-red-100 text-red-700',
+};
 
 export default function EvaluateurDashboard() {
   const { t, i18n } = useTranslation();
@@ -113,12 +123,12 @@ export default function EvaluateurDashboard() {
   };
 
   return (
-    <div className="page-shell space-y-5">
+    <div className="page-shell">
       <PageHeader
         eyebrow={t('navigationGroups.work')}
         title={t('evaluatorDashboard.title')}
         description={t('evaluatorDashboard.subtitle')}
-        icon={ClipboardCheck}
+        icon={Gauge}
         actions={<button
           type="button"
           onClick={() => loadQueue(false)}
@@ -130,141 +140,80 @@ export default function EvaluateurDashboard() {
         </button>}
       />
 
-      <section className="overflow-hidden rounded-xl bg-primary-950 px-5 py-5 text-white shadow-sm sm:px-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-primary-200">{t('evaluatorDashboard.pendingLabel')}</p>
-            <p className="mt-1 text-4xl font-bold tabular-nums">{reviewQueue.length}</p>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-primary-100">
-              {t('evaluatorDashboard.simpleInstruction')}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="rounded-lg bg-white/10 px-3 py-2">
-              {t('evaluatorDashboard.kpiAvailable')}: {availableQueue.length}
-            </span>
-            {lockedByMe.length > 0 && (
-              <span className="rounded-lg bg-amber-400/20 px-3 py-2 text-amber-100">
-                {t('evaluatorDashboard.kpiMine')}: {lockedByMe.length}
-              </span>
-            )}
-            {lockedByOthers.length > 0 && (
-              <span className="rounded-lg bg-white/10 px-3 py-2">
-                {t('evaluatorDashboard.kpiLocked')}: {lockedByOthers.length}
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KPICard title={t('evaluatorDashboard.kpiAvailable')} value={availableQueue.length} icon={ClipboardCheck} color="primary" to="/evaluateur/evaluations" />
+        <KPICard title={t('evaluatorDashboard.kpiMine')} value={lockedByMe.length} icon={Clock3} color="warning" to="/evaluateur/evaluations" />
+        <KPICard title={t('evaluatorDashboard.kpiLocked')} value={lockedByOthers.length} icon={Lock} color="danger" to="/evaluateur/evaluations" />
+        <KPICard title={t('evaluatorDashboard.kpiValidated')} value={validatedCount} icon={CheckCircle} color="success" to="/evaluateur/evaluations" />
+      </div>
 
-      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-[#132129]">
+      <section className="table-container">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-slate-700">
           <div>
-            <h2 className="section-heading">{t('evaluatorDashboard.queueTitle')}</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-              {t('evaluatorDashboard.queueCount', { count: reviewQueue.length })}
-            </p>
+            <p className="page-eyebrow">{t('navigation.evaluations')}</p>
+            <h2 className="mt-1 section-heading">{t('evaluatorDashboard.queueTitle')}</h2>
           </div>
-          <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
-            {t('evaluatorDashboard.kpiValidated')}: {validatedCount}
-          </span>
+          <span className="badge bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200">{t('evaluatorDashboard.queueCount', { count: reviewQueue.length })}</span>
         </div>
-
-        <div className="divide-y divide-gray-100 dark:divide-slate-700">
-          {isLoading ? (
-            <div className="flex min-h-40 items-center justify-center text-sm text-gray-500">
-              <RefreshCcw className="me-2 h-4 w-4 animate-spin" />
-              {t('common.loading')}
-            </div>
-          ) : orderedQueue.length === 0 ? (
-            <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                <CheckCircle2 className="h-6 w-6" />
-              </span>
-              <h3 className="mt-4 font-semibold text-gray-900 dark:text-slate-100">
-                {t('evaluatorDashboard.empty')}
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                {t('evaluatorDashboard.emptyDetail')}
-              </p>
-            </div>
-          ) : orderedQueue.map((evaluation) => {
+        <table className="table">
+          <thead className="table-head">
+            <tr>
+              <th className="table-th">{t('common.organisme')}</th>
+              <th className="table-th">{t('common.year')}</th>
+              <th className="table-th">{t('common.status')}</th>
+              <th className="table-th">{t('common.progress')}</th>
+              <th className="table-th">{t('evaluatorDashboard.openedBy')}</th>
+              <th className="table-th">{t('evaluatorDashboard.submittedAt')}</th>
+              <th className="table-th">{t('common.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {isLoading ? (
+              <tr><td colSpan={7} className="table-td py-8 text-center">{t('common.loading')}</td></tr>
+            ) : orderedQueue.length === 0 ? (
+              <tr><td colSpan={7} className="table-td py-8 text-center text-gray-500">{t('evaluatorDashboard.empty')}</td></tr>
+            ) : orderedQueue.map((evaluation) => {
               const lockedByOther = isEvaluationLockedByOther(evaluation, user?.id);
               const openedByMe = evaluation.validationOpenedById === user?.id;
 
               return (
-                <article
-                  key={evaluation.id}
-                  className={`flex flex-col gap-4 px-5 py-5 transition-colors sm:flex-row sm:items-center sm:justify-between ${
-                    openedByMe
-                      ? 'bg-amber-50/60 dark:bg-amber-900/10'
-                      : 'hover:bg-gray-50/80 dark:hover:bg-slate-800/30'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-bold text-gray-900 dark:text-slate-100">
-                        {evaluation.organismeName}
-                      </h3>
-                      <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600 dark:bg-slate-800 dark:text-slate-300">
-                        {evaluation.year}
-                      </span>
+                <tr key={evaluation.id} className={openedByMe ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-gray-50'}>
+                  <td className="table-td font-medium">{evaluation.organismeName}</td>
+                  <td className="table-td">{evaluation.year}</td>
+                  <td className="table-td">
+                    <span className={`badge ${statusColors[evaluation.status]}`}>
+                      {t(`evaluation.status.${evaluation.status}`)}
+                    </span>
+                  </td>
+                  <td className="table-td">
+                    <div className="flex items-center gap-2">
+                      <div className="w-28"><ProgressMeter value={evaluation.progressPercentage || 0} compact /></div>
+                      <span className="text-xs tabular-nums text-gray-500">{evaluation.progressPercentage || 0}%</span>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                      {lockedByOther ? (
-                        <span className="inline-flex items-center gap-1.5 font-medium text-red-700 dark:text-red-300">
-                          <Lock className="h-4 w-4" />
-                          {t('evaluatorDashboard.lockedByName', {
-                            name: evaluation.validationOpenedByName || '-',
-                          })}
-                        </span>
-                      ) : (
-                        <span className={`font-medium ${
-                          openedByMe
-                            ? 'text-amber-700 dark:text-amber-300'
-                            : 'text-green-700 dark:text-green-300'
-                        }`}
-                        >
-                          {openedByMe
-                            ? t('evaluatorDashboard.inProgressByYou')
-                            : t('evaluatorDashboard.readyToStart')}
-                        </span>
-                      )}
-                      <span className="text-gray-500 dark:text-slate-400">
-                        {t('evaluatorDashboard.submittedAt')}: {formatBackendShortDateTime(
-                          evaluation.submittedAt,
-                          language,
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleExamine(evaluation)}
-                    disabled={lockedByOther || claimingEvaluationId === evaluation.id}
-                    className={`min-h-11 w-full justify-center gap-2 sm:w-auto ${
-                      openedByMe ? 'btn-primary' : 'btn-success'
-                    } disabled:cursor-not-allowed disabled:opacity-50`}
-                    title={lockedByOther
-                      ? t('evaluations.lockedBy', { name: evaluation.validationOpenedByName })
-                      : undefined}
-                  >
-                    {lockedByOther ? (
-                      <Lock className="h-4 w-4" />
-                    ) : (
-                      <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                    )}
-                    {lockedByOther
-                      ? t('evaluations.locked')
-                      : openedByMe
-                        ? t('evaluatorDashboard.continue')
-                        : t('evaluatorDashboard.start')}
-                  </button>
-                </article>
+                  </td>
+                  <td className="table-td">
+                    {openedByMe ? t('evaluatorDashboard.you') : evaluation.validationOpenedByName || '-'}
+                  </td>
+                  <td className="table-td text-gray-500">
+                    {formatBackendShortDateTime(evaluation.submittedAt, language)}
+                  </td>
+                  <td className="table-td">
+                    <button
+                      type="button"
+                      onClick={() => handleExamine(evaluation)}
+                      disabled={lockedByOther || claimingEvaluationId === evaluation.id}
+                      className="btn-outline btn-sm gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={lockedByOther ? t('evaluations.lockedBy', { name: evaluation.validationOpenedByName }) : undefined}
+                    >
+                      {lockedByOther ? <Lock className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {lockedByOther ? t('evaluations.locked') : t('evaluations.examine')}
+                    </button>
+                  </td>
+                </tr>
               );
             })}
-        </div>
+          </tbody>
+        </table>
       </section>
     </div>
   );
