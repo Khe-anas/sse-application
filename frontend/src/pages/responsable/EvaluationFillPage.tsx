@@ -625,13 +625,16 @@ export default function EvaluationFillPage() {
                               return (
                                 <td key={niveau.key} className="px-2 py-5 text-center align-top">
                                   <label
-                                    className={`inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-lg border transition-colors ${
+                                    className={`inline-flex min-h-[76px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border px-1.5 py-2 transition-colors ${
                                       selected
                                         ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-100 dark:bg-primary-900/30 dark:ring-primary-900'
                                         : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50/50 dark:border-slate-700 dark:bg-[#132129]'
                                     } ${!canEdit ? 'cursor-not-allowed opacity-60' : ''}`}
                                     title={levelLabel}
                                   >
+                                    <span className="text-center text-[11px] font-bold leading-4 text-gray-700 dark:text-slate-200">
+                                      {levelLabel}
+                                    </span>
                                     <input
                                       type="radio"
                                       name={`niveau-${critere.id}`}

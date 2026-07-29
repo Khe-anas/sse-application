@@ -1,10 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { changeLanguage } from '@/i18n';
-import { Role } from '@/types';
+import { Role, StatusEvaluation } from '@/types';
 import { authService } from '@/services/authService';
+import { evaluationService } from '@/services/evaluationService';
 
 import AppLayout from '@/components/layout/AppLayout';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
@@ -183,7 +184,7 @@ function RoleRedirect() {
       if (user.permissions?.includes('AUDIT_READ')) return <Navigate to="/admin/audit-logs" replace />;
       return <Navigate to="/settings" replace />;
     case Role.USER:
-      return <Navigate to="/user/dashboard" replace />;
+      return <UserEvaluationRedirect />;
     case Role.EVALUATEUR:
       return <Navigate to="/evaluateur/dashboard" replace />;
     case Role.GOUVERNEMENT:
@@ -191,6 +192,43 @@ function RoleRedirect() {
     default:
       return <Navigate to="/login" />;
   }
+}
+
+function UserEvaluationRedirect() {
+  const { user } = useAuthStore();
+  const [target, setTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!user?.organismeId) {
+      setTarget('/user/dashboard');
+      return () => {
+        active = false;
+      };
+    }
+
+    evaluationService.getAll({
+      status: StatusEvaluation.EN_COURS,
+      organismeId: user.organismeId,
+      page: 0,
+      size: 1,
+    })
+      .then((result) => {
+        if (!active) return;
+        const evaluation = result.content[0];
+        setTarget(evaluation ? `/user/evaluation/${evaluation.id}` : '/user/dashboard');
+      })
+      .catch(() => {
+        if (active) setTarget('/user/dashboard');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.organismeId]);
+
+  return target ? <Navigate to={target} replace /> : <LoadingScreen />;
 }
 
 export default App;
