@@ -26,6 +26,7 @@ public class UserResponse {
     private Set<String> permissions;
     private String phone;
     private String position;
+    private String grade;
     private Boolean isActive;
     private UserStatus status;
     private LocalDateTime createdAt;

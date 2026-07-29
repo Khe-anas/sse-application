@@ -19,7 +19,6 @@ import { Role, type PermissionDefinition, type RoleDefinition } from '@/types';
 const emptyRole: RoleDefinitionPayload = {
   label: '',
   description: '',
-  baseRole: Role.ADMIN,
   permissionCodes: [],
   active: true,
 };
@@ -82,7 +81,6 @@ export default function AccessControlPage() {
       code: role.code,
       label: role.label,
       description: role.description || '',
-      baseRole: role.baseRole,
       permissionCodes: [...role.permissionCodes],
       active: role.active,
     });
@@ -151,7 +149,6 @@ export default function AccessControlPage() {
             <thead className="table-head">
               <tr>
                 <th className="table-th">{t('accessControl.role')}</th>
-                <th className="table-th">{t('accessControl.baseProfile')}</th>
                 <th className="table-th">{t('accessControl.permissions')}</th>
                 <th className="table-th">{t('accessControl.users')}</th>
                 <th className="table-th">{t('common.status')}</th>
@@ -160,7 +157,7 @@ export default function AccessControlPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-[#132129]">
               {isLoading ? (
-                <tr><td colSpan={6} className="table-td py-10 text-center">{t('common.loading')}</td></tr>
+                <tr><td colSpan={5} className="table-td py-10 text-center">{t('common.loading')}</td></tr>
               ) : roles.map((role) => (
                 <tr key={role.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40">
                   <td className="table-td">
@@ -174,7 +171,6 @@ export default function AccessControlPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="table-td">{t(`user.role.${role.baseRole}`)}</td>
                   <td className="table-td">
                     <span className="badge bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                       {t('accessControl.permissionBadge', { count: role.permissionCodes.length })}
@@ -224,14 +220,7 @@ export default function AccessControlPage() {
                     <label htmlFor="role-code" className="label">{t('accessControl.code')}</label>
                     <input id="role-code" className="input uppercase" disabled={Boolean(editingRole)} placeholder={t('accessControl.codePlaceholder')} value={form.code || ''} onChange={(event) => setForm({ ...form, code: event.target.value })} />
                   </div>
-                  <div>
-                    <label htmlFor="role-base" className="label">{t('accessControl.baseProfile')} *</label>
-                    <select id="role-base" className="select" disabled={Boolean(editingRole?.systemRole)} value={form.baseRole} onChange={(event) => setForm({ ...form, baseRole: event.target.value as Role })}>
-                      {Object.values(Role).map((role) => <option key={role} value={role}>{t(`user.role.${role}`)}</option>)}
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{t('accessControl.baseProfileHint')}</p>
-                  </div>
-                  <label className="mt-6 flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-slate-700">
+                  <label className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-slate-700">
                     <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary-700 focus:ring-primary-600" disabled={Boolean(editingRole?.systemRole)} checked={form.active ?? true} onChange={(event) => setForm({ ...form, active: event.target.checked })} />
                     <span>
                       <span className="block text-sm font-semibold text-gray-800 dark:text-slate-100">{t('accessControl.activeRole')}</span>

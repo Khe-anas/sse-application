@@ -5,6 +5,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.UUID;
@@ -31,6 +32,8 @@ public class CreateUserRequest {
     
     private String phone;
     private String position;
+    @Size(max = 150, message = "Grade must not exceed 150 characters")
+    private String grade;
     private UUID organismeId;
     private String entrepriseName;
 

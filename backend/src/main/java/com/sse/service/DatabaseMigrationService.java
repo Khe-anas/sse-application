@@ -13,6 +13,7 @@ public class DatabaseMigrationService {
     public void updateUserActivationSchema() {
         jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(32)");
         jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(255)");
+        jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS grade VARCHAR(150)");
         jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password DROP NOT NULL");
         jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN position DROP NOT NULL");
         jdbcTemplate.update("""

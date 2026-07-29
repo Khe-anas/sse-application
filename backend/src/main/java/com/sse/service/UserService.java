@@ -80,6 +80,7 @@ public class UserService {
         user.setRoleDefinition(roleDefinition);
         user.setPhone(normalizeNullable(request.getPhone()));
         user.setPosition(normalizeNullable(request.getPosition()));
+        user.setGrade(normalizeNullable(request.getGrade()));
 
         if (user.getRole() == Role.USER) {
             user.setOrganisme(resolveUserOrganisme(request.getOrganismeId(), request.getEntrepriseName()));
@@ -151,6 +152,7 @@ public class UserService {
             createUserRequest.setPassword(request.getPassword());
             createUserRequest.setPhone(request.getPhone());
             createUserRequest.setPosition(request.getPosition());
+            createUserRequest.setGrade(request.getGrade());
             createUserRequest.setRole(Role.USER);
             createUserRequest.setOrganismeId(savedOrganisme.getId());
             return createUserWithResult(createUserRequest).getUser();
@@ -208,6 +210,7 @@ public class UserService {
         }
         if (request.getPhone() != null) user.setPhone(normalizeNullable(request.getPhone()));
         if (request.getPosition() != null) user.setPosition(normalizeNullable(request.getPosition()));
+        if (request.getGrade() != null) user.setGrade(normalizeNullable(request.getGrade()));
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setStatus(UserStatus.ACTIVE);

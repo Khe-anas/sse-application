@@ -1,11 +1,10 @@
 import api from './api';
-import type { PermissionDefinition, Role, RoleDefinition } from '@/types';
+import type { PermissionDefinition, RoleDefinition } from '@/types';
 
 export interface RoleDefinitionPayload {
   code?: string;
   label: string;
   description?: string;
-  baseRole: Role;
   permissionCodes: string[];
   active?: boolean;
 }

@@ -9,7 +9,6 @@ import {
   type TypeOrganismePayload,
 } from '@/services/adminCatalogueService';
 import {
-  TypeOrganisme,
   type SecteurDefinition,
   type TypeOrganismeDefinition,
 } from '@/types';
@@ -28,7 +27,6 @@ export default function CataloguesPage() {
   const [typeForm, setTypeForm] = useState<TypeOrganismePayload>({
     label: '',
     description: '',
-    baseType: TypeOrganisme.PUBLIC,
     active: true,
   });
   const [sectorForm, setSectorForm] = useState<SecteurPayload>({
@@ -59,7 +57,7 @@ export default function CataloguesPage() {
 
   const openNew = () => {
     if (tab === 'types') {
-      setTypeForm({ label: '', description: '', baseType: TypeOrganisme.PUBLIC, active: true });
+      setTypeForm({ label: '', description: '', active: true });
       setTypeEditor('new');
     } else {
       setSectorForm({ label: '', description: '', active: true });
@@ -72,7 +70,6 @@ export default function CataloguesPage() {
       code: type.code,
       label: type.label,
       description: type.description || '',
-      baseType: type.baseType,
       active: type.active,
     });
     setTypeEditor(type);
@@ -159,7 +156,6 @@ export default function CataloguesPage() {
               <tr>
                 <th className="table-th">{t('common.name')}</th>
                 <th className="table-th">{t('catalogues.code')}</th>
-                {tab === 'types' && <th className="table-th">{t('catalogues.baseType')}</th>}
                 <th className="table-th">{t('common.description')}</th>
                 <th className="table-th">{t('common.status')}</th>
                 <th className="table-th text-end">{t('common.actions')}</th>
@@ -167,7 +163,7 @@ export default function CataloguesPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-[#132129]">
               {isLoading ? (
-                <tr><td colSpan={tab === 'types' ? 6 : 5} className="table-td py-10 text-center">{t('common.loading')}</td></tr>
+                <tr><td colSpan={5} className="table-td py-10 text-center">{t('common.loading')}</td></tr>
               ) : tab === 'types' ? types.map((type) => (
                 <tr key={type.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40">
                   <td className="table-td">
@@ -177,7 +173,6 @@ export default function CataloguesPage() {
                     </div>
                   </td>
                   <td className="table-td font-mono text-xs">{type.code}</td>
-                  <td className="table-td">{t(`organisme.type.${type.baseType}`)}</td>
                   <td className="table-td max-w-sm truncate text-gray-500">{type.description || '-'}</td>
                   <td className="table-td"><StatusBadge active={type.active} /></td>
                   <td className="table-td text-end"><EditButton onClick={() => openType(type)} label={t('common.edit')} /></td>
@@ -202,7 +197,6 @@ export default function CataloguesPage() {
             <div className="space-y-4 px-6 py-5">
               <div><label htmlFor="type-label" className="label">{t('common.name')} *</label><input id="type-label" required className="input" value={typeForm.label} onChange={(event) => setTypeForm({ ...typeForm, label: event.target.value })} /></div>
               <div><label htmlFor="type-code" className="label">{t('catalogues.code')}</label><input id="type-code" disabled={typeEditor !== 'new'} className="input uppercase" placeholder={t('catalogues.codePlaceholder')} value={typeForm.code || ''} onChange={(event) => setTypeForm({ ...typeForm, code: event.target.value })} /></div>
-              <div><label htmlFor="type-base" className="label">{t('catalogues.baseType')} *</label><select id="type-base" disabled={typeEditor !== 'new' && typeEditor.systemType} className="select" value={typeForm.baseType} onChange={(event) => setTypeForm({ ...typeForm, baseType: event.target.value as TypeOrganisme })}>{Object.values(TypeOrganisme).map((type) => <option key={type} value={type}>{t(`organisme.type.${type}`)}</option>)}</select><p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{t('catalogues.baseTypeHint')}</p></div>
               <div><label htmlFor="type-description" className="label">{t('common.description')}</label><textarea id="type-description" rows={3} className="input" value={typeForm.description || ''} onChange={(event) => setTypeForm({ ...typeForm, description: event.target.value })} /></div>
               {typeEditor !== 'new' && !typeEditor.systemType && <ActiveField checked={typeForm.active ?? true} onChange={(active) => setTypeForm({ ...typeForm, active })} />}
             </div>

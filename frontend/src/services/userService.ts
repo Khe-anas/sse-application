@@ -27,6 +27,7 @@ export const userService = {
     if (data.password) formData.append('password', data.password);
     if (data.phone) formData.append('phone', data.phone);
     if (data.position) formData.append('position', data.position);
+    if (data.grade) formData.append('grade', data.grade);
     if (data.sector) formData.append('sector', data.sector);
     if (data.address) formData.append('address', data.address);
     if (data.organisationEmail) formData.append('organisationEmail', data.organisationEmail);
@@ -60,6 +61,7 @@ export interface UpdateUserRequest {
   password?: string;
   phone?: string;
   position?: string;
+  grade?: string;
   organismeId?: string;
   isActive?: boolean;
 }
@@ -73,6 +75,7 @@ export interface CreateUserRequest {
   password?: string;
   phone?: string;
   position?: string;
+  grade?: string;
   organismeId?: string;
 }
 
@@ -83,6 +86,7 @@ export interface CreateUserWithOrganismeRequest {
   password?: string;
   phone?: string;
   position?: string;
+  grade?: string;
   organisationName: string;
   organisationType: TypeOrganisme;
   organisationTypeDefinitionId?: string;

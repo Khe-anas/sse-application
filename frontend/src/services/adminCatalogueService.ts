@@ -1,7 +1,6 @@
 import api from './api';
 import type {
   SecteurDefinition,
-  TypeOrganisme,
   TypeOrganismeDefinition,
 } from '@/types';
 
@@ -9,7 +8,6 @@ export interface TypeOrganismePayload {
   code?: string;
   label: string;
   description?: string;
-  baseType: TypeOrganisme;
   active?: boolean;
 }
 

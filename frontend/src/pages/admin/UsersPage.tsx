@@ -27,7 +27,7 @@ import useConfirmDialog from '@/components/ui/useConfirmDialog';
 const MAX_LOGO_SIZE_MB = 5;
 const MAX_LOGO_SIZE = MAX_LOGO_SIZE_MB * 1024 * 1024;
 const ALLOWED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
-type NewOrganismeForm = Omit<CreateUserWithOrganismeRequest, 'email' | 'firstName' | 'lastName' | 'password' | 'phone' | 'position'> & {
+type NewOrganismeForm = Omit<CreateUserWithOrganismeRequest, 'email' | 'firstName' | 'lastName' | 'password' | 'phone' | 'position' | 'grade'> & {
   otherSector?: string;
 };
 
@@ -71,7 +71,7 @@ export default function UsersPage() {
   const [organisationMode, setOrganisationMode] = useState<'existing' | 'new'>('existing');
   const [newOrganisme, setNewOrganisme] = useState<Partial<NewOrganismeForm>>(emptyNewOrganisme);
   const [formData, setFormData] = useState<CreateUserRequest>({
-    email: '', firstName: '', lastName: '', position: '',
+    email: '', firstName: '', lastName: '', position: '', grade: '',
   });
   const userRequestId = useRef(0);
   const organisationRequestId = useRef(0);
@@ -82,6 +82,7 @@ export default function UsersPage() {
     firstName: '',
     lastName: '',
     position: '',
+    grade: '',
   };
 
   const loadUsers = useCallback(async () => {
@@ -187,6 +188,7 @@ export default function UsersPage() {
     const lastName = formData.lastName.trim();
     const phone = formData.phone?.trim();
     const position = formData.position?.trim();
+    const grade = formData.grade?.trim();
 
     if (!firstName || !lastName) {
       toast.error(t('users.nameRequired'));
@@ -224,6 +226,7 @@ export default function UsersPage() {
     };
     if (phone) payload.phone = phone;
     if (position) payload.position = position;
+    if (grade) payload.grade = grade;
 
     if (activationMode === 'password') {
       const password = formData.password || '';
@@ -249,6 +252,7 @@ export default function UsersPage() {
           password: payload.password,
           phone,
           position,
+          grade,
           organisationName: newOrganisme.organisationName!.trim(),
           organisationType: newOrganisme.organisationType!,
           organisationTypeDefinitionId: newOrganisme.organisationTypeDefinitionId,
@@ -489,6 +493,7 @@ export default function UsersPage() {
               <th className="table-th">{t('common.name')}</th>
               <th className="table-th">{t('common.email')}</th>
               <th className="table-th">{t('users.roleLabel')}</th>
+              <th className="table-th">{t('users.grade')}</th>
               <th className="table-th">{t('users.organisme')}</th>
               <th className="table-th">{t('common.logo')}</th>
               <th className="table-th">{t('common.status')}</th>
@@ -498,11 +503,11 @@ export default function UsersPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="table-td text-center py-8">{t('common.loading')}</td>
+                <td colSpan={8} className="table-td text-center py-8">{t('common.loading')}</td>
               </tr>
             ) : users?.content.length === 0 ? (
               <tr>
-                <td colSpan={7} className="table-td text-center py-8 text-gray-500">{t('users.empty')}</td>
+                <td colSpan={8} className="table-td text-center py-8 text-gray-500">{t('users.empty')}</td>
               </tr>
             ) : (
               users?.content.map((user) => (
@@ -519,6 +524,7 @@ export default function UsersPage() {
                       {user.roleLabel || t(`user.role.${user.role}`)}
                     </span>
                   </td>
+                  <td className="table-td text-gray-500">{user.grade || '-'}</td>
                   <td className="table-td text-gray-500">{user.organismeName || '-'}</td>
                   <td className="table-td">
                     <OrganisationLogo
@@ -611,6 +617,10 @@ export default function UsersPage() {
                     <input id="new-user-position" type="text" className="input" value={formData.position || ''} onChange={(e) => setFormData({ ...formData, position: e.target.value })} />
                   </div>
                   <div>
+                    <label htmlFor="new-user-grade" className="label">{t('users.grade')}</label>
+                    <input id="new-user-grade" type="text" maxLength={150} className="input" placeholder={t('users.gradePlaceholder')} value={formData.grade || ''} onChange={(e) => setFormData({ ...formData, grade: e.target.value })} />
+                  </div>
+                  <div>
                     <label htmlFor="new-user-phone" className="label">{t('users.directPhone')}</label>
                     <input id="new-user-phone" type="tel" className="input" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                   </div>
@@ -629,7 +639,7 @@ export default function UsersPage() {
                     <select id="new-user-role" required className="select" value={formData.roleDefinitionId || ''} onChange={(event) => handleRoleDefinitionChange(event.target.value || undefined)}>
                       <option value="">{t('users.selectRole')}</option>
                       {roleDefinitions.map((role) => (
-                        <option key={role.id} value={role.id}>{role.label} — {t(`user.role.${role.baseRole}`)}</option>
+                        <option key={role.id} value={role.id}>{role.label}</option>
                       ))}
                     </select>
                   ) : (
@@ -879,6 +889,7 @@ function UserDetailsDialog({
               <Info label={t('users.firstName')} value={user.firstName} />
               <Info label={t('users.lastName')} value={user.lastName} />
               <Info label={t('users.position')} value={user.position || '-'} />
+              <Info label={t('users.grade')} value={user.grade || '-'} />
               <Info label={t('users.roleLabel')} value={user.roleLabel || t(`user.role.${user.role}`)} />
               <Info label={t('common.status')} value={t(`userStatus.${resolvedStatus}`)} />
               <Info label={t('users.createdAt')} value={formatBackendDateTime(user.createdAt)} />
@@ -891,7 +902,7 @@ function UserDetailsDialog({
                   <select id="details-user-role" className="select flex-1" value={selectedRoleId} onChange={(event) => setSelectedRoleId(event.target.value)}>
                     {roleDefinitions.map((role) => (
                       <option key={role.id} value={role.id} disabled={role.baseRole === Role.USER && !user.organismeId}>
-                        {role.label} — {t(`user.role.${role.baseRole}`)}
+                        {role.label}
                       </option>
                     ))}
                   </select>

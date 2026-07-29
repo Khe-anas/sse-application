@@ -5,6 +5,7 @@ import com.sse.dto.RoleDefinitionRequest;
 import com.sse.dto.RoleDefinitionResponse;
 import com.sse.entity.PermissionDefinition;
 import com.sse.entity.RoleDefinition;
+import com.sse.enums.Role;
 import com.sse.repository.PermissionDefinitionRepository;
 import com.sse.repository.RoleDefinitionRepository;
 import com.sse.repository.UserRepository;
@@ -62,7 +63,9 @@ public class AdminAccessControlService {
         role.setCode(code);
         role.setLabel(request.label().trim());
         role.setDescription(normalize(request.description()));
-        role.setBaseRole(request.baseRole());
+        // Custom roles use the administrative workspace. Their effective access
+        // is entirely controlled by the permission matrix.
+        role.setBaseRole(Role.ADMIN);
         role.setSystemRole(false);
         role.setActive(true);
         role.setPermissions(resolvePermissions(request.permissionCodes()));
@@ -81,7 +84,6 @@ public class AdminAccessControlService {
 
         boolean systemAdmin = Boolean.TRUE.equals(role.getSystemRole()) && "ADMIN".equals(role.getCode());
         if (!Boolean.TRUE.equals(role.getSystemRole())) {
-            role.setBaseRole(request.baseRole());
             if (request.active() != null && !request.active() && userRepository.countByRoleDefinitionId(id) > 0) {
                 throw new RuntimeException("Ce rôle est encore attribué à un ou plusieurs utilisateurs");
             }

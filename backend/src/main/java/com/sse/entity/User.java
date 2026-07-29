@@ -54,6 +54,9 @@ public class User {
 
     private String position;
 
+    @Column(length = 150)
+    private String grade;
+
     @Column(nullable = false)
     private Boolean isActive = true;
 

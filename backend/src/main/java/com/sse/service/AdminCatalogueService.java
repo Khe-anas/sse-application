@@ -6,6 +6,7 @@ import com.sse.dto.TypeOrganismeDefinitionRequest;
 import com.sse.dto.TypeOrganismeDefinitionResponse;
 import com.sse.entity.Secteur;
 import com.sse.entity.TypeOrganismeDefinition;
+import com.sse.enums.TypeOrganisme;
 import com.sse.repository.OrganismeRepository;
 import com.sse.repository.SecteurRepository;
 import com.sse.repository.TypeOrganismeDefinitionRepository;
@@ -42,7 +43,9 @@ public class AdminCatalogueService {
         definition.setCode(code);
         definition.setLabel(request.label().trim());
         definition.setDescription(normalize(request.description()));
-        definition.setBaseType(request.baseType());
+        // The legacy enum remains an internal compatibility value. Custom
+        // organisation types are selected through type_definition_id.
+        definition.setBaseType(TypeOrganisme.PRIVE);
         definition.setSystemType(false);
         definition.setActive(true);
         TypeOrganismeDefinition saved = typeRepository.save(definition);
@@ -57,7 +60,6 @@ public class AdminCatalogueService {
         definition.setLabel(request.label().trim());
         definition.setDescription(normalize(request.description()));
         if (!Boolean.TRUE.equals(definition.getSystemType())) {
-            definition.setBaseType(request.baseType());
             if (request.active() != null) {
                 if (!request.active() && organismeRepository.countByTypeDefinitionId(id) > 0) {
                     throw new RuntimeException("Ce type est encore utilisé par un organisme");

@@ -101,6 +101,7 @@ export interface User {
   permissions?: string[];
   phone?: string;
   position?: string;
+  grade?: string;
   isActive: boolean;
   status?: UserStatus;
   createdAt: string;

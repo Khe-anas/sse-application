@@ -1,6 +1,7 @@
 package com.sse.service;
 
 import com.sse.entity.User;
+import com.sse.enums.Role;
 import com.sse.repository.UserRepository;
 import com.sse.security.JwtUtil;
 import com.sse.security.PermissionAccessService;
@@ -55,5 +56,20 @@ class AuthServiceTest {
 
         assertThat(user.getTokenVersion()).isEqualTo(5);
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void userResponseIncludesGrade() {
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setEmail("engineer@sse.tn");
+        user.setFirstName("Amira");
+        user.setLastName("Ben Salah");
+        user.setRole(Role.USER);
+        user.setGrade("Ingénieur principal");
+        user.setIsActive(true);
+
+        assertThat(authService.mapToUserResponse(user).getGrade())
+            .isEqualTo("Ingénieur principal");
     }
 }

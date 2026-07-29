@@ -151,6 +151,7 @@ public class AuthService {
         response.setPermissions(permissionAccessService.permissionsFor(user));
         response.setPhone(user.getPhone());
         response.setPosition(user.getPosition());
+        response.setGrade(user.getGrade());
         response.setIsActive(user.getIsActive());
         response.setStatus(user.getStatus() != null ? user.getStatus() : inferStatus(user));
         response.setCreatedAt(user.getCreatedAt());
