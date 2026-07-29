@@ -38,6 +38,7 @@ export default function EvaluationFillPage() {
   const [principes, setPrincipes] = useState<Principe[]>([]);
   const [reponses, setReponses] = useState<Record<string, Reponse>>({});
   const [activePrincipeId, setActivePrincipeId] = useState('');
+  const [activeBonnePratiqueId, setActiveBonnePratiqueId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -65,6 +66,7 @@ export default function EvaluationFillPage() {
       setReponses(reponseMap);
       setTouchedCorrectionIds(new Set());
       setActivePrincipeId(principeData[0]?.id || '');
+      setActiveBonnePratiqueId(principeData[0]?.bonnesPratiques[0]?.id || '');
     } catch {
       toast.error(t('evaluationFill.loadError'));
     } finally {
@@ -79,6 +81,12 @@ export default function EvaluationFillPage() {
   const activePrincipe = useMemo(
     () => principes.find((principe) => principe.id === activePrincipeId),
     [activePrincipeId, principes],
+  );
+  const activeBonnePratique = useMemo(
+    () => activePrincipe?.bonnesPratiques.find(
+      (bonnePratique) => bonnePratique.id === activeBonnePratiqueId,
+    ),
+    [activeBonnePratiqueId, activePrincipe],
   );
 
   const isCorrectionStatus = (status: StatusReponse | undefined) =>
@@ -390,7 +398,10 @@ export default function EvaluationFillPage() {
                 <button
                   key={principe.id}
                   type="button"
-                  onClick={() => setActivePrincipeId(principe.id)}
+                  onClick={() => {
+                    setActivePrincipeId(principe.id);
+                    setActiveBonnePratiqueId(principe.bonnesPratiques[0]?.id || '');
+                  }}
                   className={`min-w-[220px] rounded-lg border px-3 py-3 text-start transition-colors xl:w-full xl:min-w-0 ${
                     selected
                       ? 'border-primary-300 bg-primary-50 text-primary-900 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-100'
@@ -432,7 +443,70 @@ export default function EvaluationFillPage() {
             </span>
           </div>
 
-          {activePrincipe?.bonnesPratiques.map((bonnePratique) => {
+          {activePrincipe && activePrincipe.bonnesPratiques.length > 0 && (
+            <section className="card p-3 sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                <div>
+                  <p className="page-eyebrow">{t('validation.goodPractice')}</p>
+                  <h2 className="mt-1 text-sm font-bold text-gray-900 dark:text-slate-100">
+                    {getLocalizedField(activePrincipe, 'name', language)}
+                  </h2>
+                </div>
+                <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
+                  {activePrincipe.bonnesPratiques.length}
+                </span>
+              </div>
+              <nav
+                className="flex gap-2 overflow-x-auto pb-1"
+                role="tablist"
+                aria-label={t('validation.goodPractice')}
+              >
+                {activePrincipe.bonnesPratiques.map((bonnePratique) => {
+                  const completed = bonnePratique.criteres.filter(
+                    (critere) => isReponseComplete(reponses[critere.id]),
+                  ).length;
+                  const selected = bonnePratique.id === activeBonnePratiqueId;
+
+                  return (
+                    <button
+                      key={bonnePratique.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setActiveBonnePratiqueId(bonnePratique.id)}
+                      className={`min-w-[230px] rounded-full border px-4 py-3 text-start transition-all ${
+                        selected
+                          ? 'border-primary-600 bg-primary-700 text-white shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:bg-[#132129] dark:text-slate-200 dark:hover:border-primary-700 dark:hover:bg-primary-900/20'
+                      }`}
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className={`text-xs font-bold ${
+                          selected ? 'text-white' : 'text-primary-700 dark:text-primary-300'
+                        }`}
+                        >
+                          {t('validation.goodPractice')} {bonnePratique.number}
+                        </span>
+                        <span className={`text-[11px] font-semibold tabular-nums ${
+                          selected ? 'text-primary-100' : 'text-gray-500 dark:text-slate-400'
+                        }`}
+                        >
+                          {completed}/{bonnePratique.criteres.length}
+                        </span>
+                      </span>
+                      <span className="mt-1 block truncate text-sm font-semibold">
+                        {getLocalizedField(bonnePratique, 'label', language)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </section>
+          )}
+
+          {activePrincipe?.bonnesPratiques
+            .filter((bonnePratique) => bonnePratique.id === activeBonnePratiqueId)
+            .map((bonnePratique) => {
             const completed = bonnePratique.criteres.filter(
               (critere) => isReponseComplete(reponses[critere.id]),
             ).length;
@@ -659,7 +733,7 @@ export default function EvaluationFillPage() {
             );
           })}
 
-          {!activePrincipe && (
+          {(!activePrincipe || !activeBonnePratique) && (
             <div className="card p-10 text-center text-sm text-gray-500">
               {t('evaluationFill.noEditableResponses')}
             </div>
