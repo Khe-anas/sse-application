@@ -3,6 +3,7 @@ package com.sse.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sse.dto.ReferenceTranslationResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class ReferenceTranslationService {
     private final Map<String, String> cache = new ConcurrentHashMap<>();
     private final AtomicLong primaryRetryAfter = new AtomicLong(0);
 
+    @Autowired
     public ReferenceTranslationService(
         @Value("${sse.translation.enabled:true}") boolean enabled,
         @Value("${sse.translation.api-url:https://api.mymemory.translated.net}") String apiUrl,
