@@ -118,35 +118,27 @@ function ReferenceEditor({ editor, title, fields, initialData, onClose, onSave }
   }, [translatableFields]);
 
   useEffect(() => {
-    if (!editor || Object.keys(sourcePayload).length === 0 || sourceSignature === lastTranslatedSignature.current) {
-      return undefined;
+    if (!editor) return;
+    if (Object.keys(sourcePayload).length === 0) {
+      setTranslationStatus('idle');
+      return;
     }
-
+    if (sourceSignature === lastTranslatedSignature.current) {
+      setTranslationStatus('ready');
+      return;
+    }
+    translationSequence.current += 1;
     setTranslationStatus('waiting');
-    const sequence = ++translationSequence.current;
-    const timer = window.setTimeout(async () => {
-      setTranslationStatus('translating');
-      try {
-        const translated = await translateData(formData);
-        if (sequence !== translationSequence.current) return;
-        setFormData(translated);
-        setTranslationStatus('ready');
-      } catch {
-        if (sequence !== translationSequence.current) return;
-        setTranslationStatus('error');
-      }
-    }, 900);
-
-    return () => window.clearTimeout(timer);
-  }, [editor, formData, sourcePayload, sourceSignature, translateData]);
+  }, [editor, sourcePayload, sourceSignature]);
 
   if (!editor) return null;
 
   const runTranslation = async () => {
-    translationSequence.current += 1;
+    const sequence = ++translationSequence.current;
     setTranslationStatus('translating');
     try {
       const translated = await translateData(formData);
+      if (sequence !== translationSequence.current) return formData;
       setFormData(translated);
       setTranslationStatus('ready');
       return translated;
@@ -222,8 +214,9 @@ function ReferenceEditor({ editor, title, fields, initialData, onClose, onSave }
                     <textarea
                       value={formData[field.key] || ''}
                       onChange={(event) => setFormData((current) => ({ ...current, [field.key]: event.target.value }))}
+                      disabled={saving || translationStatus === 'translating'}
                       rows={4}
-                      className="input resize-y"
+                      className="input resize-y disabled:cursor-wait disabled:opacity-60"
                     />
                   ) : (
                     <input
@@ -232,7 +225,8 @@ function ReferenceEditor({ editor, title, fields, initialData, onClose, onSave }
                       step={field.step}
                       value={formData[field.key] || ''}
                       onChange={(event) => setFormData((current) => ({ ...current, [field.key]: event.target.value }))}
-                      className="input"
+                      disabled={saving || translationStatus === 'translating'}
+                      className="input disabled:cursor-wait disabled:opacity-60"
                     />
                   )}
                 </label>

@@ -83,6 +83,8 @@ sse:
   translation:
     enabled: ${SSE_TRANSLATION_ENABLED:true}
     api-url: ${SSE_TRANSLATION_API_URL:https://api.mymemory.translated.net}
+    fallback-enabled: ${SSE_TRANSLATION_FALLBACK_ENABLED:true}
+    fallback-api-url: ${SSE_TRANSLATION_FALLBACK_API_URL:https://translate.googleapis.com}
     contact-email: ${SSE_TRANSLATION_CONTACT_EMAIL:}
 
 # File Upload

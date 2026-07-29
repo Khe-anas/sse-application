@@ -7,13 +7,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.HtmlUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -21,26 +24,49 @@ public class ReferenceTranslationService {
 
     private static final int MAX_FIELDS = 10;
     private static final int MAX_CHUNK_BYTES = 450;
+    private static final long RATE_LIMIT_BACKOFF_MILLIS = Duration.ofHours(1).toMillis();
+    private static final long PROVIDER_ERROR_BACKOFF_MILLIS = Duration.ofMinutes(2).toMillis();
 
-    private final RestClient restClient;
+    private final RestClient primaryRestClient;
+    private final RestClient fallbackRestClient;
     private final boolean enabled;
+    private final boolean fallbackEnabled;
     private final String contactEmail;
     private final Map<String, String> cache = new ConcurrentHashMap<>();
+    private final AtomicLong primaryRetryAfter = new AtomicLong(0);
 
     public ReferenceTranslationService(
         @Value("${sse.translation.enabled:true}") boolean enabled,
         @Value("${sse.translation.api-url:https://api.mymemory.translated.net}") String apiUrl,
+        @Value("${sse.translation.fallback-enabled:true}") boolean fallbackEnabled,
+        @Value("${sse.translation.fallback-api-url:https://translate.googleapis.com}") String fallbackApiUrl,
         @Value("${sse.translation.contact-email:}") String contactEmail
     ) {
+        this(createRestClient(apiUrl), createRestClient(fallbackApiUrl), enabled, fallbackEnabled, contactEmail);
+    }
+
+    ReferenceTranslationService(
+        RestClient primaryRestClient,
+        RestClient fallbackRestClient,
+        boolean enabled,
+        boolean fallbackEnabled,
+        String contactEmail
+    ) {
+        this.primaryRestClient = primaryRestClient;
+        this.fallbackRestClient = fallbackRestClient;
+        this.enabled = enabled;
+        this.fallbackEnabled = fallbackEnabled;
+        this.contactEmail = contactEmail;
+    }
+
+    private static RestClient createRestClient(String baseUrl) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(5000);
         requestFactory.setReadTimeout(8000);
-        this.restClient = RestClient.builder()
-            .baseUrl(apiUrl)
+        return RestClient.builder()
+            .baseUrl(baseUrl)
             .requestFactory(requestFactory)
             .build();
-        this.enabled = enabled;
-        this.contactEmail = contactEmail;
     }
 
     public ReferenceTranslationResponse translateFields(Map<String, String> sourceFields) {
@@ -97,7 +123,44 @@ public class ReferenceTranslationService {
     }
 
     private String translateChunk(String source, String targetLanguage) {
-        JsonNode response = restClient.get()
+        RuntimeException primaryFailure = null;
+        if (System.currentTimeMillis() >= primaryRetryAfter.get()) {
+            try {
+                return translateWithPrimaryProvider(source, targetLanguage);
+            } catch (RestClientResponseException exception) {
+                long backoff = exception.getStatusCode().value() == 429
+                    ? RATE_LIMIT_BACKOFF_MILLIS
+                    : PROVIDER_ERROR_BACKOFF_MILLIS;
+                primaryRetryAfter.set(System.currentTimeMillis() + backoff);
+                primaryFailure = exception;
+                log.warn(
+                    "Primary translation provider unavailable (HTTP {}). Falling back for {} ms.",
+                    exception.getStatusCode().value(),
+                    backoff
+                );
+            } catch (RuntimeException exception) {
+                primaryRetryAfter.set(System.currentTimeMillis() + PROVIDER_ERROR_BACKOFF_MILLIS);
+                primaryFailure = exception;
+                log.warn("Primary translation provider unavailable. Using fallback: {}", exception.getMessage());
+            }
+        }
+
+        if (!fallbackEnabled) {
+            throw new IllegalStateException("Primary translation provider is unavailable", primaryFailure);
+        }
+
+        try {
+            return translateWithFallbackProvider(source, targetLanguage);
+        } catch (RuntimeException fallbackFailure) {
+            if (primaryFailure != null) {
+                fallbackFailure.addSuppressed(primaryFailure);
+            }
+            throw new IllegalStateException("All translation providers are unavailable", fallbackFailure);
+        }
+    }
+
+    private String translateWithPrimaryProvider(String source, String targetLanguage) {
+        JsonNode response = primaryRestClient.get()
             .uri(uriBuilder -> {
                 var builder = uriBuilder.path("/get")
                     .queryParam("q", source)
@@ -120,6 +183,35 @@ public class ReferenceTranslationService {
             throw new IllegalStateException("Translation provider returned an empty result");
         }
         return HtmlUtils.htmlUnescape(translated).trim();
+    }
+
+    private String translateWithFallbackProvider(String source, String targetLanguage) {
+        JsonNode response = fallbackRestClient.get()
+            .uri(uriBuilder -> uriBuilder.path("/translate_a/single")
+                .queryParam("client", "gtx")
+                .queryParam("sl", "fr")
+                .queryParam("tl", targetLanguage)
+                .queryParam("dt", "t")
+                .queryParam("q", source)
+                .build())
+            .retrieve()
+            .body(JsonNode.class);
+
+        if (response == null || !response.isArray() || response.isEmpty() || !response.path(0).isArray()) {
+            throw new IllegalStateException("Fallback translation provider returned an invalid result");
+        }
+
+        StringBuilder translated = new StringBuilder();
+        response.path(0).forEach(segment -> {
+            String text = segment.path(0).asText();
+            if (!text.isBlank()) {
+                translated.append(text);
+            }
+        });
+        if (translated.isEmpty()) {
+            throw new IllegalStateException("Fallback translation provider returned an empty result");
+        }
+        return HtmlUtils.htmlUnescape(translated.toString()).trim();
     }
 
     private List<String> splitIntoChunks(String source) {
