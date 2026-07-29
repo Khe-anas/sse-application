@@ -72,6 +72,20 @@ public class AdminCatalogueService {
         return toTypeResponse(saved);
     }
 
+    @Transactional
+    public void deleteType(UUID id) {
+        TypeOrganismeDefinition definition = typeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Type d'organisme introuvable"));
+        if (Boolean.TRUE.equals(definition.getSystemType())) {
+            throw new RuntimeException("Un type d'organisme système ne peut pas être supprimé");
+        }
+        if (organismeRepository.countByTypeDefinitionId(id) > 0) {
+            throw new RuntimeException("Ce type est encore utilisé par un ou plusieurs organismes");
+        }
+        typeRepository.delete(definition);
+        auditLogService.log("DELETE", "ORGANISME_TYPE", "Deleted organisation type " + definition.getCode());
+    }
+
     @Transactional(readOnly = true)
     public List<SecteurResponse> getSectors(boolean activeOnly) {
         List<Secteur> values = activeOnly
@@ -105,6 +119,17 @@ public class AdminCatalogueService {
         Secteur saved = secteurRepository.save(secteur);
         auditLogService.log("UPDATE", "SECTOR", "Updated sector " + saved.getCode());
         return toSectorResponse(saved);
+    }
+
+    @Transactional
+    public void deleteSector(UUID id) {
+        Secteur secteur = secteurRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Secteur introuvable"));
+        if (organismeRepository.countBySector(secteur.getCode()) > 0) {
+            throw new RuntimeException("Ce secteur est encore utilisé par un ou plusieurs organismes");
+        }
+        secteurRepository.delete(secteur);
+        auditLogService.log("DELETE", "SECTOR", "Deleted sector " + secteur.getCode());
     }
 
     private TypeOrganismeDefinitionResponse toTypeResponse(TypeOrganismeDefinition value) {

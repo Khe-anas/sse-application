@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,6 +52,12 @@ public class AdminCatalogueController {
         return ResponseEntity.ok(catalogueService.updateType(id, request));
     }
 
+    @DeleteMapping("/types-organisme/{id}")
+    public ResponseEntity<Void> deleteType(@PathVariable UUID id) {
+        catalogueService.deleteType(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/secteurs")
     public ResponseEntity<List<SecteurResponse>> getSectors(
         @RequestParam(defaultValue = "false") boolean activeOnly
@@ -71,5 +78,11 @@ public class AdminCatalogueController {
         @Valid @RequestBody SecteurRequest request
     ) {
         return ResponseEntity.ok(catalogueService.updateSector(id, request));
+    }
+
+    @DeleteMapping("/secteurs/{id}")
+    public ResponseEntity<Void> deleteSector(@PathVariable UUID id) {
+        catalogueService.deleteSector(id);
+        return ResponseEntity.noContent().build();
     }
 }

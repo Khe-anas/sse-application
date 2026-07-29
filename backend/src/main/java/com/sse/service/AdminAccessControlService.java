@@ -105,6 +105,21 @@ public class AdminAccessControlService {
         return toResponse(saved);
     }
 
+    @Transactional
+    public void deleteRole(UUID id) {
+        RoleDefinition role = roleRepository.findWithPermissionsById(id)
+            .orElseThrow(() -> new RuntimeException("Rôle introuvable"));
+        if (Boolean.TRUE.equals(role.getSystemRole())) {
+            throw new RuntimeException("Un rôle système ne peut pas être supprimé");
+        }
+        if (userRepository.countByRoleDefinitionId(id) > 0) {
+            throw new RuntimeException("Ce rôle est encore attribué à un ou plusieurs utilisateurs");
+        }
+        role.getPermissions().clear();
+        roleRepository.delete(role);
+        auditLogService.log("DELETE", "ROLE", "Deleted functional role " + role.getCode());
+    }
+
     private Set<PermissionDefinition> resolvePermissions(Set<String> codes) {
         if (codes == null || codes.isEmpty()) {
             return new LinkedHashSet<>();

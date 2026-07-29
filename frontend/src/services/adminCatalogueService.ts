@@ -36,6 +36,10 @@ export const adminCatalogueService = {
     return response.data;
   },
 
+  deleteType: async (id: string): Promise<void> => {
+    await api.delete(`/admin/catalogues/types-organisme/${id}`);
+  },
+
   getSectors: async (activeOnly = false): Promise<SecteurDefinition[]> => {
     const response = await api.get<SecteurDefinition[]>('/admin/catalogues/secteurs', {
       params: { activeOnly },
@@ -51,6 +55,10 @@ export const adminCatalogueService = {
   updateSector: async (id: string, data: SecteurPayload): Promise<SecteurDefinition> => {
     const response = await api.put<SecteurDefinition>(`/admin/catalogues/secteurs/${id}`, data);
     return response.data;
+  },
+
+  deleteSector: async (id: string): Promise<void> => {
+    await api.delete(`/admin/catalogues/secteurs/${id}`);
   },
 };
 

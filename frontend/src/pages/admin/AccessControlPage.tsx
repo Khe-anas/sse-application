@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
 import {
   BellRing,
   Check,
@@ -9,12 +10,14 @@ import {
   Plus,
   Save,
   ShieldCheck,
+  Trash2,
   Users,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminAccessService, type RoleDefinitionPayload } from '@/services/adminAccessService';
 import { Role, type PermissionDefinition, type RoleDefinition } from '@/types';
+import useConfirmDialog from '@/components/ui/useConfirmDialog';
 
 const emptyRole: RoleDefinitionPayload = {
   label: '',
@@ -35,9 +38,11 @@ export default function AccessControlPage() {
   const [permissions, setPermissions] = useState<PermissionDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState<RoleDefinition | null>(null);
   const [form, setForm] = useState<RoleDefinitionPayload>(emptyRole);
   const [showEditor, setShowEditor] = useState(false);
+  const { confirm: confirmAction, confirmationDialog } = useConfirmDialog();
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -117,6 +122,28 @@ export default function AccessControlPage() {
     }
   };
 
+  const deleteRole = async (role: RoleDefinition) => {
+    const confirmed = await confirmAction({
+      title: t('accessControl.deleteRoleTitle'),
+      description: t('accessControl.deleteRoleDescription', { name: role.label }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    setDeletingRoleId(role.id);
+    try {
+      await adminAccessService.deleteRole(role.id);
+      toast.success(t('accessControl.deleted'));
+      await loadData();
+    } catch (error) {
+      toast.error(getErrorMessage(error, t('accessControl.deleteError')));
+    } finally {
+      setDeletingRoleId(null);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -182,10 +209,22 @@ export default function AccessControlPage() {
                       {role.active ? t('common.active') : t('common.inactive')}
                     </span>
                   </td>
-                  <td className="table-td text-end">
-                    <button type="button" onClick={() => openEdit(role)} className="icon-button h-9 w-9" title={t('common.edit')} aria-label={t('common.edit')}>
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                  <td className="table-td">
+                    <div className="flex justify-end gap-1">
+                      <button type="button" onClick={() => openEdit(role)} className="icon-button h-9 w-9" title={t('common.edit')} aria-label={t('common.edit')}>
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteRole(role)}
+                        disabled={role.systemRole || deletingRoleId === role.id}
+                        className="icon-button h-9 w-9 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-red-900/20"
+                        title={role.systemRole ? t('accessControl.systemProtected') : t('common.delete')}
+                        aria-label={role.systemRole ? t('accessControl.systemProtected') : t('common.delete')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -193,6 +232,8 @@ export default function AccessControlPage() {
           </table>
         </div>
       </div>
+
+      {confirmationDialog}
 
       {showEditor && createPortal(
         <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-labelledby="role-editor-title">
@@ -294,4 +335,11 @@ function SummaryCard({ icon: Icon, label, value }: { icon: typeof ShieldCheck; l
       </div>
     </div>
   );
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.response?.data?.error || fallback;
+  }
+  return fallback;
 }

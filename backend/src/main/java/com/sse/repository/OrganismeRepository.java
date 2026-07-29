@@ -42,6 +42,8 @@ public interface OrganismeRepository extends JpaRepository<Organisme, UUID> {
     long countByType(@Param("type") TypeOrganisme type);
 
     long countByTypeDefinitionId(UUID typeDefinitionId);
+
+    long countBySector(String sector);
     
     @Query("SELECT o FROM Organisme o LEFT JOIN FETCH o.users WHERE o.id = :id")
     Optional<Organisme> findByIdWithUsers(@Param("id") UUID id);

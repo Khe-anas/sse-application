@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, Layers3, Pencil, Plus, Save, Tags, X } from 'lucide-react';
+import axios from 'axios';
+import { Building2, Layers3, Pencil, Plus, Save, Tags, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   adminCatalogueService,
@@ -12,6 +13,7 @@ import {
   type SecteurDefinition,
   type TypeOrganismeDefinition,
 } from '@/types';
+import useConfirmDialog from '@/components/ui/useConfirmDialog';
 
 type Tab = 'types' | 'sectors';
 
@@ -22,6 +24,7 @@ export default function CataloguesPage() {
   const [sectors, setSectors] = useState<SecteurDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [typeEditor, setTypeEditor] = useState<TypeOrganismeDefinition | 'new' | null>(null);
   const [sectorEditor, setSectorEditor] = useState<SecteurDefinition | 'new' | null>(null);
   const [typeForm, setTypeForm] = useState<TypeOrganismePayload>({
@@ -34,6 +37,7 @@ export default function CataloguesPage() {
     description: '',
     active: true,
   });
+  const { confirm: confirmAction, confirmationDialog } = useConfirmDialog();
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -125,6 +129,50 @@ export default function CataloguesPage() {
     }
   };
 
+  const deleteType = async (type: TypeOrganismeDefinition) => {
+    const confirmed = await confirmAction({
+      title: t('catalogues.deleteTypeTitle'),
+      description: t('catalogues.deleteTypeDescription', { name: type.label }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    setDeletingId(type.id);
+    try {
+      await adminCatalogueService.deleteType(type.id);
+      toast.success(t('catalogues.typeDeleted'));
+      await loadData();
+    } catch (error) {
+      toast.error(getErrorMessage(error, t('catalogues.deleteError')));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const deleteSector = async (sector: SecteurDefinition) => {
+    const confirmed = await confirmAction({
+      title: t('catalogues.deleteSectorTitle'),
+      description: t('catalogues.deleteSectorDescription', { name: sector.label }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    setDeletingId(sector.id);
+    try {
+      await adminCatalogueService.deleteSector(sector.id);
+      toast.success(t('catalogues.sectorDeleted'));
+      await loadData();
+    } catch (error) {
+      toast.error(getErrorMessage(error, t('catalogues.deleteError')));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="page-shell">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -175,7 +223,16 @@ export default function CataloguesPage() {
                   <td className="table-td font-mono text-xs">{type.code}</td>
                   <td className="table-td max-w-sm truncate text-gray-500">{type.description || '-'}</td>
                   <td className="table-td"><StatusBadge active={type.active} /></td>
-                  <td className="table-td text-end"><EditButton onClick={() => openType(type)} label={t('common.edit')} /></td>
+                  <td className="table-td">
+                    <div className="flex justify-end gap-1">
+                      <EditButton onClick={() => openType(type)} label={t('common.edit')} />
+                      <DeleteButton
+                        onClick={() => void deleteType(type)}
+                        label={type.systemType ? t('catalogues.systemProtected') : t('common.delete')}
+                        disabled={type.systemType || deletingId === type.id}
+                      />
+                    </div>
+                  </td>
                 </tr>
               )) : sectors.map((sector) => (
                 <tr key={sector.id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40">
@@ -183,13 +240,24 @@ export default function CataloguesPage() {
                   <td className="table-td font-mono text-xs">{sector.code}</td>
                   <td className="table-td max-w-sm truncate text-gray-500">{sector.description || '-'}</td>
                   <td className="table-td"><StatusBadge active={sector.active} /></td>
-                  <td className="table-td text-end"><EditButton onClick={() => openSector(sector)} label={t('common.edit')} /></td>
+                  <td className="table-td">
+                    <div className="flex justify-end gap-1">
+                      <EditButton onClick={() => openSector(sector)} label={t('common.edit')} />
+                      <DeleteButton
+                        onClick={() => void deleteSector(sector)}
+                        label={t('common.delete')}
+                        disabled={deletingId === sector.id}
+                      />
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {confirmationDialog}
 
       {typeEditor && createPortal(
         <EditorShell title={typeEditor === 'new' ? t('catalogues.createType') : t('catalogues.editType')} onClose={() => setTypeEditor(null)}>
@@ -241,6 +309,21 @@ function EditButton({ onClick, label }: { onClick: () => void; label: string }) 
   return <button type="button" onClick={onClick} className="icon-button h-9 w-9" title={label} aria-label={label}><Pencil className="h-4 w-4" /></button>;
 }
 
+function DeleteButton({ onClick, label, disabled }: { onClick: () => void; label: string; disabled: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="icon-button h-9 w-9 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-red-900/20"
+      title={label}
+      aria-label={label}
+    >
+      <Trash2 className="h-4 w-4" />
+    </button>
+  );
+}
+
 function EditorShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   const { t } = useTranslation();
   return <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true"><div className="my-auto w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-[#132129]"><div className="flex items-center justify-between border-b border-gray-100 px-6 py-5 dark:border-slate-800"><h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">{title}</h2><button type="button" onClick={onClose} className="icon-button" aria-label={t('common.close')}><X className="h-5 w-5" /></button></div>{children}</div></div>;
@@ -254,4 +337,11 @@ function ActiveField({ checked, onChange }: { checked: boolean; onChange: (activ
 function EditorFooter({ saving, onCancel }: { saving: boolean; onCancel: () => void }) {
   const { t } = useTranslation();
   return <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4 dark:border-slate-800"><button type="button" onClick={onCancel} className="btn-outline" disabled={saving}>{t('common.cancel')}</button><button type="submit" className="btn-primary gap-2" disabled={saving}><Save className="h-4 w-4" />{saving ? t('common.loading') : t('common.save')}</button></div>;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.response?.data?.error || fallback;
+  }
+  return fallback;
 }

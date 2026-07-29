@@ -29,4 +29,8 @@ export const adminAccessService = {
     const response = await api.put<RoleDefinition>(`/admin/access-control/roles/${id}`, data);
     return response.data;
   },
+
+  deleteRole: async (id: string): Promise<void> => {
+    await api.delete(`/admin/access-control/roles/${id}`);
+  },
 };

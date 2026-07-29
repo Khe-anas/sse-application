@@ -50,6 +50,10 @@ interface CriterionRow {
   reponse?: Reponse;
 }
 
+interface EvaluatorCriterionRow extends CriterionRow {
+  principe: Principe;
+}
+
 export default function EvaluationValidatePage() {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language;
@@ -250,6 +254,33 @@ export default function EvaluationValidatePage() {
   };
 
   const allReponses = useMemo(() => Object.values(reponses).flat(), [reponses]);
+  const evaluatorCriterionRows = useMemo<EvaluatorCriterionRow[]>(
+    () => principes.flatMap((principe) => {
+      const principeReponses = reponses[principe.id] || [];
+      return principe.bonnesPratiques.flatMap((bonnePratique) =>
+        bonnePratique.criteres.map((critere) => ({
+          principe,
+          bonnePratique,
+          critere,
+          reponse: principeReponses.find((item) => item.critereId === critere.id),
+        }))
+      );
+    }),
+    [principes, reponses],
+  );
+  const evaluatorVisibleRows = useMemo(
+    () => evaluatorCriterionRows.filter((row) =>
+      filter === 'ALL' || !row.reponse || !hasEvaluatorDecision(row.reponse)
+    ),
+    [evaluatorCriterionRows, filter],
+  );
+  const evaluatorPendingCount = evaluatorCriterionRows.filter(
+    (row) => !row.reponse || !hasEvaluatorDecision(row.reponse)
+  ).length;
+  const evaluatorReviewedCount = evaluatorCriterionRows.length - evaluatorPendingCount;
+  const evaluatorReviewPercentage = evaluatorCriterionRows.length > 0
+    ? Math.round((evaluatorReviewedCount / evaluatorCriterionRows.length) * 100)
+    : 0;
   const pendingDecisionReponses = allReponses.filter((reponse) => !hasEvaluatorDecision(reponse));
   const hasRequestedCorrections = allReponses.some((reponse) => reponse.status === StatusReponse.A_CORRIGER);
   const reviewedCount = allReponses.length - pendingDecisionReponses.length;
@@ -357,6 +388,7 @@ export default function EvaluationValidatePage() {
   );
 
   useEffect(() => {
+    if (isEvaluator) return;
     if (filteredRows.length === 0) {
       setActiveBonnePratiqueId('');
       setActiveCriterionId('');
@@ -374,7 +406,28 @@ export default function EvaluationValidatePage() {
     const nextRow = filteredRows.find((row) => row.bonnePratique.id === activeBonnePratiqueId) || filteredRows[0];
     setActiveBonnePratiqueId(nextRow.bonnePratique.id);
     setActiveCriterionId(nextRow.critere.id);
-  }, [activeBonnePratiqueId, activeCriterionId, filteredRows]);
+  }, [activeBonnePratiqueId, activeCriterionId, filteredRows, isEvaluator]);
+
+  useEffect(() => {
+    if (!isEvaluator) return;
+    if (evaluatorVisibleRows.length === 0) {
+      setActiveBonnePratiqueId('');
+      setActiveCriterionId('');
+      return;
+    }
+
+    const currentRow = evaluatorVisibleRows.find((row) => row.critere.id === activeCriterionId);
+    const nextRow = currentRow || evaluatorVisibleRows[0];
+    if (activePrincipe !== nextRow.principe.id) setActivePrincipe(nextRow.principe.id);
+    if (activeBonnePratiqueId !== nextRow.bonnePratique.id) setActiveBonnePratiqueId(nextRow.bonnePratique.id);
+    if (activeCriterionId !== nextRow.critere.id) setActiveCriterionId(nextRow.critere.id);
+  }, [
+    activeBonnePratiqueId,
+    activeCriterionId,
+    activePrincipe,
+    evaluatorVisibleRows,
+    isEvaluator,
+  ]);
 
   const visibleCriterionRows = isEvaluator
     ? filteredRows
@@ -384,6 +437,20 @@ export default function EvaluationValidatePage() {
   );
   const activeReviewIndex = visibleCriterionRows.findIndex((row) => row.critere.id === activeCriterionId);
   const activeReviewRow = activeReviewIndex >= 0 ? visibleCriterionRows[activeReviewIndex] : undefined;
+  const evaluatorActiveIndex = evaluatorVisibleRows.findIndex((row) => row.critere.id === activeCriterionId);
+  const evaluatorActiveRow = evaluatorActiveIndex >= 0 ? evaluatorVisibleRows[evaluatorActiveIndex] : undefined;
+  const evaluatorGlobalIndex = evaluatorActiveRow
+    ? evaluatorCriterionRows.findIndex((row) => row.critere.id === evaluatorActiveRow.critere.id)
+    : -1;
+  const moveToEvaluatorCriterion = (offset: number) => {
+    const nextRow = evaluatorVisibleRows[evaluatorActiveIndex + offset];
+    if (!nextRow) return;
+    updateNavigationKeepingPosition(() => {
+      setActivePrincipe(nextRow.principe.id);
+      setActiveBonnePratiqueId(nextRow.bonnePratique.id);
+      setActiveCriterionId(nextRow.critere.id);
+    });
+  };
   const moveToCriterion = (offset: number) => {
     const nextRow = visibleCriterionRows[activeReviewIndex + offset];
     if (!nextRow) return;
@@ -442,6 +509,59 @@ export default function EvaluationValidatePage() {
         { value: StatusReponse.A_CORRIGER, label: t('validation.filterCorrection') },
         { value: StatusReponse.REJETEE, label: t('validation.filterRejected') },
       ];
+
+  if (isEvaluator) {
+    return (
+      <div style={{ overflowAnchor: 'none' }}>
+        <EvaluatorValidationWorkspace
+          evaluation={evaluation}
+          row={evaluatorActiveRow}
+          current={evaluatorGlobalIndex + 1}
+          total={evaluatorCriterionRows.length}
+          visibleIndex={evaluatorActiveIndex}
+          visibleTotal={evaluatorVisibleRows.length}
+          reviewedCount={evaluatorReviewedCount}
+          pendingCount={evaluatorPendingCount}
+          reviewPercentage={evaluatorReviewPercentage}
+          filter={filter === 'ALL' ? 'ALL' : 'PENDING'}
+          note={evaluatorActiveRow?.reponse ? reviewNotes[evaluatorActiveRow.reponse.id] || '' : ''}
+          isBusy={evaluatorActiveRow?.reponse?.id === busyResponseId}
+          canValidate={canValidateEvaluation}
+          language={language}
+          t={t}
+          onBack={() => navigate(basePath)}
+          onFilterChange={(nextFilter) => setFilter(nextFilter)}
+          onPrevious={() => moveToEvaluatorCriterion(-1)}
+          onNext={() => moveToEvaluatorCriterion(1)}
+          onOpenCorrection={() => setGlobalCorrectionOpen(true)}
+          onValidate={handleValidateEvaluation}
+          onDownloadFile={handleDownloadFile}
+          onReviewAction={handleReviewAction}
+        />
+
+        <GlobalCorrectionDialog
+          open={globalCorrectionOpen}
+          reason={globalCorrectionReason}
+          busy={isReturningEvaluation}
+          t={t}
+          onReasonChange={setGlobalCorrectionReason}
+          onClose={() => setGlobalCorrectionOpen(false)}
+          onConfirm={handleReturnEvaluation}
+        />
+
+        <ConfirmDialog
+          open={validateDialogOpen}
+          title={t('validation.validateDialogTitle')}
+          description={t('validation.evaluationValidateConfirm')}
+          confirmLabel={t('validation.validateEvaluation')}
+          cancelLabel={t('common.cancel')}
+          busy={isValidatingEvaluation}
+          onConfirm={() => void confirmValidateEvaluation()}
+          onClose={() => setValidateDialogOpen(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-5" style={{ overflowAnchor: 'none' }}>
@@ -861,6 +981,472 @@ export default function EvaluationValidatePage() {
         onConfirm={() => void confirmValidateEvaluation()}
         onClose={() => setValidateDialogOpen(false)}
       />
+    </div>
+  );
+}
+
+function EvaluatorValidationWorkspace({
+  evaluation,
+  row,
+  current,
+  total,
+  visibleIndex,
+  visibleTotal,
+  reviewedCount,
+  pendingCount,
+  reviewPercentage,
+  filter,
+  note,
+  isBusy,
+  canValidate,
+  language,
+  t,
+  onBack,
+  onFilterChange,
+  onPrevious,
+  onNext,
+  onOpenCorrection,
+  onValidate,
+  onDownloadFile,
+  onReviewAction,
+}: {
+  evaluation: Evaluation;
+  row?: EvaluatorCriterionRow;
+  current: number;
+  total: number;
+  visibleIndex: number;
+  visibleTotal: number;
+  reviewedCount: number;
+  pendingCount: number;
+  reviewPercentage: number;
+  filter: 'ALL' | 'PENDING';
+  note: string;
+  isBusy: boolean;
+  canValidate: boolean;
+  language: string;
+  t: TFunction;
+  onBack: () => void;
+  onFilterChange: (filter: 'ALL' | 'PENDING') => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  onOpenCorrection: () => void;
+  onValidate: () => void;
+  onDownloadFile: (fileUrl: string) => Promise<void>;
+  onReviewAction: (reponse: Reponse, action: StatusReponse, reason?: string) => Promise<void>;
+}) {
+  return (
+    <div className="mx-auto max-w-6xl space-y-4">
+      <header className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-0.5 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
+              title={t('common.back')}
+              aria-label={t('common.back')}
+            >
+              <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
+            </button>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-primary-700">{t('validation.guidedTitle')}</p>
+              <h1 className="truncate text-2xl font-bold text-gray-900">{evaluation.organismeName}</h1>
+              <p className="mt-1 text-sm leading-6 text-gray-500">
+                {t('validation.year', { year: evaluation.year })} · {t('validation.guidedSubtitle')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={onOpenCorrection} className="btn-outline btn-sm gap-2 text-red-700">
+              <RotateCcw className="h-4 w-4" />
+              {t('validation.reject')}
+            </button>
+            <button
+              type="button"
+              onClick={onValidate}
+              disabled={!canValidate}
+              className="btn-success btn-sm gap-2 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Check className="h-4 w-4" />
+              {t('validation.validateEvaluation')}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-gray-900">{t('validation.reviewProgress')}</span>
+              <span className="text-sm font-bold text-primary-700">{reviewPercentage}%</span>
+            </div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${reviewPercentage}%` }} />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+              <span>{reviewedCount} / {total}</span>
+              <span className="font-semibold text-amber-700">{t('validation.remainingToReview', { count: pendingCount })}</span>
+            </div>
+          </div>
+
+          <div className="inline-flex self-start rounded-xl bg-gray-100 p-1">
+            <button
+              type="button"
+              onClick={() => onFilterChange('PENDING')}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                filter === 'PENDING' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {t('validation.filterPending')} ({pendingCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => onFilterChange('ALL')}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                filter === 'ALL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {t('validation.filterAll')} ({total})
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {row ? (
+        <main className="space-y-3">
+          <nav className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm" aria-label={t('validation.criteriaNavigation')}>
+            <button
+              type="button"
+              onClick={onPrevious}
+              disabled={visibleIndex <= 0}
+              className="btn-outline btn-sm gap-2 disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+              <span className="hidden sm:inline">{t('common.previous')}</span>
+            </button>
+            <div className="text-center">
+              <p className="text-sm font-bold text-gray-900">{t('validation.currentStep', { current, total })}</p>
+              <p className="text-xs text-gray-500">
+                {visibleIndex + 1} / {visibleTotal} · {filter === 'PENDING' ? t('validation.filterPending') : t('validation.filterAll')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={visibleIndex >= visibleTotal - 1}
+              className="btn-outline btn-sm gap-2 disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <span className="hidden sm:inline">{t('common.next')}</span>
+              <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+            </button>
+          </nav>
+
+          <EvaluatorCriterionReview
+            row={row}
+            language={language}
+            note={note}
+            isBusy={isBusy}
+            t={t}
+            onDownloadFile={onDownloadFile}
+            onReviewAction={onReviewAction}
+          />
+        </main>
+      ) : (
+        <section className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-green-200 bg-white px-6 text-center shadow-sm">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-700">
+            <CheckCircle2 className="h-7 w-7" />
+          </span>
+          <h2 className="mt-4 text-xl font-bold text-gray-900">{t('validation.allCriteriaReviewed')}</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">{t('validation.finalizeHint')}</p>
+          <button
+            type="button"
+            onClick={onValidate}
+            disabled={!canValidate}
+            className="btn-success mt-5 gap-2 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Check className="h-4 w-4" />
+            {t('validation.validateEvaluation')}
+          </button>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function EvaluatorCriterionReview({
+  row,
+  language,
+  note,
+  isBusy,
+  t,
+  onDownloadFile,
+  onReviewAction,
+}: {
+  row: EvaluatorCriterionRow;
+  language: string;
+  note: string;
+  isBusy: boolean;
+  t: TFunction;
+  onDownloadFile: (fileUrl: string) => Promise<void>;
+  onReviewAction: (reponse: Reponse, action: StatusReponse, reason?: string) => Promise<void>;
+}) {
+  const { principe, bonnePratique, critere, reponse } = row;
+  const references = getLocalizedField(critere, 'references', language) || t('validation.notSpecified');
+  const evidenceCount = (reponse?.preuveFiles?.length || 0) + (reponse?.preuveLinks?.length || 0);
+  const [reasonAction, setReasonAction] = useState<StatusReponse.A_CORRIGER | StatusReponse.REJETEE | null>(null);
+  const [reason, setReason] = useState('');
+
+  const openReasonDialog = (action: StatusReponse.A_CORRIGER | StatusReponse.REJETEE) => {
+    setReasonAction(action);
+    setReason(note);
+  };
+
+  const closeReasonDialog = () => {
+    if (isBusy) return;
+    setReasonAction(null);
+    setReason('');
+  };
+
+  const confirmReasonedDecision = async () => {
+    if (!reponse || !reasonAction || !reason.trim()) {
+      toast.error(t('validation.reasonRequired'));
+      return;
+    }
+    await onReviewAction(reponse, reasonAction, reason);
+    setReasonAction(null);
+    setReason('');
+  };
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <header className="border-b border-gray-200 px-4 py-5 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">
+              {t('validation.principleNumber', { number: principe.number })} · {t('validation.goodPractice')} {bonnePratique.number}
+            </p>
+            <p className="mt-1 text-sm font-medium text-gray-500">
+              {getLocalizedField(bonnePratique, 'label', language)}
+            </p>
+            <h2 className="mt-3 text-xl font-bold leading-8 text-gray-900">
+              {getLocalizedField(critere, 'label', language)}
+            </h2>
+          </div>
+          {reponse && statusBadge(reponse.status, t)}
+        </div>
+      </header>
+
+      <div className="border-b border-gray-200 bg-gray-50/70 p-4 sm:p-6">
+        <h3 className="text-sm font-bold text-gray-900">{t('validation.answerFromOrganisation')}</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="rounded-xl border border-primary-200 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('validation.submittedLevel')}</p>
+            <div className="mt-3 flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 flex-shrink-0 text-primary-700" />
+              <span className="text-lg font-bold text-gray-900">
+                {reponse?.niveau ? t(getNiveauTranslationKey(reponse.niveau)) : '-'}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('validation.organisationComment')}</p>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700">
+              {reponse?.commentaire?.trim() || t('validation.notSpecified')}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-0 lg:grid-cols-2">
+        <section className="min-w-0 border-b border-gray-200 p-4 sm:p-6 lg:border-b-0 lg:border-r">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+            <FileText className="h-4 w-4 text-primary-700" />
+            {t('validation.evidence')}
+            <span className="font-normal text-gray-400">({evidenceCount})</span>
+          </h3>
+          {evidenceCount === 0 ? (
+            <p className="mt-3 text-sm text-gray-500">{t('validation.noEvidence')}</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {reponse?.preuveFiles?.map((fileUrl) => (
+                <button
+                  key={fileUrl}
+                  type="button"
+                  onClick={() => onDownloadFile(fileUrl)}
+                  className="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-start text-sm font-medium text-primary-700 hover:bg-gray-100"
+                >
+                  <FileText className="h-4 w-4 flex-shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">{fileUrl.split('/').pop()}</span>
+                  <Download className="h-4 w-4 flex-shrink-0" />
+                </button>
+              ))}
+              {reponse?.preuveLinks?.map((link) => (
+                <a
+                  key={link}
+                  href={link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-primary-700 hover:bg-gray-100"
+                >
+                  <LinkIcon className="h-4 w-4 flex-shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">{link}</span>
+                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                </a>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="min-w-0 p-4 sm:p-6">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+            <BookOpenCheck className="h-4 w-4 text-secondary-600" />
+            {t('validation.references')}
+          </h3>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-700">{references}</p>
+        </section>
+      </div>
+
+      <footer className="border-t border-gray-200 bg-slate-50 px-4 py-5 sm:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-gray-900">{t('validation.decision')}</h3>
+              {isBusy && <Loader2 className="h-4 w-4 animate-spin text-primary-700" />}
+            </div>
+            <p className="mt-1 text-sm text-gray-500">{t('validation.simpleDecisionHint')}</p>
+          </div>
+          {reponse ? (
+            <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:w-[560px]">
+              <DecisionButton
+                label={t('validation.tooltipValidate')}
+                icon={CheckCircle2}
+                tone="green"
+                selected={reponse.status === StatusReponse.VALIDEE}
+                disabled={isBusy}
+                onClick={() => onReviewAction(reponse, StatusReponse.VALIDEE)}
+              />
+              <DecisionButton
+                label={t('validation.tooltipCorrection')}
+                icon={RotateCcw}
+                tone="amber"
+                selected={reponse.status === StatusReponse.A_CORRIGER}
+                disabled={isBusy}
+                onClick={() => openReasonDialog(StatusReponse.A_CORRIGER)}
+              />
+              <DecisionButton
+                label={t('validation.tooltipReject')}
+                icon={XCircle}
+                tone="red"
+                selected={reponse.status === StatusReponse.REJETEE}
+                disabled={isBusy}
+                onClick={() => openReasonDialog(StatusReponse.REJETEE)}
+              />
+            </div>
+          ) : (
+            <span className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">{t('validation.responseUnavailable')}</span>
+          )}
+        </div>
+      </footer>
+
+      {reasonAction && reponse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="simple-criterion-reason-title">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="simple-criterion-reason-title" className="text-lg font-semibold text-gray-900">
+                  {reasonAction === StatusReponse.A_CORRIGER
+                    ? t('validation.correctionDialogTitle')
+                    : t('validation.rejectionDialogTitle')}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600">
+                  {reasonAction === StatusReponse.A_CORRIGER
+                    ? t('validation.correctionDialogDetail')
+                    : t('validation.rejectionDialogDetail')}
+                </p>
+              </div>
+              <button type="button" onClick={closeReasonDialog} disabled={isBusy} className="icon-button" aria-label={t('common.close')}>
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <label htmlFor={`simple-criterion-reason-${reponse.id}`} className="label mt-5">{t('validation.reasonLabel')}</label>
+            <textarea
+              id={`simple-criterion-reason-${reponse.id}`}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              rows={4}
+              className="input resize-y"
+              placeholder={t('validation.reasonPlaceholder')}
+              autoFocus
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={closeReasonDialog} disabled={isBusy} className="btn-outline btn-sm">{t('common.cancel')}</button>
+              <button
+                type="button"
+                onClick={confirmReasonedDecision}
+                disabled={isBusy || !reason.trim()}
+                className={`${reasonAction === StatusReponse.REJETEE ? 'btn-danger' : 'btn-primary'} btn-sm gap-2 disabled:opacity-50`}
+              >
+                {isBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t('validation.confirmDecision')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GlobalCorrectionDialog({
+  open,
+  reason,
+  busy,
+  t,
+  onReasonChange,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  reason: string;
+  busy: boolean;
+  t: TFunction;
+  onReasonChange: (reason: string) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{t('validation.returnDialogTitle')}</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-500">{t('validation.returnDialogDetail')}</p>
+          </div>
+          <button type="button" onClick={onClose} disabled={busy} className="icon-button" aria-label={t('common.close')}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <label htmlFor="evaluator-global-correction-reason" className="label mt-5">{t('validation.globalReason')}</label>
+        <textarea
+          id="evaluator-global-correction-reason"
+          value={reason}
+          onChange={(event) => onReasonChange(event.target.value)}
+          rows={5}
+          className="input resize-y"
+          placeholder={t('validation.globalReasonPlaceholder')}
+          autoFocus
+        />
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-outline btn-sm">{t('common.cancel')}</button>
+          <button type="button" onClick={onConfirm} disabled={busy || !reason.trim()} className="btn-danger btn-sm gap-2 disabled:opacity-50">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            {t('validation.confirmReturn')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
