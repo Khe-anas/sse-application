@@ -57,7 +57,7 @@ public class NotificationController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @PreAuthorize("@permissionAccess.has('NOTIFICATIONS_READ')")
+    @PreAuthorize("isAuthenticated()")
     public SseEmitter streamNotifications(HttpServletRequest request) {
         UUID userId = currentUserService.getCurrentUserId(request);
         return notificationStreamService.subscribe(userId);
