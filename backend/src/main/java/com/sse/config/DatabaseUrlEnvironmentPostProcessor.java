@@ -12,7 +12,7 @@ import org.springframework.core.env.MapPropertySource;
 
 public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
-    private static final String PROPERTY_SOURCE_NAME = "renderDatabaseUrl";
+    private static final String PROPERTY_SOURCE_NAME = "databaseUrlOverride";
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {

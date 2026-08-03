@@ -26,10 +26,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Generated review/export artifacts
-outputs/
-rapport-stage/.build/
-rapport-stage/__pycache__/
-rapport-stage/*.tmp
+# Local scratch artifacts
+tmp/
 ~$*.docx
-diagrams/diagramme-cas-utilisation.png
